@@ -7,11 +7,12 @@
   const emptyTitle = byId('empty-title');
   const toolbar = byId('toolbar');
   const counter = byId('counter');
-  const progressFill = byId('progress-fill');
+  const timeline = /** @type {HTMLInputElement} */ (byId('timeline'));
   const backBtn = /** @type {HTMLButtonElement} */ (byId('back'));
   const forwardBtn = /** @type {HTMLButtonElement} */ (byId('forward'));
+  const liveBtn = byId('live');
   const fileEl = byId('file');
-  const lineEl = byId('line');
+  const codeEl = byId('code');
   const endedBadge = byId('ended');
   const status = byId('status');
   const explanationEl = byId('explanation');
@@ -23,10 +24,14 @@
    * @typedef {{ name: string, value: number }} Pointer
    * @typedef {{ name: string, index: number }} Arrow
    * @typedef {{ kind: string, array?: string, index?: number, a?: number, b?: number, name?: string }} Change
-   * @typedef {{ snapshot: { file: string, line: number, arrays: ArrayVar[], pointers: Pointer[] },
-   *             changes: Change[], arrows: Record<string, Arrow[]>,
+   * @typedef {{ line: number, code?: string }} LineRef
+   * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[] },
+   *             executed?: LineRef, changes: Change[], arrows: Record<string, Arrow[]>,
    *             explanation: string[], step: number, total: number }} Frame
    */
+
+  /** Multiplicador das durações em CSS; 0 desliga o movimento. */
+  const SPEED = { lenta: 2, normal: 1, rapida: 0.5, desligada: 0 };
 
   const EMPTY_TITLE = {
     idle: 'Pronto para visualizar',
@@ -58,6 +63,8 @@
       render(msg.frame);
     } else if (msg.type === 'session') {
       session = msg.state;
+    } else if (msg.type === 'settings') {
+      document.documentElement.style.setProperty('--cs-speed', String(SPEED[msg.animationSpeed] ?? 1));
     } else if (msg.type === 'reset') {
       reset();
     } else if (msg.type === 'error') {
@@ -68,11 +75,26 @@
 
   backBtn.addEventListener('click', () => vscode.postMessage({ type: 'back' }));
   forwardBtn.addEventListener('click', () => vscode.postMessage({ type: 'forward' }));
+  liveBtn.addEventListener('click', () => gotoStep(Infinity));
+  // "input" dispara a cada movimento do controle: arrastar a linha do tempo passa pelos passos.
+  timeline.addEventListener('input', () => gotoStep(Number(timeline.value)));
   document.addEventListener('keydown', (e) => {
     if (e.altKey || e.ctrlKey || e.metaKey || !current) return;
+    // O slider já trata as setas sozinho; aqui só os atalhos do resto do painel.
+    if (e.target === timeline) return;
     if (e.key === 'ArrowLeft') vscode.postMessage({ type: 'back' });
     else if (e.key === 'ArrowRight') vscode.postMessage({ type: 'forward' });
+    else if (e.key === 'Home') gotoStep(1);
+    else if (e.key === 'End') gotoStep(Infinity);
+    else return;
+    e.preventDefault();
   });
+
+  /** @param {number} step */
+  function gotoStep(step) {
+    if (!current) return;
+    vscode.postMessage({ type: 'goto', step: Math.min(step, current.total) });
+  }
 
   /** Estado vazio, selo de sessão encerrada e a linha de status. */
   function updateChrome() {
@@ -96,6 +118,7 @@
     pointerColor.clear();
     varsEl.replaceChildren();
     explanationEl.replaceChildren();
+    codeEl.replaceChildren();
   }
 
   /** @param {Frame} frame */
@@ -105,11 +128,16 @@
     const arrowNames = new Set(Object.values(frame.arrows).flatMap((list) => list.map((a) => a.name)));
 
     counter.textContent = `Passo ${frame.step} de ${frame.total}`;
-    progressFill.style.setProperty('--progress', String(frame.total > 0 ? frame.step / frame.total : 0));
+    timeline.max = String(frame.total);
+    timeline.value = String(frame.step);
+    timeline.disabled = frame.total <= 1;
+    timeline.setAttribute('aria-valuetext', `Passo ${frame.step} de ${frame.total}`);
+    timeline.style.setProperty('--progress', String(frame.total > 1 ? (frame.step - 1) / (frame.total - 1) : 1));
     backBtn.disabled = frame.step <= 1;
     forwardBtn.disabled = frame.step >= frame.total;
+    liveBtn.hidden = frame.step >= frame.total;
     fileEl.textContent = basename(s.file);
-    lineEl.textContent = `linha ${s.line}`;
+    renderCode(frame.executed, { line: s.line, code: s.code });
 
     explanationEl.replaceChildren(
       ...frame.explanation.map((text) => {
@@ -143,13 +171,50 @@
   }
 
   /**
+   * A linha que acabou de rodar e a próxima. O debugger para antes de executar
+   * a linha marcada no editor, e é a linha anterior que causou as mudanças.
+   * @param {LineRef | undefined} executed
+   * @param {LineRef} next
+   */
+  function renderCode(executed, next) {
+    /** @type {HTMLElement[]} */
+    const rows = [];
+    if (executed) rows.push(...codeRow('Executou', executed, 'is-executed'));
+    rows.push(...codeRow('Próxima', next, 'is-next'));
+    codeEl.replaceChildren(...rows);
+  }
+
+  /**
+   * @param {string} label
+   * @param {LineRef} ref
+   * @param {string} modifier
+   */
+  function codeRow(label, ref, modifier) {
+    const dt = el('dt', `code-label ${modifier}`);
+    dt.textContent = label;
+    const dd = el('dd', `code-line ${modifier}`);
+    const num = el('span', 'code-num');
+    num.textContent = String(ref.line);
+    const text = el('code', 'code-text');
+    text.textContent = ref.code ?? '';
+    text.title = ref.code ?? '';
+    dd.append(num, text);
+    return [dt, dd];
+  }
+
+  /**
    * Destaca "arr[2]" e nomes de variáveis conhecidos dentro da frase,
    * sem passar texto do debug por innerHTML.
    * @param {string} text
    */
   function highlightCode(text) {
     const s = current?.snapshot;
-    const known = new Set([...(s?.arrays.map((a) => a.name) ?? []), ...(s?.pointers.map((p) => p.name) ?? [])]);
+    const known = new Set([
+      ...(s?.arrays.map((a) => a.name) ?? []),
+      ...(s?.pointers.map((p) => p.name) ?? []),
+      // Quem acabou de sair de escopo não está mais no snapshot, mas aparece na frase.
+      ...(current?.changes.map((c) => c.name ?? c.array ?? '') ?? []),
+    ]);
     /** @type {(string | HTMLElement)[]} */
     const out = [];
     let last = 0;

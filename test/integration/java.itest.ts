@@ -74,6 +74,7 @@ describe('Java Debugger real', () => {
     const snaps = await debugSample('BubbleSort', 6, 12);
     const first = snaps[0];
     assert.equal(first.line, 6);
+    assert.equal(first.code, 'for (int i = 0; i < numeros.length - 1; i++) {');
     assert.deepEqual(first.arrays.find((a) => a.name === 'numeros')?.values, ['5', '1', '4', '2', '8']);
 
     const kinds = snaps.flatMap((s, k) => diff(snaps[k - 1], s, snaps[k - 2])).map((c) => c.kind);

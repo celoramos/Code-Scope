@@ -1,5 +1,6 @@
 import { diff, type Change } from './diff';
 import { explain } from './explain';
+import { explainFlow } from './flow';
 import type { Step } from './history';
 import { arrowsFor, VALUE_NAMES, type Arrow } from './pointers';
 import type { Snapshot } from './snapshot';
@@ -36,12 +37,13 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
   const arrows: Record<string, Arrow[]> = {};
   for (const arr of snapshot.arrays) arrows[arr.name] = arrowsFor(arr, snapshot.pointers, options.valueNames);
   const changes = diff(prev, snapshot, older);
+  const executed = prev && prev.file === snapshot.file ? { line: prev.line, code: prev.code } : undefined;
   return {
     snapshot,
-    executed: prev && prev.file === snapshot.file ? { line: prev.line, code: prev.code } : undefined,
+    executed,
     changes,
     arrows,
-    explanation: options.beginnerMode ? explain(changes, prev === undefined) : [],
+    explanation: options.beginnerMode ? explain(changes, prev === undefined, explainFlow(executed, snapshot)) : [],
     step: step.index,
     total: step.total,
   };

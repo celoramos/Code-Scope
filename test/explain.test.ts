@@ -79,4 +79,12 @@ describe('explain', () => {
   it('nada mudou', () => {
     assert.deepEqual(explain([]), ['Nada mudou neste passo.']);
   });
+
+  it('o caminho do programa substitui o "nada mudou" e vem depois das mudanças', () => {
+    assert.deepEqual(explain([], false, 'A condição foi falsa.'), ['A condição foi falsa.']);
+    assert.deepEqual(explain([{ kind: 'pointer', name: 'j', from: 0, to: 1 }], false, 'Volta.'), [
+      'j avançou de 0 para 1.',
+      'Volta.',
+    ]);
+  });
 });

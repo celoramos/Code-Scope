@@ -83,17 +83,18 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
         </button>
         <div class="step">
           <span id="counter" class="counter"></span>
-          <span class="progress" aria-hidden="true"><span id="progress-fill" class="progress-fill"></span></span>
+          <input id="timeline" class="timeline" type="range" min="1" max="1" value="1" aria-label="Ir para o passo">
         </div>
         <button id="forward" class="icon-button" type="button" aria-label="Próximo passo" title="Próximo passo (seta direita)">
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
         </button>
       </nav>
+      <button id="live" class="link-button" type="button" hidden>Voltar ao passo mais recente</button>
       <p class="location">
         <span id="file" class="location-file"></span>
-        <span id="line" class="location-line"></span>
         <span id="ended" class="badge" hidden>sessão encerrada</span>
       </p>
+      <dl id="code" class="code-lines"></dl>
     </header>
 
     <p id="status" class="status" role="status" aria-live="polite"></p>

@@ -4,16 +4,17 @@ import type { Change } from './diff';
  * Modo iniciante: uma frase curta por mudança, na ordem em que o aluno deve
  * ler. Arrays primeiro, porque são o assunto; ponteiros depois.
  */
-export function explain(changes: Change[], isFirstStep = false): string[] {
+export function explain(changes: Change[], isFirstStep = false, flow?: string): string[] {
   if (isFirstStep) {
     const added = changes.filter((c) => c.kind === 'array-added');
     if (added.length === 0) return ['Primeiro passo. Ainda não há arrays nas variáveis locais.'];
     return added.map((c) => `Primeiro passo: ${c.array} tem ${plural(c.length, 'posição', 'posições')}.`);
   }
 
+  // O que mudou vem antes do caminho que o programa tomou: os dados são o assunto.
   const arrays = changes.filter((c) => c.kind !== 'pointer').map(sentence);
   const pointers = changes.filter((c) => c.kind === 'pointer').map(sentence);
-  const all = [...arrays, ...pointers];
+  const all = [...arrays, ...pointers, ...(flow ? [flow] : [])];
   return all.length > 0 ? all : ['Nada mudou neste passo.'];
 }
 

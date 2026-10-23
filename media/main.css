@@ -47,9 +47,13 @@
   /* Altura de uma linha de seta: ponta + etiqueta. */
   --cs-pointer-row: 2.3em;
 
-  /* Rápido o bastante para não atrasar o F10, lento o bastante para ver a troca. */
-  --cs-move: 420ms;
-  --cs-flash: 900ms;
+  /*
+   * Rápido o bastante para não atrasar o F10, lento o bastante para ver a troca.
+   * --cs-speed vem da configuração codeScope.animationSpeed (0 desliga).
+   */
+  --cs-speed: 1;
+  --cs-move: calc(420ms * var(--cs-speed));
+  --cs-flash: calc(900ms * var(--cs-speed));
   --cs-ease: cubic-bezier(0.3, 0, 0.2, 1);
 }
 
@@ -173,20 +177,110 @@ kbd {
   font-variant-numeric: tabular-nums;
 }
 
-.progress {
-  height: 3px;
-  border-radius: 2px;
-  background: var(--cs-line);
-  overflow: hidden;
+/*
+ * Linha do tempo: um range nativo (teclado e leitor de tela de graça) com o
+ * trilho fino da barra de progresso. A parte já percorrida é um gradiente
+ * cortado em --progress.
+ */
+.timeline {
+  --fill: var(--vscode-progressBar-background, var(--cs-ptr-0));
+  width: 100%;
+  height: 14px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
 }
 
-.progress-fill {
-  display: block;
-  height: 100%;
-  background: var(--vscode-progressBar-background, var(--cs-ptr-0));
-  transform-origin: left;
-  transform: scaleX(var(--progress, 0));
-  transition: transform var(--cs-move) var(--cs-ease);
+.timeline:disabled {
+  cursor: default;
+}
+
+.timeline::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--fill) calc(var(--progress, 1) * 100%),
+    var(--cs-line) calc(var(--progress, 1) * 100%)
+  );
+}
+
+.timeline::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+  margin-top: -4.5px; /* centraliza no trilho de 3px: (3 - 12) / 2 */
+  border: 2px solid var(--cs-bg);
+  border-radius: 50%;
+  background: var(--fill);
+  appearance: none;
+}
+
+.timeline:disabled::-webkit-slider-thumb {
+  background: var(--cs-line);
+}
+
+.link-button {
+  margin-top: var(--cs-space-2);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--vscode-textLink-foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground));
+  text-decoration: underline;
+}
+
+/* Executou / Próxima: duas linhas de código como no editor, número à esquerda. */
+.code-lines {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 2px var(--cs-space-2);
+  margin: var(--cs-space-2) 0 0;
+}
+
+.code-label {
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+.code-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cs-space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 2px var(--cs-space-2);
+  border-radius: var(--cs-radius-sm);
+  font-family: var(--cs-mono);
+}
+
+.code-line.is-executed {
+  background: var(--cs-surface);
+}
+
+/* A próxima linha usa a mesma cor que o editor dá à linha parada no debug. */
+.code-line.is-next {
+  background: var(--vscode-editor-stackFrameHighlightBackground, var(--cs-change-bg));
+}
+
+.code-num {
+  flex: 0 0 auto;
+  min-width: 2ch;
+  color: var(--cs-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.code-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Alvo de 28px: o tamanho dos botões de ícone do VS Code. */
@@ -233,11 +327,6 @@ kbd {
 .location-file {
   font-family: var(--cs-mono);
   overflow-wrap: anywhere;
-}
-
-.location-line {
-  color: var(--cs-muted);
-  font-variant-numeric: tabular-nums;
 }
 
 .badge {
@@ -531,7 +620,15 @@ kbd {
 
 /* ---------- Movimento reduzido ---------- */
 
+/*
+ * O sistema pedindo menos movimento vence a configuração da extensão: o
+ * !important ganha do --cs-speed que o script põe no estilo inline.
+ */
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --cs-speed: 0 !important;
+  }
+
   .cell .cell-value,
   .cell.swap-up .cell-value,
   .cell.swap-down .cell-value,
@@ -540,7 +637,6 @@ kbd {
   }
 
   .pointer,
-  .progress-fill,
   .var {
     transition: none;
   }
