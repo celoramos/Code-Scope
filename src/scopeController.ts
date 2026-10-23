@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { collectSnapshot } from './debug/dapCollector';
 import { registerStopTracker } from './debug/trackerFactory';
+import { makeFrame } from './model/frame';
+import type { Snapshot } from './model/snapshot';
 import type { ScopeViewProvider } from './webview/scopeViewProvider';
 
 /** Liga o debug ao painel: cada "stopped" vira um snapshot. */
@@ -8,6 +10,8 @@ export class ScopeController implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
   /** Cada parada ganha um número; uma coleta só publica se ainda for a mais recente. */
   private generation = 0;
+  /** Os dois últimos snapshots: [antes do anterior, anterior]. */
+  private recent: [Snapshot | undefined, Snapshot | undefined] = [undefined, undefined];
 
   constructor(
     private readonly view: ScopeViewProvider,
@@ -17,6 +21,7 @@ export class ScopeController implements vscode.Disposable {
       registerStopTracker((session, threadId) => void this.onStopped(session, threadId)),
       vscode.debug.onDidStartDebugSession((s) => {
         this.log.info(`sessão iniciada: ${s.name} (type=${s.type})`);
+        this.recent = [undefined, undefined];
         this.view.post({ type: 'status', text: 'Sessão iniciada. Aguardando um breakpoint.' });
       }),
       vscode.debug.onDidTerminateDebugSession(() => {
@@ -36,7 +41,9 @@ export class ScopeController implements vscode.Disposable {
       this.log.debug('scopes', JSON.stringify(collected.raw.scopes));
       this.log.debug('locals', JSON.stringify(collected.raw.locals));
       this.log.info('snapshot', JSON.stringify(collected.snapshot));
-      this.view.post({ type: 'render', frame: { snapshot: collected.snapshot } });
+      const [older, prev] = this.recent;
+      this.recent = [prev, collected.snapshot];
+      this.view.post({ type: 'render', frame: makeFrame(collected.snapshot, prev, older) });
     } catch (err) {
       if (gen !== this.generation) return;
       this.log.error('falha ao ler variáveis', err instanceof Error ? err : String(err));

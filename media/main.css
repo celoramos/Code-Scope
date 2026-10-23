@@ -21,6 +21,23 @@
   /* Caixa quadrada que cabe um número de 3 dígitos na fonte do editor. */
   --cs-cell-size: 2.5em;
   --cs-mono: var(--vscode-editor-font-family);
+
+  /*
+   * Mudança em amarelo, ponteiro em azul: as cores de gráfico do tema, que
+   * cada tema já ajusta para o próprio fundo. O texto nunca usa essas cores,
+   * só bordas, fundos misturados e a ponta da seta.
+   */
+  --cs-change: var(--vscode-charts-yellow);
+  --cs-change-bg: color-mix(in srgb, var(--cs-change) 22%, var(--cs-cell-bg));
+  --cs-pointer: var(--vscode-charts-blue);
+
+  /* Altura de uma linha de seta: ponta + nome. */
+  --cs-pointer-row: 2.4em;
+
+  /* Rápido o bastante para não atrasar o F10, lento o bastante para ver a troca. */
+  --cs-move: 420ms;
+  --cs-flash: 900ms;
+  --cs-ease: cubic-bezier(0.3, 0, 0.2, 1);
 }
 
 body {
@@ -123,6 +140,127 @@ body {
   font-family: var(--cs-mono);
   background: var(--cs-cell-bg);
   border: 1px solid var(--cs-cell-border);
+}
+
+/* Mudou neste passo: fica marcado até o próximo, e pisca ao chegar. */
+.cell.is-changed .cell-value {
+  background: var(--cs-change-bg);
+  border-color: var(--cs-change);
+  border-left-width: 1px;
+  animation: cs-flash var(--cs-flash) var(--cs-ease);
+}
+
+@keyframes cs-flash {
+  0%,
+  40% {
+    background: color-mix(in srgb, var(--cs-change) 55%, var(--cs-cell-bg));
+  }
+}
+
+/* Troca: cada caixa parte da posição da outra e faz meio arco, uma por cima, outra por baixo. */
+.cell.swap-up .cell-value,
+.cell.swap-down .cell-value {
+  position: relative;
+  z-index: 1;
+}
+
+.cell.swap-up .cell-value {
+  animation: cs-swap-up var(--cs-move) var(--cs-ease), cs-flash var(--cs-flash) var(--cs-ease);
+}
+
+.cell.swap-down .cell-value {
+  animation: cs-swap-down var(--cs-move) var(--cs-ease), cs-flash var(--cs-flash) var(--cs-ease);
+}
+
+@keyframes cs-swap-up {
+  from {
+    transform: translateX(var(--dx));
+  }
+  50% {
+    transform: translate(calc(var(--dx) / 2), -60%);
+  }
+}
+
+@keyframes cs-swap-down {
+  from {
+    transform: translateX(var(--dx));
+  }
+  50% {
+    transform: translate(calc(var(--dx) / 2), 60%);
+  }
+}
+
+.array.is-new {
+  animation: cs-appear var(--cs-move) var(--cs-ease);
+}
+
+@keyframes cs-appear {
+  from {
+    opacity: 0;
+  }
+}
+
+.pointers {
+  position: relative;
+  height: calc(var(--rows, 0) * var(--cs-pointer-row));
+}
+
+.pointer {
+  position: absolute;
+  top: calc(var(--row) * var(--cs-pointer-row));
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--cs-mono);
+  line-height: 1.2;
+  transform: translateX(calc(var(--x) - 50%));
+  transition: transform var(--cs-move) var(--cs-ease);
+}
+
+.pointer.no-move {
+  transition: none;
+}
+
+.pointer-head {
+  color: var(--cs-pointer);
+}
+
+.vars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cs-space-1) var(--cs-space-2);
+  margin: 0 0 var(--cs-space-3);
+  padding: 0;
+  list-style: none;
+  font-family: var(--cs-mono);
+}
+
+.vars:empty {
+  display: none;
+}
+
+.var {
+  padding: 0 var(--cs-space-1);
+  border: 1px solid transparent;
+}
+
+.var.is-changed {
+  background: var(--cs-change-bg);
+  border-color: var(--cs-change);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell .cell-value,
+  .cell.swap-up .cell-value,
+  .cell.swap-down .cell-value,
+  .array.is-new {
+    animation: none;
+  }
+
+  .pointer {
+    transition: none;
+  }
 }
 
 :focus-visible {

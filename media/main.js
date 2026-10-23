@@ -4,7 +4,17 @@
   const vscode = acquireVsCodeApi();
   const status = byId('status');
   const location = byId('location');
+  const varsEl = byId('vars');
   const arraysEl = byId('arrays');
+
+  /**
+   * @typedef {{ name: string, values: string[], length: number }} ArrayVar
+   * @typedef {{ name: string, value: number }} Pointer
+   * @typedef {{ name: string, index: number }} Arrow
+   * @typedef {{ kind: string, array?: string, index?: number, a?: number, b?: number, name?: string }} Change
+   * @typedef {{ snapshot: { file: string, line: number, arrays: ArrayVar[], pointers: Pointer[] },
+   *             changes: Change[], arrows: Record<string, Arrow[]> }} Frame
+   */
 
   /** Um bloco por array, reaproveitado entre passos para poder animar. */
   /** @type {Map<string, HTMLElement>} */
@@ -19,23 +29,27 @@
     }
   });
 
-  /** @param {{ snapshot: { file: string, line: number, arrays: { name: string, values: string[], length: number }[] } }} frame */
+  /** @param {Frame} frame */
   function render(frame) {
     const s = frame.snapshot;
     location.hidden = false;
     location.textContent = `${basename(s.file)}, linha ${s.line}`;
     status.textContent = s.arrays.length === 0 ? 'Nenhum array nas variáveis locais deste ponto.' : '';
+    renderVars(s.pointers, frame.changes);
 
     const seen = new Set();
     for (const arr of s.arrays) {
       seen.add(arr.name);
       let block = blocks.get(arr.name);
+      const isNew = !block;
       if (!block) {
         block = createBlock(arr.name);
         blocks.set(arr.name, block);
       }
       arraysEl.appendChild(block); // mantém a ordem das variáveis
       updateBlock(block, arr);
+      animateBlock(block, arr.name, frame.changes, isNew);
+      updateArrows(block, frame.arrows[arr.name] ?? []);
     }
     for (const [name, block] of blocks) {
       if (!seen.has(name)) {
@@ -43,6 +57,21 @@
         blocks.delete(name);
       }
     }
+  }
+
+  /**
+   * @param {Pointer[]} pointers
+   * @param {Change[]} changes
+   */
+  function renderVars(pointers, changes) {
+    const changed = new Set(changes.filter((c) => c.kind === 'pointer').map((c) => c.name));
+    varsEl.replaceChildren(
+      ...pointers.map((p) => {
+        const li = el('li', changed.has(p.name) ? 'var is-changed' : 'var');
+        li.textContent = `${p.name} = ${p.value}`;
+        return li;
+      }),
+    );
   }
 
   /** @param {string} name */
@@ -55,14 +84,16 @@
     const track = el('div', 'array-track');
     const cells = el('ol', 'cells');
     cells.setAttribute('aria-label', `Posições de ${name}`);
-    track.append(cells);
+    const pointers = el('div', 'pointers');
+    pointers.setAttribute('aria-hidden', 'true'); // as setas já estão no aria-label das caixas
+    track.append(cells, pointers);
     block.append(header, track);
     return block;
   }
 
   /**
    * @param {HTMLElement} block
-   * @param {{ name: string, values: string[], length: number }} arr
+   * @param {ArrayVar} arr
    */
   function updateBlock(block, arr) {
     const meta = /** @type {HTMLElement} */ (block.querySelector('.array-meta'));
@@ -71,15 +102,17 @@
         ? `mostrando ${arr.values.length} de ${arr.length} posições`
         : `${arr.length} ${arr.length === 1 ? 'posição' : 'posições'}`;
 
-    const cells = /** @type {HTMLElement} */ (block.querySelector('.cells'));
-    while (cells.children.length > arr.values.length) cells.lastElementChild?.remove();
-    while (cells.children.length < arr.values.length) cells.append(createCell(cells.children.length));
+    const cells = cellsOf(block);
+    while (cells.length > arr.values.length) cells.pop()?.remove();
+    const list = /** @type {HTMLElement} */ (block.querySelector('.cells'));
+    while (list.children.length < arr.values.length) list.append(createCell(list.children.length));
     arr.values.forEach((value, i) => {
-      const cell = /** @type {HTMLElement} */ (cells.children[i]);
+      const cell = /** @type {HTMLElement} */ (list.children[i]);
       const v = /** @type {HTMLElement} */ (cell.querySelector('.cell-value'));
       v.textContent = value;
       v.title = value;
-      cell.setAttribute('aria-label', `${arr.name}[${i}] = ${value}`);
+      cell.dataset.label = `${arr.name}[${i}] = ${value}`;
+      cell.setAttribute('aria-label', cell.dataset.label);
     });
   }
 
@@ -91,6 +124,106 @@
     idx.setAttribute('aria-hidden', 'true');
     cell.append(idx, el('span', 'cell-value'));
     return cell;
+  }
+
+  /**
+   * Destaca o que mudou neste passo. Uma troca anima as duas caixas se
+   * cruzando: cada valor sai da posição antiga e faz um arco até a nova.
+   * @param {HTMLElement} block
+   * @param {string} name
+   * @param {Change[]} changes
+   * @param {boolean} isNew
+   */
+  function animateBlock(block, name, changes, isNew) {
+    const cells = cellsOf(block);
+    for (const cell of cells) {
+      cell.classList.remove('is-changed', 'swap-up', 'swap-down');
+      cell.style.removeProperty('--dx');
+    }
+    block.classList.remove('is-new');
+    void block.offsetWidth; // reinicia as animações CSS
+
+    if (isNew) block.classList.add('is-new');
+    /** @type {HTMLElement | undefined} */
+    let first;
+    for (const c of changes) {
+      if (c.array !== name) continue;
+      if (c.kind === 'set' && c.index !== undefined && cells[c.index]) {
+        cells[c.index].classList.add('is-changed');
+        first ??= cells[c.index];
+      } else if (c.kind === 'swap' && c.a !== undefined && c.b !== undefined && cells[c.a] && cells[c.b]) {
+        const a = cells[c.a];
+        const b = cells[c.b];
+        const dx = b.offsetLeft - a.offsetLeft;
+        a.style.setProperty('--dx', `${dx}px`);
+        b.style.setProperty('--dx', `${-dx}px`);
+        a.classList.add('is-changed', 'swap-up');
+        b.classList.add('is-changed', 'swap-down');
+        first ??= a;
+      }
+    }
+    first?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  /**
+   * Setas embaixo das caixas. Cada seta é um elemento fixo por nome e só
+   * muda de posição, então "i++" aparece como a seta deslizando.
+   * @param {HTMLElement} block
+   * @param {Arrow[]} arrows
+   */
+  function updateArrows(block, arrows) {
+    const layer = /** @type {HTMLElement} */ (block.querySelector('.pointers'));
+    const cells = cellsOf(block);
+    const list = /** @type {HTMLElement} */ (block.querySelector('.cells'));
+    layer.style.width = `${list.scrollWidth}px`;
+
+    /** @type {Map<number, number>} quantas setas já empilhadas por posição */
+    const stack = new Map();
+    const keep = new Set();
+    for (const arrow of arrows) {
+      keep.add(arrow.name);
+      const cell = cells[arrow.index];
+      const row = stack.get(arrow.index) ?? 0;
+      stack.set(arrow.index, row + 1);
+
+      let p = /** @type {HTMLElement | null} */ (layer.querySelector(`[data-name="${CSS.escape(arrow.name)}"]`));
+      const appearing = !p;
+      if (!p) {
+        p = el('span', 'pointer');
+        p.dataset.name = arrow.name;
+        const head = el('span', 'pointer-head');
+        head.textContent = '▲';
+        const label = el('span', 'pointer-name');
+        label.textContent = arrow.name;
+        p.append(head, label);
+        layer.append(p);
+      }
+      const x = cell.offsetLeft + cell.offsetWidth / 2;
+      p.style.setProperty('--x', `${x}px`);
+      p.style.setProperty('--row', String(row));
+      if (appearing) {
+        p.classList.add('no-move');
+        void p.offsetWidth;
+        p.classList.remove('no-move');
+      }
+    }
+    for (const p of Array.from(layer.querySelectorAll('.pointer'))) {
+      if (!keep.has(/** @type {HTMLElement} */ (p).dataset.name)) p.remove();
+    }
+    const rows = Math.max(0, ...stack.values());
+    layer.style.setProperty('--rows', String(rows));
+
+    // Leitores de tela: a caixa diz quem aponta para ela.
+    cells.forEach((cell, i) => {
+      const names = arrows.filter((a) => a.index === i).map((a) => a.name);
+      const base = cell.dataset.label ?? '';
+      cell.setAttribute('aria-label', names.length ? `${base}, apontada por ${names.join(', ')}` : base);
+    });
+  }
+
+  /** @param {HTMLElement} block */
+  function cellsOf(block) {
+    return /** @type {HTMLElement[]} */ (Array.from(block.querySelectorAll('.cell')));
   }
 
   /** @param {string} id */
