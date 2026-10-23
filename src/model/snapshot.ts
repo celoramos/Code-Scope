@@ -8,13 +8,27 @@ export interface ArrayVar {
   name: string;
   /** Valores já formatados para exibição, um por posição. */
   values: string[];
-  /** Tamanho real do array; pode ser maior que values.length se foi truncado. */
+  /** Tamanho real; pode ser maior que values.length se foi truncado. */
   length: number;
+  /** "list" para coleções como ArrayList, que crescem e encolhem. Sem valor, é array. */
+  kind?: 'array' | 'list';
+  /**
+   * Linhas de uma matriz (array de arrays). Cada linha se chama "nome[i]".
+   * Quando existe, values guarda só um resumo de cada linha.
+   */
+  rows?: ArrayVar[];
 }
 
+/** Inteiro que pode apontar para uma posição: i, j, inicio, fim... */
 export interface Pointer {
   name: string;
   value: number;
+}
+
+/** Qualquer outra variável simples: boolean, char, double, String. */
+export interface Scalar {
+  name: string;
+  value: string;
 }
 
 export interface Snapshot {
@@ -25,4 +39,5 @@ export interface Snapshot {
   code?: string;
   arrays: ArrayVar[];
   pointers: Pointer[];
+  scalars?: Scalar[];
 }

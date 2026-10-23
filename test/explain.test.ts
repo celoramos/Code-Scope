@@ -3,7 +3,7 @@ import { explain } from '../src/model/explain';
 
 describe('explain', () => {
   it('primeiro passo descreve os arrays', () => {
-    assert.deepEqual(explain([{ kind: 'array-added', array: 'arr', length: 5 }], true), [
+    assert.deepEqual(explain([{ kind: 'array-added', array: 'arr', length: 5, structure: 'array' }], true), [
       'Primeiro passo: arr tem 5 posições.',
     ]);
   });
@@ -64,14 +64,44 @@ describe('explain', () => {
   it('arrays criados, removidos e trocados', () => {
     assert.deepEqual(
       explain([
-        { kind: 'array-added', array: 'copia', length: 1 },
+        { kind: 'array-added', array: 'copia', length: 1, structure: 'array' },
         { kind: 'array-removed', array: 'tmp' },
         { kind: 'array-resized', array: 'arr', from: 3, to: 6 },
       ]),
       [
         'O array copia foi criado com 1 posição.',
         'O array tmp saiu de escopo.',
-        'arr agora é outro array, com 6 posições (antes tinha 3).',
+        'arr agora tem 6 posições (antes tinha 3).',
+      ],
+    );
+  });
+
+  it('nascimento de lista e matriz', () => {
+    assert.deepEqual(
+      explain([
+        { kind: 'array-added', array: 'lista', length: 0, structure: 'list' },
+        { kind: 'array-added', array: 'grade', length: 2, structure: 'matrix', cols: 3 },
+      ]),
+      ['A lista lista foi criada vazia.', 'A matriz grade foi criada com 2 linhas e 3 colunas.'],
+    );
+    assert.deepEqual(explain([{ kind: 'array-added', array: 'grade', length: 2, structure: 'matrix', cols: 3 }], true), [
+      'Primeiro passo: grade tem 2 linhas e 3 colunas.',
+    ]);
+  });
+
+  it('lista, matriz e variável simples', () => {
+    assert.deepEqual(
+      explain([
+        { kind: 'insert', array: 'lista', index: 1, value: '"leite"', shifted: true },
+        { kind: 'remove', array: 'lista', index: 2, value: '"café"', shifted: false },
+        { kind: 'set', array: 'grade[1]', index: 2, from: '6', to: '60' },
+        { kind: 'scalar', name: 'achou', from: 'false', to: 'true' },
+      ]),
+      [
+        'lista ganhou "leite" na posição 1. Os itens que estavam dali em diante andaram uma posição.',
+        '"café" saiu do fim de lista (posição 2).',
+        'grade[1][2] mudou de 6 para 60.',
+        'achou mudou de false para true.',
       ],
     );
   });

@@ -4,6 +4,7 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type { CodeScopeApi } from '../../src/extension';
 import { diff } from '../../src/model/diff';
+import { makeFrame } from '../../src/model/frame';
 import type { Snapshot } from '../../src/model/snapshot';
 
 const samples = path.resolve(__dirname, '..', 'samples', 'java');
@@ -63,10 +64,28 @@ async function debugSample(name: string, breakpointLine: number, steps: number):
   }
 
   const snaps = cs.snapshots();
-  fs.writeFileSync(path.join(dumpDir, `${name}.json`), JSON.stringify({ raw, snapshots: snaps }, null, 2));
+  const probe = await probeLocals();
+  fs.writeFileSync(path.join(dumpDir, `${name}.json`), JSON.stringify({ raw, probe, snapshots: snaps }, null, 2));
   await vscode.debug.stopDebugging();
   await ended;
   return snaps;
+}
+
+/** Abre um nível de cada variável local na parada atual, para documentar formatos novos. */
+async function probeLocals(): Promise<unknown> {
+  const s = vscode.debug.activeDebugSession;
+  const thread = vscode.debug.activeStackItem;
+  if (!s || !thread || !('threadId' in thread)) return undefined;
+  const { stackFrames } = await s.customRequest('stackTrace', { threadId: thread.threadId, levels: 1 });
+  const { scopes } = await s.customRequest('scopes', { frameId: stackFrames[0].id });
+  const { variables } = await s.customRequest('variables', { variablesReference: scopes[0].variablesReference });
+  const out: Record<string, unknown> = {};
+  for (const v of variables as { name: string; variablesReference: number }[]) {
+    if (v.variablesReference <= 0) continue;
+    const children = await s.customRequest('variables', { variablesReference: v.variablesReference });
+    out[v.name] = { variable: v, children: children.variables.slice(0, 4) };
+  }
+  return out;
 }
 
 describe('Java Debugger real', () => {
@@ -83,6 +102,43 @@ describe('Java Debugger real', () => {
       snaps.some((s) => s.pointers.some((p) => p.name === 'j')),
       'a variável j nunca apareceu como ponteiro',
     );
+  });
+
+  it('Matriz: lê as linhas, acha linha e coluna no código e vê a célula mudar', async () => {
+    const snaps = await debugSample('Matriz', 9, 5);
+    const grade = snaps[0].arrays.find((a) => a.name === 'grade');
+    assert.deepEqual(grade?.rows?.map((r) => r.values), [
+      ['1', '2', '3'],
+      ['4', '5', '6'],
+    ]);
+    const changes = snaps.flatMap((s, k) => diff(snaps[k - 1], s, snaps[k - 2]));
+    assert.ok(
+      changes.some((c) => c.kind === 'set' && c.array === 'grade[0]' && c.index === 0 && c.to === '10'),
+      `grade[0][0] não virou 10: ${JSON.stringify(changes)}`,
+    );
+    const frames = snaps.map((s, k) => makeFrame({ snapshot: s, prev: snaps[k - 1], older: snaps[k - 2], index: k + 1, total: snaps.length }));
+    assert.ok(
+      frames.some((f) => f.axes.grade?.row?.name === 'i' && f.axes.grade?.col?.name === 'j'),
+      'i e j nunca foram reconhecidos como linha e coluna',
+    );
+  });
+
+  it('ListaDeCompras: ArrayList vira lista e as inserções são reconhecidas', async () => {
+    const snaps = await debugSample('ListaDeCompras', 7, 6);
+    const last = snaps[snaps.length - 1].arrays.find((a) => a.name === 'lista');
+    assert.equal(last?.kind, 'list');
+    // Logo depois do "new ArrayList<>()" a lista existe e está vazia.
+    const empty = snaps.find((s) => s.line === 8)?.arrays.find((a) => a.name === 'lista');
+    assert.deepEqual(empty, { name: 'lista', values: [], length: 0, kind: 'list' });
+    const kinds = snaps.flatMap((s, k) => diff(snaps[k - 1], s, snaps[k - 2])).map((c) => c.kind);
+    assert.ok(kinds.includes('insert'), `nenhuma inserção: ${kinds.join(', ')}`);
+  });
+
+  it('Palindromo: char com aspas simples e boolean como variável simples', async () => {
+    const snaps = await debugSample('Palindromo', 7, 3);
+    const s = snaps[snaps.length - 1];
+    assert.deepEqual(s.arrays.find((a) => a.name === 'letras')?.values, ["'r'", "'a'", "'d'", "'a'", "'r'"]);
+    assert.deepEqual(s.scalars?.find((v) => v.name === 'ehPalindromo'), { name: 'ehPalindromo', value: 'true' });
   });
 
   it('InverterArray: lê os dois ponteiros', async () => {

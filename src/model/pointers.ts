@@ -15,6 +15,45 @@ export interface Arrow {
   index: number;
 }
 
+export interface MatrixAxes {
+  row?: Arrow;
+  col?: Arrow;
+}
+
+/**
+ * Em matriz não dá para adivinhar pelo valor quem é linha e quem é coluna:
+ * i e j costumam caber nos dois. O código diz: em "grade[i][j]" o primeiro
+ * índice é a linha. Procura nas linhas próximas da parada e só aceita nomes
+ * de variáveis inteiras que caibam na matriz desenhada.
+ */
+export function matrixAxesFor(matrix: ArrayVar, pointers: Pointer[], codes: (string | undefined)[]): MatrixAxes {
+  const name = matrix.name.replace(/[$]/g, '\\$&');
+  const both = new RegExp(`\\b${name}\\s*\\[\\s*(\\w+)\\s*\\]\\s*\\[\\s*(\\w+)\\s*\\]`);
+  const rowOnly = new RegExp(`\\b${name}\\s*\\[\\s*(\\w+)\\s*\\]`);
+  const value = new Map(pointers.map((p) => [p.name, p.value]));
+  const rows = matrix.rows ?? [];
+  const cols = Math.max(0, ...rows.map((r) => r.values.length));
+
+  const arrow = (n: string | undefined, limit: number): Arrow | undefined => {
+    const v = n === undefined ? undefined : value.get(n);
+    return n !== undefined && v !== undefined && v >= 0 && v < limit ? { name: n, index: v } : undefined;
+  };
+
+  let rowName: string | undefined;
+  let colName: string | undefined;
+  for (const code of codes) {
+    if (!code) continue;
+    const m = both.exec(code);
+    if (m) {
+      rowName ??= m[1];
+      colName ??= m[2];
+    }
+    rowName ??= rowOnly.exec(code)?.[1];
+    if (rowName && colName) break;
+  }
+  return { row: arrow(rowName, rows.length), col: arrow(colName, cols) };
+}
+
 /** Ponteiros que apontam para uma caixa desenhada deste array. */
 export function arrowsFor(array: ArrayVar, pointers: Pointer[], valueNames: ReadonlySet<string> = VALUE_NAMES): Arrow[] {
   return pointers

@@ -18,6 +18,24 @@
       "name": "InverterArray",
       "request": "launch",
       "mainClass": "InverterArray"
+    },
+    {
+      "type": "java",
+      "name": "Matriz",
+      "request": "launch",
+      "mainClass": "Matriz"
+    },
+    {
+      "type": "java",
+      "name": "ListaDeCompras",
+      "request": "launch",
+      "mainClass": "ListaDeCompras"
+    },
+    {
+      "type": "java",
+      "name": "Palindromo",
+      "request": "launch",
+      "mainClass": "Palindromo"
     }
   ]
 }

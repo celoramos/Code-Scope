@@ -8,7 +8,7 @@ function snap(values: number[], pointers: Pointer[] = [], name = 'arr'): Snapsho
 
 describe('diff', () => {
   it('primeiro passo: todo array é novo', () => {
-    assert.deepEqual(diff(undefined, snap([1, 2])), [{ kind: 'array-added', array: 'arr', length: 2 }]);
+    assert.deepEqual(diff(undefined, snap([1, 2])), [{ kind: 'array-added', array: 'arr', length: 2, structure: 'array' }]);
   });
 
   it('nada mudou', () => {
@@ -71,9 +71,58 @@ describe('diff', () => {
     };
     assert.deepEqual(diff(prev, next), [
       { kind: 'array-resized', array: 'a', from: 1, to: 2 },
-      { kind: 'array-added', array: 'c', length: 0 },
+      { kind: 'array-added', array: 'c', length: 0, structure: 'array' },
       { kind: 'array-removed', array: 'b' },
     ]);
+  });
+
+  it('lista: item inserido no meio, no fim e removido', () => {
+    const list = (values: string[]): Snapshot => ({
+      line: 1,
+      file: 'X.java',
+      arrays: [{ name: 'lista', values, length: values.length, kind: 'list' }],
+      pointers: [],
+    });
+    assert.deepEqual(diff(list(['a', 'c']), list(['a', 'b', 'c'])), [
+      { kind: 'insert', array: 'lista', index: 1, value: 'b', shifted: true },
+    ]);
+    assert.deepEqual(diff(list(['a']), list(['a', 'b'])), [
+      { kind: 'insert', array: 'lista', index: 1, value: 'b', shifted: false },
+    ]);
+    assert.deepEqual(diff(list(['a', 'b', 'c']), list(['b', 'c'])), [
+      { kind: 'remove', array: 'lista', index: 0, value: 'a', shifted: true },
+    ]);
+    // Dois itens de uma vez não têm uma posição única que explique: vira redimensionamento.
+    assert.deepEqual(diff(list(['a']), list(['a', 'b', 'c'])), [
+      { kind: 'array-resized', array: 'lista', from: 1, to: 3 },
+    ]);
+  });
+
+  it('matriz: mudança e troca dentro de uma linha', () => {
+    const grid = (rows: number[][]): Snapshot => ({
+      line: 1,
+      file: 'X.java',
+      arrays: [
+        {
+          name: 'g',
+          values: rows.map((r) => `int[${r.length}]`),
+          length: rows.length,
+          rows: rows.map((r, i) => ({ name: `g[${i}]`, values: r.map(String), length: r.length })),
+        },
+      ],
+      pointers: [],
+    });
+    assert.deepEqual(diff(grid([[1, 2], [3, 4]]), grid([[1, 2], [3, 40]])), [
+      { kind: 'set', array: 'g[1]', index: 1, from: '4', to: '40' },
+    ]);
+    assert.deepEqual(diff(grid([[1, 2], [3, 4]]), grid([[2, 1], [3, 4]])), [
+      { kind: 'swap', array: 'g[0]', a: 0, b: 1, steps: 1 },
+    ]);
+  });
+
+  it('variáveis simples: boolean que muda', () => {
+    const s = (v: string): Snapshot => ({ line: 1, file: 'X.java', arrays: [], pointers: [], scalars: [{ name: 'ok', value: v }] });
+    assert.deepEqual(diff(s('true'), s('false')), [{ kind: 'scalar', name: 'ok', from: 'true', to: 'false' }]);
   });
 
   it('ponteiros que andaram, surgiram e sumiram', () => {
@@ -88,7 +137,7 @@ describe('diff', () => {
     assert.deepEqual(diff(prev, next), [
       { kind: 'pointer', name: 'i', from: 0, to: 1 },
       { kind: 'pointer', name: 'j', from: undefined, to: 0 },
-      { kind: 'pointer', name: 'k', from: 2 },
+      { kind: 'pointer', name: 'k', from: 2, to: undefined },
     ]);
   });
 });

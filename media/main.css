@@ -566,6 +566,103 @@ kbd {
   }
 }
 
+/* Item que só mudou de lugar porque a lista abriu ou fechou espaço. */
+.cell.slide .cell-value {
+  animation: cs-slide var(--cs-move) var(--cs-ease);
+}
+
+@keyframes cs-slide {
+  from {
+    transform: translateX(var(--dx));
+  }
+}
+
+.cell.is-inserted .cell-value {
+  animation: cs-pop var(--cs-move) var(--cs-ease), cs-flash var(--cs-flash) var(--cs-ease);
+}
+
+@keyframes cs-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* Lista cresce: uma vaga tracejada no fim diz que cabe mais um. */
+.array.is-list .cells::after {
+  content: '';
+  flex: 0 0 auto;
+  align-self: flex-end;
+  width: calc(var(--cs-cell-size) * 0.6);
+  height: var(--cs-cell-size);
+  border: 1px dashed var(--cs-line);
+  border-radius: var(--cs-radius-sm);
+}
+
+/* ---------- Matriz ---------- */
+
+.matrix {
+  display: grid;
+  grid-template-columns: auto repeat(var(--cols), auto);
+  justify-content: start;
+  align-items: end;
+  gap: var(--cs-space-1);
+  padding-bottom: var(--cs-space-1);
+}
+
+.matrix-col,
+.matrix-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.matrix-col {
+  flex-direction: column;
+}
+
+.matrix-row {
+  align-self: center;
+  justify-content: flex-end;
+  padding-right: var(--cs-space-1);
+}
+
+.matrix .cell.is-empty .cell-value {
+  border-style: dashed;
+  background: transparent;
+}
+
+/* Onde linha e coluna se cruzam: a célula que o código está lendo ou escrevendo. */
+.matrix .cell.is-cursor .cell-value {
+  outline: 2px solid var(--cs-fg);
+  outline-offset: 1px;
+}
+
+.axis-pointer {
+  display: inline-flex;
+  align-items: center;
+}
+
+.axis-pointer.is-col {
+  flex-direction: column;
+}
+
+/* Na coluna a ponta aponta para baixo; na linha, para a direita. */
+.axis-pointer.is-col .pointer-head {
+  border-top: 6px solid var(--ptr);
+  border-bottom: none;
+}
+
+.axis-pointer.is-row .pointer-head {
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid var(--ptr);
+  border-right: none;
+}
+
 .array.is-new {
   animation: cs-appear var(--cs-move) var(--cs-ease);
 }
@@ -632,6 +729,8 @@ kbd {
   .cell .cell-value,
   .cell.swap-up .cell-value,
   .cell.swap-down .cell-value,
+  .cell.slide .cell-value,
+  .cell.is-inserted .cell-value,
   .array.is-new {
     animation: none;
   }

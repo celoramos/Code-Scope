@@ -20,13 +20,15 @@
   const arraysEl = byId('arrays');
 
   /**
-   * @typedef {{ name: string, values: string[], length: number }} ArrayVar
+   * @typedef {{ name: string, values: string[], length: number, kind?: 'array' | 'list', rows?: ArrayVar[] }} ArrayVar
    * @typedef {{ name: string, value: number }} Pointer
+   * @typedef {{ name: string, value: string }} Scalar
    * @typedef {{ name: string, index: number }} Arrow
+   * @typedef {{ row?: Arrow, col?: Arrow }} Axes
    * @typedef {{ kind: string, array?: string, index?: number, a?: number, b?: number, name?: string }} Change
    * @typedef {{ line: number, code?: string }} LineRef
-   * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[] },
-   *             executed?: LineRef, changes: Change[], arrows: Record<string, Arrow[]>,
+   * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[] },
+   *             executed?: LineRef, changes: Change[], arrows: Record<string, Arrow[]>, axes: Record<string, Axes>,
    *             explanation: string[], step: number, total: number }} Frame
    */
 
@@ -125,7 +127,10 @@
   function render(frame) {
     current = frame;
     const s = frame.snapshot;
-    const arrowNames = new Set(Object.values(frame.arrows).flatMap((list) => list.map((a) => a.name)));
+    const arrowNames = new Set([
+      ...Object.values(frame.arrows).flatMap((list) => list.map((a) => a.name)),
+      ...Object.values(frame.axes ?? {}).flatMap((ax) => [ax.row?.name, ax.col?.name].filter(isString)),
+    ]);
 
     counter.textContent = `Passo ${frame.step} de ${frame.total}`;
     timeline.max = String(frame.total);
@@ -146,21 +151,31 @@
         return li;
       }),
     );
-    renderVars(s.pointers, frame.changes, arrowNames);
+    renderVars(s.pointers, s.scalars ?? [], frame.changes, arrowNames);
 
     const seen = new Set();
     for (const arr of s.arrays) {
       seen.add(arr.name);
+      const kind = arr.rows ? 'matrix' : 'array';
       let block = blocks.get(arr.name);
+      if (block && block.dataset.kind !== kind) {
+        block.remove();
+        block = undefined;
+      }
       const isNew = !block;
       if (!block) {
-        block = createBlock(arr.name);
+        block = arr.rows ? createMatrixBlock(arr.name) : createBlock(arr.name);
+        block.dataset.kind = kind;
         blocks.set(arr.name, block);
       }
       arraysEl.appendChild(block); // mantém a ordem das variáveis
-      updateBlock(block, arr);
-      animateBlock(block, arr.name, frame.changes, isNew);
-      updateArrows(block, frame.arrows[arr.name] ?? []);
+      if (arr.rows) {
+        updateMatrix(block, arr, frame.axes[arr.name] ?? {}, frame.changes, isNew);
+      } else {
+        updateBlock(block, arr);
+        animateBlock(block, arr.name, frame.changes, isNew);
+        updateArrows(block, frame.arrows[arr.name] ?? []);
+      }
     }
     for (const [name, block] of blocks) {
       if (!seen.has(name)) {
@@ -218,7 +233,7 @@
     /** @type {(string | HTMLElement)[]} */
     const out = [];
     let last = 0;
-    for (const m of text.matchAll(/[A-Za-z_$][\w$]*(\[\d+\])?/g)) {
+    for (const m of text.matchAll(/[A-Za-z_$][\w$]*((?:\[\d+\])+)?/g)) {
       if (!m[1] && !known.has(m[0])) continue;
       if (m.index > last) out.push(text.slice(last, m.index));
       const code = el('code', 'code');
@@ -231,27 +246,35 @@
   }
 
   /**
-   * Variáveis inteiras. As que estão desenhadas como seta levam a cor da seta.
+   * Variáveis simples: inteiros primeiro, depois boolean, char, String...
+   * Os inteiros desenhados como seta levam a cor da seta.
    * @param {Pointer[]} pointers
+   * @param {Scalar[]} scalars
    * @param {Change[]} changes
    * @param {Set<string>} arrowNames
    */
-  function renderVars(pointers, changes, arrowNames) {
-    const changed = new Set(changes.filter((c) => c.kind === 'pointer').map((c) => c.name));
+  function renderVars(pointers, scalars, changes, arrowNames) {
+    const changed = new Set(changes.filter((c) => c.kind === 'pointer' || c.kind === 'scalar').map((c) => c.name));
+    /** @param {string} n @param {string} v */
+    const chip = (n, v) => {
+      const li = el('li', changed.has(n) ? 'var is-changed' : 'var');
+      const name = el('span', 'var-name');
+      name.textContent = `${n} =`;
+      const value = el('span', 'var-value');
+      value.textContent = v;
+      li.append(name, value);
+      return li;
+    };
     varsEl.replaceChildren(
       ...pointers.map((p) => {
-        const li = el('li', changed.has(p.name) ? 'var is-changed' : 'var');
+        const li = chip(p.name, String(p.value));
         if (arrowNames.has(p.name)) {
           li.classList.add('is-pointer');
           li.style.setProperty('--ptr', `var(--cs-ptr-${colorOf(p.name)})`);
         }
-        const name = el('span', 'var-name');
-        name.textContent = `${p.name} =`;
-        const value = el('span', 'var-value');
-        value.textContent = String(p.value);
-        li.append(name, value);
         return li;
       }),
+      ...scalars.map((sc) => chip(sc.name, sc.value)),
     );
   }
 
@@ -278,10 +301,13 @@
    */
   function updateBlock(block, arr) {
     const meta = /** @type {HTMLElement} */ (block.querySelector('.array-meta'));
-    meta.textContent =
+    const unit = arr.kind === 'list' ? ['item', 'itens'] : ['posição', 'posições'];
+    const count =
       arr.values.length < arr.length
-        ? `${arr.values.length} de ${arr.length} posições`
-        : `${arr.length} ${arr.length === 1 ? 'posição' : 'posições'}`;
+        ? `${arr.values.length} de ${arr.length} ${unit[1]}`
+        : `${arr.length} ${arr.length === 1 ? unit[0] : unit[1]}`;
+    meta.textContent = arr.kind === 'list' ? `lista, ${count}` : count;
+    block.classList.toggle('is-list', arr.kind === 'list');
 
     const list = /** @type {HTMLElement} */ (block.querySelector('.cells'));
     while (list.children.length > arr.values.length) list.lastElementChild?.remove();
@@ -315,17 +341,35 @@
    * @param {boolean} isNew
    */
   function animateBlock(block, name, changes, isNew) {
+    block.classList.remove('is-new');
     const cells = cellsOf(block);
+    resetCells(cells);
+    void block.offsetWidth; // reinicia as animações CSS
+    if (isNew) block.classList.add('is-new');
+    animateCells(cells, name, changes)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  /** @param {HTMLElement[]} cells */
+  function resetCells(cells) {
     for (const cell of cells) {
-      cell.classList.remove('is-changed', 'swap-up', 'swap-down');
+      cell.classList.remove('is-changed', 'swap-up', 'swap-down', 'slide', 'is-inserted');
       cell.style.removeProperty('--dx');
     }
-    block.classList.remove('is-new');
-    void block.offsetWidth; // reinicia as animações CSS
+  }
 
-    if (isNew) block.classList.add('is-new');
+  /**
+   * Aplica as classes de animação às caixas de um array (ou de uma linha da
+   * matriz) e devolve a primeira caixa que mudou, para rolar até ela.
+   * @param {HTMLElement[]} cells
+   * @param {string} name
+   * @param {Change[]} changes
+   * @returns {HTMLElement | undefined}
+   */
+  function animateCells(cells, name, changes) {
     /** @type {HTMLElement | undefined} */
     let first;
+    // Distância entre duas caixas vizinhas: o quanto um item anda quando a lista abre ou fecha espaço.
+    const step = cells.length > 1 ? cells[1].offsetLeft - cells[0].offsetLeft : 0;
     for (const c of changes) {
       if (c.array !== name) continue;
       if (c.kind === 'set' && c.index !== undefined && cells[c.index]) {
@@ -340,9 +384,128 @@
         a.classList.add('is-changed', 'swap-up');
         b.classList.add('is-changed', 'swap-down');
         first ??= a;
+      } else if (c.kind === 'insert' && c.index !== undefined && cells[c.index]) {
+        cells[c.index].classList.add('is-changed', 'is-inserted');
+        cells.slice(c.index + 1).forEach((cell) => slide(cell, -step));
+        first ??= cells[c.index];
+      } else if (c.kind === 'remove' && c.index !== undefined) {
+        cells.slice(c.index).forEach((cell) => slide(cell, step));
+        first ??= cells[c.index];
       }
     }
+    return first;
+  }
+
+  /**
+   * Caixa que mudou de posição sem mudar de valor: parte de onde estava.
+   * @param {HTMLElement} cell
+   * @param {number} dx
+   */
+  function slide(cell, dx) {
+    cell.style.setProperty('--dx', `${dx}px`);
+    cell.classList.add('slide');
+  }
+
+  /** @param {string} name */
+  function createMatrixBlock(name) {
+    const block = el('article', 'array is-matrix');
+    const header = el('header', 'array-header');
+    const title = el('h3', 'array-name');
+    title.textContent = name;
+    header.append(title, el('span', 'array-meta'));
+    const track = el('div', 'array-track');
+    const grid = el('div', 'matrix');
+    grid.setAttribute('role', 'table');
+    grid.setAttribute('aria-label', `Matriz ${name}`);
+    track.append(grid);
+    block.append(header, track);
+    return block;
+  }
+
+  /**
+   * Matriz como grade: índices das colunas em cima, das linhas à esquerda.
+   * A variável que indexa a linha aparece ao lado da linha; a da coluna, em
+   * cima da coluna; a célula onde as duas se cruzam ganha contorno. A grade é
+   * refeita a cada passo, e as animações tocam nas células novas.
+   * @param {HTMLElement} block
+   * @param {ArrayVar} arr
+   * @param {Axes} axes
+   * @param {Change[]} changes
+   * @param {boolean} isNew
+   */
+  function updateMatrix(block, arr, axes, changes, isNew) {
+    const rows = arr.rows ?? [];
+    const cols = Math.max(0, ...rows.map((r) => r.values.length));
+    const meta = /** @type {HTMLElement} */ (block.querySelector('.array-meta'));
+    meta.textContent = `${rows.length} ${rows.length === 1 ? 'linha' : 'linhas'}, ${cols} ${cols === 1 ? 'coluna' : 'colunas'}`;
+
+    const grid = /** @type {HTMLElement} */ (block.querySelector('.matrix'));
+    grid.style.setProperty('--cols', String(cols));
+    /** @type {HTMLElement[]} */
+    const parts = [el('div', 'matrix-corner')];
+    for (let c = 0; c < cols; c++) {
+      const head = el('div', 'matrix-col');
+      head.setAttribute('role', 'columnheader');
+      if (axes.col?.index === c) head.append(axisPointer(axes.col.name, 'col'));
+      const idx = el('span', 'cell-index');
+      idx.textContent = String(c);
+      head.append(idx);
+      parts.push(head);
+    }
+    /** @type {HTMLElement[][]} */
+    const rowCells = [];
+    rows.forEach((row, r) => {
+      const head = el('div', 'matrix-row');
+      head.setAttribute('role', 'rowheader');
+      if (axes.row?.index === r) head.append(axisPointer(axes.row.name, 'row'));
+      const idx = el('span', 'cell-index');
+      idx.textContent = String(r);
+      head.append(idx);
+      parts.push(head);
+      /** @type {HTMLElement[]} */
+      const cells = [];
+      for (let c = 0; c < cols; c++) {
+        const cell = el('div', 'cell');
+        cell.setAttribute('role', 'cell');
+        const v = el('span', 'cell-value');
+        const value = row.values[c] ?? '';
+        v.textContent = value;
+        v.title = value;
+        cell.append(v);
+        cell.setAttribute('aria-label', `${row.name}[${c}] = ${value}`);
+        if (c >= row.values.length) cell.classList.add('is-empty');
+        if (axes.row?.index === r && axes.col?.index === c) cell.classList.add('is-cursor');
+        cells.push(cell);
+        parts.push(cell);
+      }
+      rowCells.push(cells);
+    });
+    grid.replaceChildren(...parts);
+
+    block.classList.remove('is-new');
+    void block.offsetWidth;
+    if (isNew) block.classList.add('is-new');
+    /** @type {HTMLElement | undefined} */
+    let first;
+    rowCells.forEach((cells, r) => {
+      first ??= animateCells(cells, rows[r].name, changes);
+    });
+    first ??= /** @type {HTMLElement | null} */ (grid.querySelector('.is-cursor')) ?? undefined;
     first?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  /**
+   * Etiqueta de ponteiro presa a um cabeçalho da matriz.
+   * @param {string} name
+   * @param {'row' | 'col'} axis
+   */
+  function axisPointer(name, axis) {
+    const p = el('span', `axis-pointer is-${axis}`);
+    p.style.setProperty('--ptr', `var(--cs-ptr-${colorOf(name)})`);
+    const label = el('span', 'pointer-name');
+    label.textContent = name;
+    p.append(label, el('span', 'pointer-head'));
+    return p;
   }
 
   /**
@@ -427,6 +590,11 @@
     const e = document.createElement(tag);
     e.className = className;
     return e;
+  }
+
+  /** @param {unknown} v @returns {v is string} */
+  function isString(v) {
+    return typeof v === 'string';
   }
 
   /** @param {string} path */

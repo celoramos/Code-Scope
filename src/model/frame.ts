@@ -2,7 +2,7 @@ import { diff, type Change } from './diff';
 import { explain } from './explain';
 import { explainFlow } from './flow';
 import type { Step } from './history';
-import { arrowsFor, VALUE_NAMES, type Arrow } from './pointers';
+import { arrowsFor, matrixAxesFor, VALUE_NAMES, type Arrow, type MatrixAxes } from './pointers';
 import type { Snapshot } from './snapshot';
 
 /** Tudo que o painel precisa para desenhar um passo. */
@@ -15,8 +15,10 @@ export interface Frame {
   executed?: { line: number; code?: string };
   /** O que mudou em relação ao passo anterior; guia as animações. */
   changes: Change[];
-  /** Setas por nome de array. */
+  /** Setas por nome de array (vazio para matrizes). */
   arrows: Record<string, Arrow[]>;
+  /** Linha e coluna apontadas em cada matriz, lidas do código. */
+  axes: Record<string, MatrixAxes>;
   /** Frases do modo iniciante; vazio quando o modo está desligado. */
   explanation: string[];
   /** Posição no histórico, a partir de 1. */
@@ -35,7 +37,15 @@ export const DEFAULT_FRAME_OPTIONS: FrameOptions = { valueNames: VALUE_NAMES, be
 export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTIONS): Frame {
   const { snapshot, prev, older } = step;
   const arrows: Record<string, Arrow[]> = {};
-  for (const arr of snapshot.arrays) arrows[arr.name] = arrowsFor(arr, snapshot.pointers, options.valueNames);
+  const axes: Record<string, MatrixAxes> = {};
+  for (const arr of snapshot.arrays) {
+    if (arr.rows) {
+      arrows[arr.name] = [];
+      axes[arr.name] = matrixAxesFor(arr, snapshot.pointers, [snapshot.code, prev?.code, older?.code]);
+    } else {
+      arrows[arr.name] = arrowsFor(arr, snapshot.pointers, options.valueNames);
+    }
+  }
   const changes = diff(prev, snapshot, older);
   const executed = prev && prev.file === snapshot.file ? { line: prev.line, code: prev.code } : undefined;
   return {
@@ -43,6 +53,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
     executed,
     changes,
     arrows,
+    axes,
     explanation: options.beginnerMode ? explain(changes, prev === undefined, explainFlow(executed, snapshot)) : [],
     step: step.index,
     total: step.total,
