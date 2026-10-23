@@ -2,33 +2,55 @@
 
 Extensão do VS Code que mostra o código rodando de forma visual, para quem está aprendendo a programar.
 
-Neste MVP ela desenha os **arrays Java** durante o debug. Quando o programa para num breakpoint ou avança com um step, o painel lateral mostra cada array como uma fileira de caixas com índice e valor. As variáveis `int` que servem de índice, como `i`, `j` ou `min`, aparecem como setas embaixo das caixas.
-
-A cada passo o painel anima o que mudou e explica em uma frase:
+Enquanto você debuga um programa Java, um painel lateral desenha os arrays, as listas e as matrizes das variáveis locais. A cada F10 ele anima o que mudou e explica em português o que aconteceu:
 
 - a caixa alterada pisca e fica marcada;
-- uma troca aparece como as duas caixas se cruzando;
-- a seta de `i` desliza quando `i++` acontece;
-- o texto diz, por exemplo, "numeros[2] mudou de 5 para 3" ou "numeros[0] e numeros[1] trocaram de lugar".
+- uma troca aparece como as duas caixas se cruzando, mesmo quando o código usa uma variável `temp` e leva dois passos;
+- `i`, `j`, `inicio` e `fim` viram setas coloridas que deslizam embaixo das caixas;
+- numa lista, o item novo surge e os seguintes abrem espaço;
+- numa matriz, a linha e a coluna lidas pelo código ficam marcadas e a célula onde elas se cruzam ganha contorno;
+- o texto diz o que mudou e por qual caminho o programa foi: "numeros[0] e numeros[1] trocaram de lugar", "a condição da linha 8 foi falsa: o programa pulou o bloco do if", "fim de uma volta do laço".
 
-![Prévia do painel](docs/preview.png)
+![Code Scope rodando o BubbleSort passo a passo](docs/demo.gif)
 
-*Prévia renderizada fora do VS Code, com dados simulados de um passo do BubbleSort.*
+| Matriz | Lista |
+|---|---|
+| ![Matriz com a linha i e a coluna j marcadas](docs/matriz.png) | ![ArrayList recebendo um item no meio](docs/lista.png) |
 
-<!-- TODO: trocar por um GIF gravado no Extension Development Host rodando samples/java/BubbleSort.java -->
+*Imagens geradas com sessões reais do Java Debugger, renderizadas fora do VS Code para captura.*
+
+## O que aparece no painel
+
+| Parte | O que mostra |
+|---|---|
+| Linha do tempo | "Passo 7 de 13", botões de passo anterior e próximo, e um controle deslizante para pular para qualquer passo. Rever o histórico não volta a execução do programa. |
+| Código | A linha que acabou de executar e a próxima, com a mesma cor que o editor usa para a linha parada. |
+| Explicação | Uma frase por mudança, mais o caminho do programa (if, laço, break). Pode ser desligada. |
+| Variáveis | Inteiros, booleans, chars, doubles e Strings locais. Os inteiros que viram seta levam a cor da seta. |
+| Estruturas | Arrays (`int[]`, `char[]`, `String[]`...), matrizes (`int[][]`) e listas (`ArrayList`, `LinkedList`...). |
 
 ## Requisitos
 
 - VS Code 1.90 ou mais novo
-- Node.js 20 ou mais novo
-- Um JDK instalado (os exemplos foram compilados com o JDK 21)
-- Extensão **Debugger for Java** (`vscjava.vscode-java-debug`). A forma mais simples é instalar o **Extension Pack for Java** (`vscjava.vscode-java-pack`), que já traz o debugger e o suporte à linguagem.
+- Extensão **Debugger for Java** (`vscjava.vscode-java-debug`). O jeito mais simples é instalar o **Extension Pack for Java**, que já traz o debugger e o suporte à linguagem:
+
+  ```bash
+  code --install-extension vscjava.vscode-java-pack
+  ```
+
+- Um JDK instalado. Os exemplos e os testes de integração rodam com o JDK 21.
+
+## Instalar
+
+Baixe o `code-scope.vsix` da última execução do CI (aba **Actions** do repositório, artefato `code-scope-vsix`) ou gere o seu:
 
 ```bash
-code --install-extension vscjava.vscode-java-pack
+npm install
+npm run vsix
+code --install-extension code-scope.vsix
 ```
 
-## Como rodar
+## Rodar a partir do código
 
 ```bash
 git clone https://github.com/celoramos/Code-Scope.git
@@ -36,78 +58,91 @@ cd Code-Scope
 npm install
 ```
 
-Abra a pasta no VS Code e aperte **F5**. A configuração "Rodar extensão" compila o projeto e abre uma segunda janela, o *Extension Development Host*, com a extensão carregada e a pasta `samples/java` aberta.
+Abra a pasta no VS Code e aperte **F5**. A configuração "Rodar extensão" compila o projeto e abre uma segunda janela, o *Extension Development Host*, já com a pasta `samples/java` aberta.
 
-Para recompilar a cada alteração durante o desenvolvimento, rode `npm run watch` e recarregue a janela de teste com `Ctrl+R`.
+Durante o desenvolvimento, `npm run watch` recompila a cada alteração; recarregue a janela de teste com `Ctrl+R`.
 
 ## Testando com os exemplos
 
 Na janela do Extension Development Host:
 
-1. Clique no ícone do **Code Scope** na Activity Bar. É o ícone de três caixas com uma seta.
-2. Abra `BubbleSort.java` e coloque um breakpoint na linha do primeiro `for`.
-3. Abra a aba **Run and Debug**, escolha **BubbleSort** e aperte F5.
-4. Quando parar, use **F10** (step over) e acompanhe o painel.
+1. Abra um dos arquivos de `samples/java` e coloque um breakpoint na linha indicada pelo comentário.
+2. Na aba **Run and Debug**, escolha o exemplo com o mesmo nome e aperte F5. O painel do Code Scope abre sozinho na primeira parada.
+3. Avance com **F10** (step over) e acompanhe o painel.
 
 | Exemplo | O que observar |
 |---|---|
-| `BubbleSort.java` | Setas `i` e `j` andando; trocas feitas com `temp` aparecendo como caixas que se cruzam |
-| `BuscaLinear.java` | A seta `i` percorrendo o array até achar o valor; `alvo` não vira seta, porque guarda um valor e não uma posição |
+| `BubbleSort.java` | Setas `i` e `j`; trocas feitas com `temp` aparecendo como caixas que se cruzam; if verdadeiro e falso |
+| `BuscaLinear.java` | A seta `i` percorrendo o array; `alvo` guarda um valor, então não vira seta; o break encerrando o laço |
 | `InverterArray.java` | As setas `inicio` e `fim` se aproximando enquanto as pontas trocam de lugar |
+| `Palindromo.java` | `char[]` com aspas simples; o boolean `ehPalindromo` entre as variáveis |
+| `Matriz.java` | Grade 2 por 3 com a linha `i` e a coluna `j` marcadas, célula a célula |
+| `ListaDeCompras.java` | Lista nascendo vazia, itens entrando no fim e no meio, item saindo do começo |
 
-Use os botões de passo anterior e próximo passo no topo do painel, ou as setas do teclado com o painel em foco, para rever passos anteriores. Isso só navega pelo que já foi visto: a execução do programa não volta. O histórico continua disponível depois que o debug termina e é limpo quando uma nova sessão começa.
+Com o painel em foco: setas esquerda e direita andam um passo, Home e End vão para o primeiro e para o último.
 
-Se o painel não mostrar o que você esperava, abra **Output → Code Scope**. Esse canal registra cada snapshot e, no nível *Debug*, o que o adaptador Java devolveu.
+Se o painel não mostrar o que você esperava, abra **Output**, escolha **Code Scope** e mude o nível para *Debug*. O canal registra cada snapshot e o que o adaptador Java devolveu.
+
+## Configurações
+
+| Configuração | Padrão | O que faz |
+|---|---|---|
+| `codeScope.beginnerMode` | `true` | Mostra a frase explicando cada passo |
+| `codeScope.animationSpeed` | `normal` | `lenta`, `normal`, `rapida` ou `desligada`. Se o sistema pedir menos movimento, as animações ficam desligadas de qualquer forma |
+| `codeScope.maxElements` | `50` | Quantas posições de cada array, lista ou linha de matriz são lidas |
+| `codeScope.valueNames` | `temp`, `aux`, `alvo`, `soma`... | Inteiros com esses nomes guardam valor, não posição, e não viram seta |
+| `codeScope.revealOnDebug` | `true` | Abre o painel na primeira parada de cada sessão de debug |
+
+Comandos na paleta: **Code Scope: Mostrar painel** e **Code Scope: Limpar histórico**.
 
 ## Como funciona
 
 ```
-Debugger for Java ── evento "stopped" ──► trackerFactory
-                                              │
-          stackTrace → scopes → variables ◄── dapCollector (customRequest)
-                                              │  javaAdapter interpreta "int[5] (id=23)", "[0]"...
-                                              ▼
-                                         Snapshot { line, file, arrays, pointers }
-                                              │
-                         History ─► diff + explain + setas ─► Frame
-                                              │ postMessage
-                                              ▼
-                                   Webview (HTML, CSS e JS puros)
+Debugger for Java -- evento "stopped" --> trackerFactory
+                                             |
+        stackTrace, scopes, variables  <---- dapCollector (customRequest)
+                                             |  javaAdapter interpreta "int[5]@10", "ArrayList@11 size=4"...
+                                             v
+                     Snapshot { line, code, arrays, pointers, scalars }
+                                             |
+          History --> diff + explain + flow + setas --> Frame
+                                             | postMessage
+                                             v
+                               Webview (HTML, CSS e JS puros)
 ```
 
 | Pasta | Responsabilidade |
 |---|---|
 | `src/debug` | Fala o Debug Adapter Protocol. É a única parte que conhece o formato do adaptador Java. |
-| `src/model` | `Snapshot`, diff entre passos, histórico, setas e texto explicativo. Não depende do VS Code nem do DAP. |
+| `src/model` | `Snapshot`, diff entre passos, histórico, setas, linha e coluna da matriz, texto explicativo. Não depende do VS Code nem do DAP. |
 | `src/webview` | `WebviewViewProvider` do painel e o protocolo de mensagens. |
-| `media` | HTML, CSS e JS do painel. As cores vêm do tema do VS Code. |
+| `media` | HTML, CSS e JS do painel. Cores, fontes e bordas vêm do tema do VS Code. |
 | `samples/java` | Programas de exemplo com `launch.json` pronto. |
-| `test` | Testes unitários com mocha, sem precisar abrir o VS Code. |
+| `test` | Testes unitários (mocha) e de integração com o Java Debugger real. |
 
-Como o `Snapshot` é neutro, suportar outra linguagem significa escrever outro adaptador em `src/debug`. O diff, o histórico e o painel continuam iguais.
+Como o `Snapshot` é neutro, suportar outra linguagem significa escrever outro adaptador em `src/debug`. O diff, o histórico e o painel continuam iguais. A única regra presa à sintaxe é a explicação de fluxo (`src/model/flow.ts`), que entende `if`, `for` e `while` no estilo de C.
 
-## Limites do MVP
-
-- Lê só as variáveis locais do frame atual.
-- Mostra até 50 posições por array e até 20 arrays por passo.
-- Matrizes (`int[][]`) aparecem como uma fileira em que cada caixa diz só `int[3]`; o conteúdo das linhas ainda não é aberto.
-- Um inteiro vira seta quando é um índice válido e o nome não está na lista de nomes que guardam valor (`temp`, `aux`, `alvo`, `soma`, `n`...). Essa lista fica em `src/model/pointers.ts`.
-- Se você usar F5 (continue) entre breakpoints em vez de F10, o painel mostra a diferença acumulada entre as duas paradas.
-
-## Desenvolvimento
+## Testes
 
 | Comando | O que faz |
 |---|---|
-| `npm run compile` | Checa os tipos e gera `dist/extension.js` com esbuild |
-| `npm run watch` | Recompila a cada alteração |
-| `npm test` | Roda os testes unitários |
-| `npm run package` | Build minificado para publicar |
+| `npm test` | Testes unitários do modelo, do adaptador e do coletor, com respostas DAP gravadas do debugger real |
+| `npm run test:integration` | Baixa um VS Code isolado em `.vscode-test/`, instala o Java Extension Pack só nele e debuga os samples de verdade. Seu VS Code não é tocado. Leva alguns minutos na primeira vez |
+
+O CI roda os dois a cada push e publica o `.vsix` como artefato.
+
+## Limites conhecidos
+
+- Lê só as variáveis locais do método atual; campos de objetos e chamadas anteriores na pilha ainda não aparecem.
+- Matrizes de três ou mais dimensões mostram o terceiro nível como texto (`int[3]`).
+- Uma lista que ganha ou perde mais de um item num só passo aparece como redimensionada, sem animação de deslize.
+- Fora de matrizes, um inteiro vira seta pelo valor: qualquer inteiro que caiba nos índices aponta para uma caixa, a menos que o nome esteja em `codeScope.valueNames`.
+- Se você usar F5 (continue) entre breakpoints em vez de F10, o painel mostra a diferença acumulada entre as duas paradas e a linha "Executou" é a do breakpoint anterior.
 
 ## Roadmap
 
-1. `ArrayList` e `LinkedList`
+1. `HashMap` e `HashSet`
 2. Pilha e fila
-3. `HashMap`
-4. Recursão, com a pilha de chamadas
-5. Stack vs heap, com setas de referência
-6. Suporte a JavaScript e Python
+3. Recursão, com a pilha de chamadas
+4. Stack vs heap, com setas de referência entre objetos
+5. Suporte a JavaScript e Python

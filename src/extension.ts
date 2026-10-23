@@ -7,6 +7,7 @@ import { ScopeViewProvider } from './webview/scopeViewProvider';
 export interface CodeScopeApi {
   snapshots(): Snapshot[];
   lastRaw(): unknown;
+  panelVisible(): boolean;
 }
 
 export function activate(context: vscode.ExtensionContext): CodeScopeApi {
@@ -23,6 +24,7 @@ export function activate(context: vscode.ExtensionContext): CodeScopeApi {
   return {
     snapshots: () => controller.history.all(),
     lastRaw: () => controller.lastRaw,
+    panelVisible: () => provider.visible,
   };
 }
 

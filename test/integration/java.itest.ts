@@ -10,6 +10,9 @@ import type { Snapshot } from '../../src/model/snapshot';
 const samples = path.resolve(__dirname, '..', 'samples', 'java');
 const dumpDir = path.resolve(__dirname);
 
+/** Se o painel estava visível na primeira parada do último debugSample. */
+let visibleAtFirstStop = false;
+
 async function api(): Promise<CodeScopeApi> {
   const ext = vscode.extensions.getExtension<CodeScopeApi>('code-scope.code-scope');
   assert.ok(ext, 'extensão Code Scope não encontrada');
@@ -56,6 +59,9 @@ async function debugSample(name: string, breakpointLine: number, steps: number):
   // startDebugging limpa o histórico; espera a primeira parada.
   await waitFor('a primeira parada', () => cs.snapshots().length >= 1 || undefined, 240_000);
   const raw = cs.lastRaw();
+  // O painel abre na primeira parada; dá um instante para o VS Code trocar a barra lateral.
+  await new Promise((r) => setTimeout(r, 1500));
+  visibleAtFirstStop = cs.panelVisible();
 
   for (let k = 0; k < steps && vscode.debug.activeDebugSession; k++) {
     const n = cs.snapshots().length;
@@ -91,6 +97,7 @@ async function probeLocals(): Promise<unknown> {
 describe('Java Debugger real', () => {
   it('BubbleSort: lê o array, os ponteiros e reconhece a troca com temp', async () => {
     const snaps = await debugSample('BubbleSort', 6, 12);
+    assert.ok(visibleAtFirstStop, 'o painel não estava visível na primeira parada');
     const first = snaps[0];
     assert.equal(first.line, 6);
     assert.equal(first.code, 'for (int i = 0; i < numeros.length - 1; i++) {');

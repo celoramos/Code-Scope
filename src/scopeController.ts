@@ -17,6 +17,8 @@ export class ScopeController implements vscode.Disposable {
   private state: SessionState = 'idle';
   /** Cada parada ganha um número; uma coleta só publica se ainda for a mais recente. */
   private generation = 0;
+  /** Abrir o painel na próxima parada (configuração codeScope.revealOnDebug). */
+  private revealPending = false;
 
   constructor(
     private readonly view: ScopeViewProvider,
@@ -50,11 +52,18 @@ export class ScopeController implements vscode.Disposable {
     this.history.clear();
     this.setState('running');
     this.view.post({ type: 'reset' });
-    if (readSettings().revealOnDebug && !this.view.visible) {
-      await this.reveal();
-      // Abrir a view rouba o foco; devolve ao editor para o F10 continuar natural.
-      await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
-    }
+    // Abrir aqui não adianta: logo depois o VS Code troca a barra lateral para
+    // "Run and Debug" e cobre o painel. Abre na primeira parada.
+    this.revealPending = readSettings().revealOnDebug;
+  }
+
+  /** Mostra o painel sem tirar o foco do editor, para o F10 continuar funcionando. */
+  private async revealOnFirstStop() {
+    if (!this.revealPending) return;
+    this.revealPending = false;
+    if (this.view.visible) return;
+    await this.reveal();
+    await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
   }
 
   private async onStopped(session: vscode.DebugSession, threadId: number | undefined) {
@@ -72,6 +81,7 @@ export class ScopeController implements vscode.Disposable {
       this.lastRaw = collected.raw;
       this.history.push(collected.snapshot);
       this.showCurrent();
+      await this.revealOnFirstStop();
     } catch (err) {
       if (gen !== this.generation) return;
       this.log.error('falha ao ler variáveis', err instanceof Error ? err : String(err));
