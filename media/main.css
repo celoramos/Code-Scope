@@ -49,6 +49,62 @@ body {
   font-size: var(--vscode-font-size);
 }
 
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--cs-space-2);
+  margin-bottom: var(--cs-space-2);
+}
+
+.nav[hidden] {
+  display: none;
+}
+
+/* Alvo de 28px: o mínimo confortável para clique, no tamanho dos botões de ícone do VS Code. */
+.nav-button {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 var(--cs-space-2);
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid var(--vscode-button-border, transparent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.nav-button:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.nav-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.counter {
+  font-variant-numeric: tabular-nums;
+}
+
+.explanation {
+  margin: 0 0 var(--cs-space-3);
+  padding: 0 0 0 var(--cs-space-2);
+  list-style: none;
+  border-left: 2px solid var(--cs-change);
+  text-wrap: pretty;
+}
+
+.explanation:empty {
+  display: none;
+}
+
+.explanation-item + .explanation-item {
+  margin-top: var(--cs-space-1);
+}
+
+.status.is-error {
+  color: var(--vscode-errorForeground);
+}
+
 .location {
   margin: 0 0 var(--cs-space-2);
   font-family: var(--cs-mono);

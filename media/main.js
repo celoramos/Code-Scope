@@ -6,6 +6,24 @@
   const location = byId('location');
   const varsEl = byId('vars');
   const arraysEl = byId('arrays');
+  const nav = byId('nav');
+  const counter = byId('counter');
+  const backBtn = /** @type {HTMLButtonElement} */ (byId('back'));
+  const forwardBtn = /** @type {HTMLButtonElement} */ (byId('forward'));
+  const explanationEl = byId('explanation');
+
+  const SESSION_TEXT = {
+    idle: 'Aguardando debug. Coloque um breakpoint num programa Java e aperte F5.',
+    running: 'Sessão iniciada. Aguardando um breakpoint.',
+    ended: 'Sessão encerrada. O histórico continua aqui até o próximo debug.',
+  };
+
+  /** @type {'idle' | 'running' | 'ended'} */
+  let session = 'idle';
+  /** @type {Frame | undefined} */
+  let current;
+  /** @type {string | undefined} */
+  let error;
 
   /**
    * @typedef {{ name: string, values: string[], length: number }} ArrayVar
@@ -13,7 +31,8 @@
    * @typedef {{ name: string, index: number }} Arrow
    * @typedef {{ kind: string, array?: string, index?: number, a?: number, b?: number, name?: string }} Change
    * @typedef {{ snapshot: { file: string, line: number, arrays: ArrayVar[], pointers: Pointer[] },
-   *             changes: Change[], arrows: Record<string, Arrow[]> }} Frame
+   *             changes: Change[], arrows: Record<string, Arrow[]>,
+   *             explanation: string[], step: number, total: number }} Frame
    */
 
   /** Um bloco por array, reaproveitado entre passos para poder animar. */
@@ -22,19 +41,65 @@
 
   window.addEventListener('message', (event) => {
     const msg = event.data;
-    if (msg.type === 'status') {
-      status.textContent = msg.text;
-    } else if (msg.type === 'render') {
+    if (msg.type === 'render') {
+      error = undefined;
       render(msg.frame);
+    } else if (msg.type === 'session') {
+      session = msg.state;
+    } else if (msg.type === 'reset') {
+      reset();
+    } else if (msg.type === 'error') {
+      error = msg.text;
     }
+    updateStatus();
   });
+
+  backBtn.addEventListener('click', () => vscode.postMessage({ type: 'back' }));
+  forwardBtn.addEventListener('click', () => vscode.postMessage({ type: 'forward' }));
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey || !current) return;
+    if (e.key === 'ArrowLeft') vscode.postMessage({ type: 'back' });
+    else if (e.key === 'ArrowRight') vscode.postMessage({ type: 'forward' });
+  });
+
+  /** Uma linha só: erro, estado da sessão quando importa, e o caso sem arrays. */
+  function updateStatus() {
+    const parts = [];
+    if (error) parts.push(error);
+    if (!current || session === 'ended') parts.push(SESSION_TEXT[session]);
+    if (current && current.snapshot.arrays.length === 0) parts.push('Nenhum array nas variáveis locais deste ponto.');
+    status.textContent = parts.join(' ');
+    status.classList.toggle('is-error', Boolean(error));
+  }
+
+  function reset() {
+    current = undefined;
+    error = undefined;
+    for (const block of blocks.values()) block.remove();
+    blocks.clear();
+    varsEl.replaceChildren();
+    explanationEl.replaceChildren();
+    location.hidden = true;
+    nav.hidden = true;
+  }
 
   /** @param {Frame} frame */
   function render(frame) {
+    current = frame;
     const s = frame.snapshot;
+    nav.hidden = false;
+    counter.textContent = `passo ${frame.step} de ${frame.total}`;
+    backBtn.disabled = frame.step <= 1;
+    forwardBtn.disabled = frame.step >= frame.total;
     location.hidden = false;
     location.textContent = `${basename(s.file)}, linha ${s.line}`;
-    status.textContent = s.arrays.length === 0 ? 'Nenhum array nas variáveis locais deste ponto.' : '';
+    explanationEl.replaceChildren(
+      ...frame.explanation.map((text) => {
+        const li = el('li', 'explanation-item');
+        li.textContent = text;
+        return li;
+      }),
+    );
     renderVars(s.pointers, frame.changes);
 
     const seen = new Set();
