@@ -27,6 +27,11 @@ export class History {
     this.cursor = this.items.length - 1;
   }
 
+  /** Cópia de todos os snapshots, do mais antigo ao mais novo. */
+  all(): Snapshot[] {
+    return [...this.items];
+  }
+
   clear() {
     this.items = [];
     this.cursor = -1;
@@ -41,6 +46,15 @@ export class History {
   forward(): boolean {
     if (this.cursor >= this.items.length - 1) return false;
     this.cursor++;
+    return true;
+  }
+
+  /** Pula para o passo n (a partir de 1); valores fora do intervalo param na ponta. */
+  goto(n: number): boolean {
+    if (this.items.length === 0) return false;
+    const target = Math.min(Math.max(Math.round(n), 1), this.items.length) - 1;
+    if (target === this.cursor) return false;
+    this.cursor = target;
     return true;
   }
 

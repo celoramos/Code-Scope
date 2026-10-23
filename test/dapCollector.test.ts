@@ -1,17 +1,17 @@
 import * as assert from 'node:assert/strict';
 import { collectSnapshot, type Session } from '../src/debug/dapCollector';
 
-/** Sessão falsa que responde como o Java Debugger num BubbleSort parado. */
+/** Sessão falsa com as respostas que o Java Debugger real deu num BubbleSort parado. */
 function fakeJavaSession(opts: { paging?: boolean } = {}): Session & { requests: string[] } {
   const requests: string[] = [];
   const vars: Record<number, unknown[]> = {
     1: [
-      { name: 'args', value: 'String[0] (id=20)', type: 'String[]', variablesReference: 0 },
-      { name: 'numeros', value: 'int[5] (id=21)', type: 'int[]', variablesReference: 2, indexedVariables: 5 },
+      { name: 'args', value: 'String[0]@9', type: 'String[]', variablesReference: 0, indexedVariables: 0 },
+      { name: 'numeros', value: 'int[5]@10', type: 'int[]', variablesReference: 2, indexedVariables: 5 },
       { name: 'i', value: '0', type: 'int', variablesReference: 0 },
       { name: 'j', value: '1', type: 'int', variablesReference: 0 },
     ],
-    2: [5, 1, 4, 2, 8].map((v, i) => ({ name: `[${i}]`, value: String(v), type: 'int', variablesReference: 0 })),
+    2: [5, 1, 4, 2, 8].map((v, i) => ({ name: String(i), value: String(v), type: 'int', variablesReference: 0 })),
   };
   return {
     requests,

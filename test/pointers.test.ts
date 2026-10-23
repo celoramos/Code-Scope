@@ -1,5 +1,6 @@
 import * as assert from 'node:assert/strict';
-import { arrowsFor } from '../src/model/pointers';
+import { arrowsFor, VALUE_NAMES } from '../src/model/pointers';
+import pkg from '../package.json';
 
 describe('arrowsFor', () => {
   const arr = { name: 'arr', values: ['5', '1', '4'], length: 10 };
@@ -15,6 +16,11 @@ describe('arrowsFor', () => {
       { name: 'i', index: 0 },
       { name: 'j', index: 2 },
     ]);
+  });
+
+  it('a lista padrão é a mesma do package.json', () => {
+    const fromSettings = pkg.contributes.configuration.properties['codeScope.valueNames'].default;
+    assert.deepEqual([...VALUE_NAMES], fromSettings);
   });
 
   it('ignora nomes que guardam valor, não posição', () => {

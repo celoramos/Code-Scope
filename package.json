@@ -39,6 +39,84 @@
           "name": "Visualização"
         }
       ]
+    },
+    "commands": [
+      {
+        "command": "codeScope.show",
+        "title": "Mostrar painel",
+        "category": "Code Scope"
+      },
+      {
+        "command": "codeScope.clearHistory",
+        "title": "Limpar histórico",
+        "category": "Code Scope"
+      }
+    ],
+    "configuration": {
+      "title": "Code Scope",
+      "properties": {
+        "codeScope.beginnerMode": {
+          "type": "boolean",
+          "default": true,
+          "description": "Mostra uma frase explicando o que mudou em cada passo."
+        },
+        "codeScope.animationSpeed": {
+          "type": "string",
+          "enum": [
+            "lenta",
+            "normal",
+            "rapida",
+            "desligada"
+          ],
+          "enumDescriptions": [
+            "Movimentos com o dobro da duração, bom para apresentar em aula.",
+            "Duração padrão.",
+            "Metade da duração, para quem avança rápido com F10.",
+            "Sem movimento; as mudanças continuam destacadas."
+          ],
+          "default": "normal",
+          "description": "Velocidade das animações do painel."
+        },
+        "codeScope.maxElements": {
+          "type": "number",
+          "default": 50,
+          "minimum": 1,
+          "maximum": 500,
+          "description": "Quantas posições de cada array são lidas e desenhadas."
+        },
+        "codeScope.valueNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "temp",
+            "tmp",
+            "aux",
+            "alvo",
+            "target",
+            "valor",
+            "value",
+            "chave",
+            "key",
+            "soma",
+            "sum",
+            "total",
+            "n",
+            "len",
+            "tamanho",
+            "size",
+            "count",
+            "contador"
+          ],
+          "description": "Nomes de variáveis inteiras que guardam um valor, não uma posição. Elas não viram seta embaixo dos arrays."
+        },
+        "codeScope.revealOnDebug": {
+          "type": "boolean",
+          "default": true,
+          "description": "Abre o painel do Code Scope quando uma sessão de debug começa."
+        }
+      }
     }
   },
   "scripts": {
@@ -46,12 +124,14 @@
     "check-types": "tsc --noEmit",
     "watch": "node esbuild.js --watch",
     "package": "npm run check-types && node esbuild.js --production",
-    "test": "mocha"
+    "test": "mocha",
+    "test:integration": "npm run compile && node esbuild.test.js && tsx test/integration/runTest.ts"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.17.0",
     "@types/vscode": "^1.90.0",
+    "@vscode/test-electron": "^2.5.2",
     "esbuild": "^0.25.0",
     "mocha": "^11.1.0",
     "tsx": "^4.19.0",

@@ -36,7 +36,18 @@ describe('explain', () => {
         { kind: 'pointer', name: 'j', from: 0, to: 1 },
         { kind: 'set', array: 'arr', index: 0, from: '5', to: '1' },
       ]),
-      ['arr[0] mudou de 5 para 1.', 'j mudou de 0 para 1.'],
+      ['arr[0] mudou de 5 para 1.', 'j avançou de 0 para 1.'],
+    );
+  });
+
+  it('ponteiro que recua, que volta a zero e que salta', () => {
+    assert.deepEqual(
+      explain([
+        { kind: 'pointer', name: 'fim', from: 5, to: 4 },
+        { kind: 'pointer', name: 'j', from: 3, to: 0 },
+        { kind: 'pointer', name: 'meio', from: 2, to: 7 },
+      ]),
+      ['fim recuou de 5 para 4.', 'j voltou para 0 (o laço recomeçou).', 'meio mudou de 2 para 7.'],
     );
   });
 

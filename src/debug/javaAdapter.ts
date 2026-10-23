@@ -2,20 +2,20 @@ import type { DapScope, DapVariable } from './dap';
 
 /*
  * Regras de leitura do que o Java Debugger (vscjava.vscode-java-debug) devolve.
- * Formatos esperados do adaptador:
- *   array:     value "int[5] (id=23)", type "int[]", indexedVariables 5
- *   matriz:    value "int[3][] (id=24)", type "int[][]"
- *   elemento:  name "[0]", value "5"
- *   String:    value "\"abc\" (id=31)" ou "\"abc\""
+ * Formatos observados no adaptador real (teste de integração, Java Pack com
+ * VS Code 1.143):
  *   escopo:    um único escopo chamado "Local"
- * As funções aceitam variações (outro adaptador, outra versão), porque o
- * value é texto livre no protocolo. O canal de log "Code Scope" mostra o que
- * realmente chegou.
+ *   array:     value "int[5]@10", type "int[]", indexedVariables 5
+ *   elemento:  name "0", value "5", evaluateName "numeros[0]"
+ *   vazio:     "String[0]@9" com variablesReference 0, então não é expandido
+ * Também aceitamos "[0]" e "(id=10)", formatos de outros adaptadores e de
+ * versões antigas, porque o value é texto livre no protocolo. O canal de log
+ * "Code Scope" mostra o que realmente chegou.
  */
 
 const ARRAY_VALUE = /^[\w.$]+\[(\d+)\](?:\[\])*/;
-const INDEX_NAME = /^\[(\d+)\]$/;
-const RANGE_NAME = /^\[(\d+)\.\.(\d+)\]$/;
+const INDEX_NAME = /^\[?(\d+)\]?$/;
+const RANGE_NAME = /^\[?(\d+)\.\.(\d+)\]?$/;
 const INTEGER = /^-?\d+$/;
 const INTEGRAL_TYPES = new Set(['int', 'short', 'long', 'byte', 'Integer', 'Short', 'Long', 'Byte']);
 
@@ -40,13 +40,13 @@ export function arrayLength(v: DapVariable): number | undefined {
   return m ? Number(m[1]) : undefined;
 }
 
-/** "[3]" vira 3; qualquer outro nome vira undefined. */
+/** "3" ou "[3]" vira 3; qualquer outro nome vira undefined. */
 export function elementIndex(name: string): number | undefined {
   const m = INDEX_NAME.exec(name);
   return m ? Number(m[1]) : undefined;
 }
 
-/** Grupo de paginação "[0..99]" que o adaptador cria para arrays grandes. */
+/** Grupo de paginação "[0..99]" ou "0..99" que um adaptador pode criar para arrays grandes. */
 export function isRangeGroup(name: string): boolean {
   return RANGE_NAME.test(name);
 }
@@ -59,7 +59,7 @@ export function integralValue(v: DapVariable): number | undefined {
   return INTEGER.test(raw) ? Number(raw) : undefined;
 }
 
-/** Tira o "(id=23)" que o Java põe em objetos; o resto fica como veio. */
+/** Tira o "@10" (ou o antigo "(id=10)") que o Java põe em objetos; o resto fica como veio. */
 export function cleanValue(value: string): string {
-  return value.replace(/\s*\(id=\d+\)$/, '');
+  return value.replace(/\s*\(id=\d+\)$/, '').replace(/@\d+$/, '');
 }

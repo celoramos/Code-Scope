@@ -23,7 +23,13 @@ export const DEFAULT_LIMITS: Limits = { maxElements: 50, maxArrays: 20 };
 export interface Collected {
   snapshot: Snapshot;
   /** O que o adaptador devolveu, para investigar formatos no log. */
-  raw: { frame: DapStackFrame; scopes: DapScope[]; locals: DapVariable[] };
+  raw: {
+    frame: DapStackFrame;
+    scopes: DapScope[];
+    locals: DapVariable[];
+    /** Primeiros filhos de cada array, como vieram. */
+    elements: Record<string, DapVariable[]>;
+  };
 }
 
 export type Session = Pick<vscode.DebugSession, 'customRequest'>;
@@ -47,9 +53,13 @@ export async function collectSnapshot(
 
   const arrays: ArrayVar[] = [];
   const pointers: Pointer[] = [];
+  const elements: Record<string, DapVariable[]> = {};
   for (const v of locals) {
     if (isArrayVariable(v)) {
-      if (arrays.length < limits.maxArrays) arrays.push(await readArray(session, v, limits.maxElements));
+      if (arrays.length >= limits.maxArrays) continue;
+      const { array, children } = await readArray(session, v, limits.maxElements);
+      arrays.push(array);
+      elements[v.name] = children.slice(0, 3);
       continue;
     }
     const n = integralValue(v);
@@ -58,11 +68,15 @@ export async function collectSnapshot(
 
   return {
     snapshot: { line: frame.line, file: frame.source?.path ?? frame.source?.name ?? '', arrays, pointers },
-    raw: { frame, scopes, locals },
+    raw: { frame, scopes, locals, elements },
   };
 }
 
-async function readArray(session: Session, v: DapVariable, max: number): Promise<ArrayVar> {
+async function readArray(
+  session: Session,
+  v: DapVariable,
+  max: number,
+): Promise<{ array: ArrayVar; children: DapVariable[] }> {
   const length = arrayLength(v) ?? 0;
   const count = Math.min(length, max);
   let children: DapVariable[];
@@ -82,7 +96,10 @@ async function readArray(session: Session, v: DapVariable, max: number): Promise
     const i = elementIndex(c.name);
     if (i !== undefined && i < count) values[i] = cleanValue(c.value);
   }
-  return { name: v.name, values: Array.from({ length: count }, (_, i) => values[i] ?? '?'), length };
+  return {
+    array: { name: v.name, values: Array.from({ length: count }, (_, i) => values[i] ?? '?'), length },
+    children,
+  };
 }
 
 async function variables(session: Session, variablesReference: number, extra: object = {}): Promise<DapVariable[]> {

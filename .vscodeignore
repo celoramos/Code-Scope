@@ -8,3 +8,6 @@ tsconfig.json
 .mocharc.json
 **/*.map
 docs/**
+out-test/**
+.vscode-test/**
+esbuild.test.js

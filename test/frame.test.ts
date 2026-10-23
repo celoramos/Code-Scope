@@ -22,7 +22,17 @@ describe('makeFrame', () => {
     assert.equal(frame.step, 2);
     assert.equal(frame.total, 2);
     assert.deepEqual(frame.arrows, { arr: [{ name: 'i', index: 1 }] });
-    assert.deepEqual(frame.explanation, ['arr[0] e arr[1] trocaram de lugar.', 'i mudou de 0 para 1.']);
+    assert.deepEqual(frame.explanation, ['arr[0] e arr[1] trocaram de lugar.', 'i avançou de 0 para 1.']);
+  });
+
+  it('aponta a linha que executou e respeita as opções', () => {
+    const h = new History();
+    h.push({ ...snap([5, 1], 0), line: 9, code: 'int temp = arr[j];' });
+    h.push({ ...snap([5, 1], 0), line: 10 });
+    const frame = makeFrame(h.current()!, { valueNames: new Set(['i']), beginnerMode: false });
+    assert.deepEqual(frame.executed, { line: 9, code: 'int temp = arr[j];' });
+    assert.deepEqual(frame.arrows, { arr: [] });
+    assert.deepEqual(frame.explanation, []);
   });
 
   it('o primeiro passo usa o texto de abertura', () => {

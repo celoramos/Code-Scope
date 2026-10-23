@@ -49,6 +49,19 @@ describe('History', () => {
     assert.equal(h.current()?.snapshot.line, 6);
   });
 
+  it('goto pula para qualquer passo e para nas pontas', () => {
+    const h = new History();
+    [1, 2, 3, 4].forEach((l) => h.push(snap(l)));
+    assert.equal(h.goto(2), true);
+    assert.equal(h.current()?.snapshot.line, 2);
+    assert.equal(h.goto(2), false);
+    h.goto(99);
+    assert.equal(h.current()?.index, 4);
+    h.goto(-3);
+    assert.equal(h.current()?.index, 1);
+    assert.equal(new History().goto(1), false);
+  });
+
   it('clear zera tudo', () => {
     const h = new History();
     h.push(snap(1));

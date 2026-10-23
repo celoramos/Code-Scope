@@ -34,6 +34,10 @@ function sentence(c: Change): string {
     case 'pointer':
       if (c.from === undefined) return `${c.name} foi criada valendo ${c.to}.`;
       if (c.to === undefined) return `${c.name} saiu de escopo.`;
+      // Contadores de laço andam de um em um; o verbo diz a direção sem o aluno fazer a conta.
+      if (c.to === c.from + 1) return `${c.name} avançou de ${c.from} para ${c.to}.`;
+      if (c.to === c.from - 1) return `${c.name} recuou de ${c.from} para ${c.to}.`;
+      if (c.to === 0 && c.from > 0) return `${c.name} voltou para 0 (o laço recomeçou).`;
       return `${c.name} mudou de ${c.from} para ${c.to}.`;
   }
 }

@@ -27,6 +27,7 @@ describe('javaAdapter', () => {
   });
 
   it('reconhece array Java pelo type e pelo value', () => {
+    assert.ok(isArrayVariable({ name: 'a', value: 'int[5]@10', type: 'int[]', variablesReference: 7 }));
     assert.ok(isArrayVariable({ name: 'a', value: 'int[5] (id=23)', type: 'int[]', variablesReference: 7 }));
     assert.ok(isArrayVariable({ name: 'a', value: 'int[5] (id=23)', variablesReference: 7 }));
     assert.ok(!isArrayVariable({ name: 'i', value: '3', type: 'int', variablesReference: 0 }));
@@ -40,9 +41,11 @@ describe('javaAdapter', () => {
   });
 
   it('lê índices e grupos de paginação', () => {
+    assert.equal(elementIndex('12'), 12);
     assert.equal(elementIndex('[12]'), 12);
     assert.equal(elementIndex('length'), undefined);
     assert.ok(isRangeGroup('[0..99]'));
+    assert.ok(isRangeGroup('0..99'));
     assert.ok(!isRangeGroup('[0]'));
   });
 
@@ -55,6 +58,7 @@ describe('javaAdapter', () => {
 
   it('tira o id de objeto do value', () => {
     assert.equal(cleanValue('"abc" (id=31)'), '"abc"');
+    assert.equal(cleanValue('Integer@12'), 'Integer');
     assert.equal(cleanValue('5'), '5');
   });
 });

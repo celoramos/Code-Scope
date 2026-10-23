@@ -3,3 +3,5 @@ dist/
 *.vsix
 samples/java/**/*.class
 samples/java/bin/
+out-test/
+.vscode-test/

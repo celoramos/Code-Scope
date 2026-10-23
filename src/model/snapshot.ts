@@ -18,8 +18,11 @@ export interface Pointer {
 }
 
 export interface Snapshot {
+  /** Linha onde o programa parou: a próxima a ser executada. */
   line: number;
   file: string;
+  /** Texto dessa linha no arquivo, sem espaços nas pontas, quando foi possível ler. */
+  code?: string;
   arrays: ArrayVar[];
   pointers: Pointer[];
 }

@@ -1,20 +1,31 @@
 import * as vscode from 'vscode';
+import type { AnimationSpeed } from '../config';
 import type { Frame } from '../model/frame';
 
 /** Mensagens que a extensão envia para o painel. */
 export type ToWebview =
   | { type: 'render'; frame: Frame }
   | { type: 'session'; state: 'idle' | 'running' | 'ended' }
+  | { type: 'settings'; animationSpeed: AnimationSpeed }
   | { type: 'reset' }
   | { type: 'error'; text: string };
 
 /** Mensagens que o painel envia para a extensão. */
-export type FromWebview = { type: 'ready' } | { type: 'back' } | { type: 'forward' };
+export type FromWebview =
+  | { type: 'ready' }
+  | { type: 'back' }
+  | { type: 'forward' }
+  | { type: 'goto'; step: number };
 
 export class ScopeViewProvider implements vscode.WebviewViewProvider {
   static readonly viewId = 'codeScope.panel';
+  readonly viewId = ScopeViewProvider.viewId;
 
   private view?: vscode.WebviewView;
+
+  get visible(): boolean {
+    return this.view?.visible ?? false;
+  }
   private readonly messages = new vscode.EventEmitter<FromWebview>();
   /** O painel avisa "ready" ao carregar; quem escuta reenvia o estado atual. */
   readonly onMessage = this.messages.event;
