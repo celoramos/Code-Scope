@@ -15,3 +15,5 @@ tsconfig.json
 .mocharc.json
 .gitignore
 .gitattributes
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md

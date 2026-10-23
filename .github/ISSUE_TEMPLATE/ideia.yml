@@ -1,0 +1,17 @@
+name: Ideia ou sugestão
+description: Uma estrutura de dados, uma explicação, uma linguagem ou qualquer coisa que ajudaria a aprender.
+labels: [ideia]
+body:
+  - type: textarea
+    id: ideia
+    attributes:
+      label: A ideia
+      description: O que o Code Scope deveria mostrar ou explicar, e por que isso ajudaria quem está aprendendo.
+    validations:
+      required: true
+  - type: textarea
+    id: exemplo
+    attributes:
+      label: Um exemplo de código (opcional)
+      description: Um programa curto onde a ideia faria diferença.
+      render: java

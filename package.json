@@ -9,6 +9,10 @@
     "type": "git",
     "url": "https://github.com/celoramos/Code-Scope.git"
   },
+  "homepage": "https://github.com/celoramos/Code-Scope#readme",
+  "bugs": {
+    "url": "https://github.com/celoramos/Code-Scope/issues"
+  },
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -16,6 +20,17 @@
     "Debuggers",
     "Education",
     "Visualization"
+  ],
+  "keywords": [
+    "java",
+    "debug",
+    "visualização",
+    "ensino",
+    "educação",
+    "array",
+    "algoritmos",
+    "iniciantes",
+    "estrutura de dados"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
@@ -127,7 +142,7 @@
     "test": "mocha",
     "test:integration": "npm run compile && node esbuild.test.js && tsx test/integration/runTest.ts",
     "vscode:prepublish": "npm run package",
-    "vsix": "vsce package --skip-license --out code-scope.vsix"
+    "vsix": "vsce package --out code-scope.vsix"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

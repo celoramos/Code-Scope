@@ -1,0 +1,32 @@
+name: Algo não funcionou
+description: O painel mostrou algo errado, não mostrou nada, ou a extensão deu erro.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por avisar. Não se preocupe em acertar todos os detalhes: conte o que você viu, do jeito que conseguir.
+  - type: textarea
+    id: o-que-aconteceu
+    attributes:
+      label: O que aconteceu
+      description: O que você esperava ver no painel, e o que apareceu.
+    validations:
+      required: true
+  - type: textarea
+    id: codigo
+    attributes:
+      label: Código que você estava debugando
+      description: Cole o trecho (ou o arquivo inteiro, se for pequeno) e diga em qual linha estava o breakpoint.
+      render: java
+  - type: textarea
+    id: log
+    attributes:
+      label: Log do Code Scope (opcional)
+      description: Em View, Output, escolha "Code Scope" na lista, mude o nível para Debug, repita o passo e cole o que aparecer.
+      render: text
+  - type: input
+    id: versoes
+    attributes:
+      label: Versões
+      description: Versão do VS Code, do Code Scope e do Java (por exemplo "VS Code 1.143, Code Scope 0.2.0, JDK 21").

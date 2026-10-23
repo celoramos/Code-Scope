@@ -1,6 +1,8 @@
 # Code Scope
 
-Extensão do VS Code que mostra o código rodando de forma visual, para quem está aprendendo a programar.
+Extensão do VS Code que mostra o código rodando de forma visual, para quem está aprendendo a programar. Gratuita e de código aberto ([MIT](LICENSE)).
+
+Tudo acontece dentro do VS Code: o painel fica na barra lateral, ao lado do seu código, e usa as cores do seu tema. Não abre navegador, não precisa de conta e não envia nada para a internet.
 
 Enquanto você debuga um programa Java, um painel lateral desenha os arrays, as listas e as matrizes das variáveis locais. A cada F10 ele anima o que mudou e explica em português o que aconteceu:
 
@@ -17,7 +19,7 @@ Enquanto você debuga um programa Java, um painel lateral desenha os arrays, as 
 |---|---|
 | ![Matriz com a linha i e a coluna j marcadas](docs/matriz.png) | ![ArrayList recebendo um item no meio](docs/lista.png) |
 
-*Imagens geradas com sessões reais do Java Debugger, renderizadas fora do VS Code para captura.*
+*Capturas do painel feitas com dados de sessões reais do Java Debugger.*
 
 ## O que aparece no painel
 
@@ -146,3 +148,18 @@ O CI roda os dois a cada push e publica o `.vsix` como artefato.
 3. Recursão, com a pilha de chamadas
 4. Stack vs heap, com setas de referência entre objetos
 5. Suporte a JavaScript e Python
+
+## Contribuindo
+
+O Code Scope é open source para ajudar o máximo de pessoas a entrar na programação, e quem já está nela a entender melhor o próprio código. Você pode ajudar mesmo começando agora:
+
+- relate o que te confundiu no painel, abrindo uma [issue](https://github.com/celoramos/Code-Scope/issues/new/choose);
+- escreva um exemplo novo em `samples/java`;
+- melhore uma frase de explicação;
+- implemente um item do roadmap.
+
+O [guia de contribuição](CONTRIBUTING.md) explica como preparar o ambiente, rodar os testes e onde fica cada parte do código. Toda participação segue o [código de conduta](CODE_OF_CONDUCT.md).
+
+## Licença
+
+[MIT](LICENSE). Pode usar, estudar, modificar e distribuir, inclusive em aulas e cursos.
