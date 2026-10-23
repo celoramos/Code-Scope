@@ -1,38 +1,51 @@
 /*
- * Tokens do painel. Cores e fontes vêm do tema do VS Code: o painel vive
- * dentro do editor e herda a temperatura dele em vez de ter paleta própria.
- * Nenhuma regra abaixo do :root digita cor; tamanhos fora da escala são
- * registrados onde aparecem.
+ * Tokens do painel. Tudo deriva do tema do VS Code: o painel vive dentro do
+ * editor e herda a temperatura dele. Superfícies e bordas são misturas do
+ * texto com o fundo, então funcionam igual em tema claro, escuro e alto
+ * contraste. Nenhuma regra abaixo do :root digita uma cor.
  */
 :root {
   --cs-fg: var(--vscode-foreground);
   --cs-muted: var(--vscode-descriptionForeground);
   --cs-bg: var(--vscode-sideBar-background, var(--vscode-editor-background));
   --cs-focus: var(--vscode-focusBorder);
-  --cs-cell-bg: var(--vscode-input-background);
-  --cs-cell-border: var(--vscode-panel-border, var(--vscode-widget-border, var(--vscode-contrastBorder)));
+
+  /* Três degraus de profundidade: cartão, caixa, borda. */
+  --cs-surface: color-mix(in srgb, var(--cs-fg) 4%, var(--cs-bg));
+  --cs-cell-bg: color-mix(in srgb, var(--cs-fg) 8%, var(--cs-bg));
+  --cs-line: color-mix(in srgb, var(--cs-fg) 14%, var(--cs-bg));
+
+  /*
+   * Mudança em amarelo, ponteiros nas cores de gráfico do tema, que cada
+   * tema já ajusta para o próprio fundo. Texto nunca usa essas cores
+   * direto: elas pintam bordas, pontas de seta e fundos misturados, e o
+   * texto por cima continua na cor de primeiro plano.
+   */
+  --cs-change: var(--vscode-charts-yellow);
+  --cs-change-bg: color-mix(in srgb, var(--cs-change) 22%, var(--cs-cell-bg));
+  --cs-ptr-0: var(--vscode-charts-blue);
+  --cs-ptr-1: var(--vscode-charts-purple);
+  --cs-ptr-2: var(--vscode-charts-green);
+  --cs-ptr-3: var(--vscode-charts-orange);
 
   /* Base 4px: a barra lateral é estreita, densidade alta. */
   --cs-space-1: 4px;
   --cs-space-2: 8px;
   --cs-space-3: 12px;
   --cs-space-4: 16px;
+  --cs-space-5: 24px;
+
+  /* Caixas e botões com o raio dos controles do VS Code; cartões um degrau acima. */
+  --cs-radius-sm: 4px;
+  --cs-radius: 6px;
 
   /* Caixa quadrada que cabe um número de 3 dígitos na fonte do editor. */
-  --cs-cell-size: 2.5em;
+  --cs-cell-size: 2.6em;
   --cs-mono: var(--vscode-editor-font-family);
+  --cs-small: 0.88em;
 
-  /*
-   * Mudança em amarelo, ponteiro em azul: as cores de gráfico do tema, que
-   * cada tema já ajusta para o próprio fundo. O texto nunca usa essas cores,
-   * só bordas, fundos misturados e a ponta da seta.
-   */
-  --cs-change: var(--vscode-charts-yellow);
-  --cs-change-bg: color-mix(in srgb, var(--cs-change) 22%, var(--cs-cell-bg));
-  --cs-pointer: var(--vscode-charts-blue);
-
-  /* Altura de uma linha de seta: ponta + nome. */
-  --cs-pointer-row: 2.4em;
+  /* Altura de uma linha de seta: ponta + etiqueta. */
+  --cs-pointer-row: 2.3em;
 
   /* Rápido o bastante para não atrasar o F10, lento o bastante para ver a troca. */
   --cs-move: 420ms;
@@ -42,74 +55,200 @@
 
 body {
   margin: 0;
-  padding: var(--cs-space-2) var(--cs-space-3);
+  padding: var(--cs-space-3);
   color: var(--cs-fg);
   background: var(--cs-bg);
   font-family: var(--vscode-font-family);
   font-size: var(--vscode-font-size);
+  line-height: 1.45;
 }
 
-.nav {
-  display: flex;
-  align-items: center;
+[hidden] {
+  display: none !important;
+}
+
+:focus-visible {
+  outline: 1px solid var(--cs-focus);
+  outline-offset: 2px;
+}
+
+/* ---------- Estado vazio ---------- */
+
+.empty {
+  display: grid;
+  justify-items: center;
   gap: var(--cs-space-2);
+  padding: var(--cs-space-5) var(--cs-space-2);
+  text-align: center;
+}
+
+.empty-art {
+  width: 120px;
+  height: 64px;
   margin-bottom: var(--cs-space-2);
+  fill: var(--cs-cell-bg);
+  stroke: var(--cs-line);
+  stroke-width: 1.5;
 }
 
-.nav[hidden] {
-  display: none;
+.empty-art-accent {
+  stroke: var(--cs-ptr-0);
 }
 
-/* Alvo de 28px: o mínimo confortável para clique, no tamanho dos botões de ícone do VS Code. */
-.nav-button {
-  min-width: 28px;
-  min-height: 28px;
-  padding: 0 var(--cs-space-2);
-  color: var(--vscode-button-secondaryForeground);
-  background: var(--vscode-button-secondaryBackground);
-  border: 1px solid var(--vscode-button-border, transparent);
-  font: inherit;
-  cursor: pointer;
+.empty-art-pointer {
+  fill: var(--cs-ptr-0);
+  stroke: none;
 }
 
-.nav-button:hover:not(:disabled) {
-  background: var(--vscode-button-secondaryHoverBackground);
+.empty-title {
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: 600;
+  text-wrap: balance;
 }
 
-.nav-button:disabled {
-  opacity: 0.4;
-  cursor: default;
+.empty-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  color: var(--cs-muted);
+  text-align: left;
 }
 
-.counter {
+.empty-steps li {
+  counter-increment: step;
+  display: flex;
+  align-items: baseline;
+  gap: var(--cs-space-2);
+  padding: 2px 0;
+}
+
+/* Estes três passos são uma sequência de verdade, então levam número. */
+.empty-steps li::before {
+  content: counter(step);
+  flex: 0 0 auto;
+  width: 1.5em;
+  height: 1.5em;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--cs-cell-bg);
+  color: var(--cs-fg);
+  font-size: var(--cs-small);
   font-variant-numeric: tabular-nums;
 }
 
-.explanation {
-  margin: 0 0 var(--cs-space-3);
-  padding: 0 0 0 var(--cs-space-2);
-  list-style: none;
-  border-left: 2px solid var(--cs-change);
-  text-wrap: pretty;
+kbd {
+  padding: 0 var(--cs-space-1);
+  border: 1px solid var(--vscode-keybindingLabel-border, var(--cs-line));
+  border-bottom-color: var(--vscode-keybindingLabel-bottomBorder, var(--cs-line));
+  border-radius: 3px;
+  background: var(--vscode-keybindingLabel-background, var(--cs-cell-bg));
+  color: var(--vscode-keybindingLabel-foreground, var(--cs-fg));
+  font-family: var(--vscode-font-family);
+  font-size: var(--cs-small);
 }
 
-.explanation:empty {
-  display: none;
+/* ---------- Barra de passos ---------- */
+
+.toolbar {
+  margin-bottom: var(--cs-space-3);
 }
 
-.explanation-item + .explanation-item {
-  margin-top: var(--cs-space-1);
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--cs-space-2);
 }
 
-.status.is-error {
-  color: var(--vscode-errorForeground);
+.step {
+  flex: 1;
+  display: grid;
+  gap: var(--cs-space-1);
+}
+
+.counter {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--cs-line);
+  overflow: hidden;
+}
+
+.progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--vscode-progressBar-background, var(--cs-ptr-0));
+  transform-origin: left;
+  transform: scaleX(var(--progress, 0));
+  transition: transform var(--cs-move) var(--cs-ease);
+}
+
+/* Alvo de 28px: o tamanho dos botões de ícone do VS Code. */
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius-sm);
+  background: var(--cs-surface);
+  color: var(--cs-fg);
+  cursor: pointer;
+}
+
+.icon-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--vscode-toolbar-hoverBackground, var(--cs-cell-bg));
+}
+
+.icon-button:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .location {
-  margin: 0 0 var(--cs-space-2);
-  font-family: var(--cs-mono);
-  color: var(--cs-muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cs-space-1) var(--cs-space-2);
+  margin: var(--cs-space-2) 0 0;
 }
+
+.location-file {
+  font-family: var(--cs-mono);
+  overflow-wrap: anywhere;
+}
+
+.location-line {
+  color: var(--cs-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  padding: 0 var(--cs-space-2);
+  border-radius: var(--cs-radius-sm);
+  background: var(--cs-cell-bg);
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+/* ---------- Status e explicação ---------- */
 
 .status {
   margin: 0 0 var(--cs-space-3);
@@ -121,41 +260,134 @@ body {
   display: none;
 }
 
+.status.is-error {
+  color: var(--vscode-errorForeground);
+}
+
+.explanation {
+  margin: 0 0 var(--cs-space-3);
+  padding: var(--cs-space-2) var(--cs-space-3);
+  list-style: none;
+  border-left: 3px solid var(--cs-change);
+  border-radius: 0 var(--cs-radius-sm) var(--cs-radius-sm) 0;
+  background: color-mix(in srgb, var(--cs-change) 8%, var(--cs-bg));
+  text-wrap: pretty;
+}
+
+.explanation:empty {
+  display: none;
+}
+
+.explanation-item + .explanation-item {
+  margin-top: var(--cs-space-1);
+}
+
+.code {
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--cs-cell-bg);
+  font-family: var(--cs-mono);
+  font-size: 0.95em;
+}
+
+/* ---------- Variáveis inteiras ---------- */
+
+.vars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cs-space-1);
+  margin: 0 0 var(--cs-space-3);
+  padding: 0;
+  list-style: none;
+  font-family: var(--cs-mono);
+}
+
+.vars:empty {
+  display: none;
+}
+
+.var {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cs-space-1);
+  padding: 1px var(--cs-space-2);
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius-sm);
+  background: var(--cs-surface);
+  transition: background-color var(--cs-move) var(--cs-ease), border-color var(--cs-move) var(--cs-ease);
+}
+
+/* A bolinha liga a variável à seta da mesma cor. */
+.var.is-pointer::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ptr);
+}
+
+.var-name {
+  color: var(--cs-muted);
+}
+
+.var-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.var.is-changed {
+  background: var(--cs-change-bg);
+  border-color: var(--cs-change);
+}
+
+/* ---------- Arrays ---------- */
+
 .arrays {
   display: grid;
-  gap: var(--cs-space-4);
+  gap: var(--cs-space-3);
 }
 
 /* Item de grid tem min-width auto: sem isto o array longo alarga o painel. */
 .array {
   min-width: 0;
+  padding: var(--cs-space-2) var(--cs-space-3) var(--cs-space-1);
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius);
+  background: var(--cs-surface);
 }
 
 .array-header {
   display: flex;
   align-items: baseline;
+  justify-content: space-between;
   gap: var(--cs-space-2);
   margin-bottom: var(--cs-space-1);
 }
 
 .array-name {
+  margin: 0;
   font-family: var(--cs-mono);
+  font-size: 1em;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .array-meta {
+  flex: 0 0 auto;
   color: var(--cs-muted);
+  font-size: var(--cs-small);
 }
 
 /* Arrays longos rolam na horizontal; o painel nunca rola de lado. */
 .array-track {
   position: relative;
   overflow-x: auto;
-  padding-bottom: var(--cs-space-1);
+  padding: 0 1px var(--cs-space-2);
 }
 
 .cells {
   display: flex;
+  gap: var(--cs-space-1);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -169,16 +401,12 @@ body {
   flex: 0 0 auto;
 }
 
-/* Bordas coladas: cada caixa só desenha a borda esquerda, a última fecha. */
-.cell + .cell .cell-value {
-  border-left-width: 0;
-}
-
 .cell-index {
-  font-family: var(--cs-mono);
   color: var(--cs-muted);
-  font-size: 0.85em;
-  line-height: 1.6;
+  font-family: var(--cs-mono);
+  font-size: 0.8em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.7;
 }
 
 .cell-value {
@@ -193,23 +421,25 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--cs-mono);
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius-sm);
   background: var(--cs-cell-bg);
-  border: 1px solid var(--cs-cell-border);
+  font-family: var(--cs-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Mudou neste passo: fica marcado até o próximo, e pisca ao chegar. */
 .cell.is-changed .cell-value {
   background: var(--cs-change-bg);
   border-color: var(--cs-change);
-  border-left-width: 1px;
   animation: cs-flash var(--cs-flash) var(--cs-ease);
 }
 
 @keyframes cs-flash {
   0%,
   40% {
-    background: color-mix(in srgb, var(--cs-change) 55%, var(--cs-cell-bg));
+    background: color-mix(in srgb, var(--cs-change) 50%, var(--cs-cell-bg));
   }
 }
 
@@ -218,6 +448,7 @@ body {
 .cell.swap-down .cell-value {
   position: relative;
   z-index: 1;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--vscode-widget-shadow, black) 60%, transparent);
 }
 
 .cell.swap-up .cell-value {
@@ -253,8 +484,11 @@ body {
 @keyframes cs-appear {
   from {
     opacity: 0;
+    transform: translateY(4px);
   }
 }
+
+/* ---------- Setas ---------- */
 
 .pointers {
   position: relative;
@@ -263,13 +497,11 @@ body {
 
 .pointer {
   position: absolute;
-  top: calc(var(--row) * var(--cs-pointer-row));
+  top: calc(var(--row) * var(--cs-pointer-row) + 3px);
   left: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: var(--cs-mono);
-  line-height: 1.2;
   transform: translateX(calc(var(--x) - 50%));
   transition: transform var(--cs-move) var(--cs-ease);
 }
@@ -279,32 +511,25 @@ body {
 }
 
 .pointer-head {
-  color: var(--cs-pointer);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid var(--ptr);
 }
 
-.vars {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--cs-space-1) var(--cs-space-2);
-  margin: 0 0 var(--cs-space-3);
-  padding: 0;
-  list-style: none;
-  font-family: var(--cs-mono);
-}
-
-.vars:empty {
-  display: none;
-}
-
-.var {
+.pointer-name {
   padding: 0 var(--cs-space-1);
-  border: 1px solid transparent;
+  border: 1px solid var(--ptr);
+  border-radius: var(--cs-radius-sm);
+  background: color-mix(in srgb, var(--ptr) 18%, var(--cs-bg));
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
-.var.is-changed {
-  background: var(--cs-change-bg);
-  border-color: var(--cs-change);
-}
+/* ---------- Movimento reduzido ---------- */
 
 @media (prefers-reduced-motion: reduce) {
   .cell .cell-value,
@@ -314,12 +539,9 @@ body {
     animation: none;
   }
 
-  .pointer {
+  .pointer,
+  .progress-fill,
+  .var {
     transition: none;
   }
-}
-
-:focus-visible {
-  outline: 1px solid var(--cs-focus);
-  outline-offset: 2px;
 }

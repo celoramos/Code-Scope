@@ -55,7 +55,7 @@ Na janela do Extension Development Host:
 | `BuscaLinear.java` | A seta `i` percorrendo o array até achar o valor; `alvo` não vira seta, porque guarda um valor e não uma posição |
 | `InverterArray.java` | As setas `inicio` e `fim` se aproximando enquanto as pontas trocam de lugar |
 
-Use **⏮** e **⏭**, ou as setas do teclado com o painel em foco, para rever passos anteriores. Isso só navega pelo que já foi visto: a execução do programa não volta. O histórico continua disponível depois que o debug termina e é limpo quando uma nova sessão começa.
+Use os botões de passo anterior e próximo passo no topo do painel, ou as setas do teclado com o painel em foco, para rever passos anteriores. Isso só navega pelo que já foi visto: a execução do programa não volta. O histórico continua disponível depois que o debug termina e é limpo quando uma nova sessão começa.
 
 Se o painel não mostrar o que você esperava, abra **Output → Code Scope**. Esse canal registra cada snapshot e, no nível *Debug*, o que o adaptador Java devolveu.
 

@@ -2,28 +2,21 @@
 (function () {
   // @ts-ignore acquireVsCodeApi é injetado pelo VS Code
   const vscode = acquireVsCodeApi();
-  const status = byId('status');
-  const location = byId('location');
-  const varsEl = byId('vars');
-  const arraysEl = byId('arrays');
-  const nav = byId('nav');
+
+  const empty = byId('empty');
+  const emptyTitle = byId('empty-title');
+  const toolbar = byId('toolbar');
   const counter = byId('counter');
+  const progressFill = byId('progress-fill');
   const backBtn = /** @type {HTMLButtonElement} */ (byId('back'));
   const forwardBtn = /** @type {HTMLButtonElement} */ (byId('forward'));
+  const fileEl = byId('file');
+  const lineEl = byId('line');
+  const endedBadge = byId('ended');
+  const status = byId('status');
   const explanationEl = byId('explanation');
-
-  const SESSION_TEXT = {
-    idle: 'Aguardando debug. Coloque um breakpoint num programa Java e aperte F5.',
-    running: 'Sessão iniciada. Aguardando um breakpoint.',
-    ended: 'Sessão encerrada. O histórico continua aqui até o próximo debug.',
-  };
-
-  /** @type {'idle' | 'running' | 'ended'} */
-  let session = 'idle';
-  /** @type {Frame | undefined} */
-  let current;
-  /** @type {string | undefined} */
-  let error;
+  const varsEl = byId('vars');
+  const arraysEl = byId('arrays');
 
   /**
    * @typedef {{ name: string, values: string[], length: number }} ArrayVar
@@ -35,9 +28,28 @@
    *             explanation: string[], step: number, total: number }} Frame
    */
 
+  const EMPTY_TITLE = {
+    idle: 'Pronto para visualizar',
+    running: 'Aguardando um breakpoint',
+    ended: 'Sessão encerrada',
+  };
+
+  /** Quantas cores de ponteiro o CSS declara (--cs-ptr-0 até --cs-ptr-3). */
+  const POINTER_COLORS = 4;
+
+  /** @type {'idle' | 'running' | 'ended'} */
+  let session = 'idle';
+  /** @type {Frame | undefined} */
+  let current;
+  /** @type {string | undefined} */
+  let error;
+
   /** Um bloco por array, reaproveitado entre passos para poder animar. */
   /** @type {Map<string, HTMLElement>} */
   const blocks = new Map();
+  /** Cada ponteiro guarda a cor da primeira vez que apareceu: i é sempre azul. */
+  /** @type {Map<string, number>} */
+  const pointerColor = new Map();
 
   window.addEventListener('message', (event) => {
     const msg = event.data;
@@ -51,7 +63,7 @@
     } else if (msg.type === 'error') {
       error = msg.text;
     }
-    updateStatus();
+    updateChrome();
   });
 
   backBtn.addEventListener('click', () => vscode.postMessage({ type: 'back' }));
@@ -62,11 +74,15 @@
     else if (e.key === 'ArrowRight') vscode.postMessage({ type: 'forward' });
   });
 
-  /** Uma linha só: erro, estado da sessão quando importa, e o caso sem arrays. */
-  function updateStatus() {
+  /** Estado vazio, selo de sessão encerrada e a linha de status. */
+  function updateChrome() {
+    empty.hidden = Boolean(current);
+    emptyTitle.textContent = EMPTY_TITLE[session];
+    toolbar.hidden = !current;
+    endedBadge.hidden = session !== 'ended';
+
     const parts = [];
     if (error) parts.push(error);
-    if (!current || session === 'ended') parts.push(SESSION_TEXT[session]);
     if (current && current.snapshot.arrays.length === 0) parts.push('Nenhum array nas variáveis locais deste ponto.');
     status.textContent = parts.join(' ');
     status.classList.toggle('is-error', Boolean(error));
@@ -77,30 +93,32 @@
     error = undefined;
     for (const block of blocks.values()) block.remove();
     blocks.clear();
+    pointerColor.clear();
     varsEl.replaceChildren();
     explanationEl.replaceChildren();
-    location.hidden = true;
-    nav.hidden = true;
   }
 
   /** @param {Frame} frame */
   function render(frame) {
     current = frame;
     const s = frame.snapshot;
-    nav.hidden = false;
-    counter.textContent = `passo ${frame.step} de ${frame.total}`;
+    const arrowNames = new Set(Object.values(frame.arrows).flatMap((list) => list.map((a) => a.name)));
+
+    counter.textContent = `Passo ${frame.step} de ${frame.total}`;
+    progressFill.style.setProperty('--progress', String(frame.total > 0 ? frame.step / frame.total : 0));
     backBtn.disabled = frame.step <= 1;
     forwardBtn.disabled = frame.step >= frame.total;
-    location.hidden = false;
-    location.textContent = `${basename(s.file)}, linha ${s.line}`;
+    fileEl.textContent = basename(s.file);
+    lineEl.textContent = `linha ${s.line}`;
+
     explanationEl.replaceChildren(
       ...frame.explanation.map((text) => {
         const li = el('li', 'explanation-item');
-        li.textContent = text;
+        li.append(...highlightCode(text));
         return li;
       }),
     );
-    renderVars(s.pointers, frame.changes);
+    renderVars(s.pointers, frame.changes, arrowNames);
 
     const seen = new Set();
     for (const arr of s.arrays) {
@@ -125,15 +143,48 @@
   }
 
   /**
+   * Destaca "arr[2]" e nomes de variáveis conhecidos dentro da frase,
+   * sem passar texto do debug por innerHTML.
+   * @param {string} text
+   */
+  function highlightCode(text) {
+    const s = current?.snapshot;
+    const known = new Set([...(s?.arrays.map((a) => a.name) ?? []), ...(s?.pointers.map((p) => p.name) ?? [])]);
+    /** @type {(string | HTMLElement)[]} */
+    const out = [];
+    let last = 0;
+    for (const m of text.matchAll(/[A-Za-z_$][\w$]*(\[\d+\])?/g)) {
+      if (!m[1] && !known.has(m[0])) continue;
+      if (m.index > last) out.push(text.slice(last, m.index));
+      const code = el('code', 'code');
+      code.textContent = m[0];
+      out.push(code);
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) out.push(text.slice(last));
+    return out;
+  }
+
+  /**
+   * Variáveis inteiras. As que estão desenhadas como seta levam a cor da seta.
    * @param {Pointer[]} pointers
    * @param {Change[]} changes
+   * @param {Set<string>} arrowNames
    */
-  function renderVars(pointers, changes) {
+  function renderVars(pointers, changes, arrowNames) {
     const changed = new Set(changes.filter((c) => c.kind === 'pointer').map((c) => c.name));
     varsEl.replaceChildren(
       ...pointers.map((p) => {
         const li = el('li', changed.has(p.name) ? 'var is-changed' : 'var');
-        li.textContent = `${p.name} = ${p.value}`;
+        if (arrowNames.has(p.name)) {
+          li.classList.add('is-pointer');
+          li.style.setProperty('--ptr', `var(--cs-ptr-${colorOf(p.name)})`);
+        }
+        const name = el('span', 'var-name');
+        name.textContent = `${p.name} =`;
+        const value = el('span', 'var-value');
+        value.textContent = String(p.value);
+        li.append(name, value);
         return li;
       }),
     );
@@ -141,9 +192,9 @@
 
   /** @param {string} name */
   function createBlock(name) {
-    const block = el('div', 'array');
-    const header = el('div', 'array-header');
-    const title = el('span', 'array-name');
+    const block = el('article', 'array');
+    const header = el('header', 'array-header');
+    const title = el('h3', 'array-name');
     title.textContent = name;
     header.append(title, el('span', 'array-meta'));
     const track = el('div', 'array-track');
@@ -164,12 +215,11 @@
     const meta = /** @type {HTMLElement} */ (block.querySelector('.array-meta'));
     meta.textContent =
       arr.values.length < arr.length
-        ? `mostrando ${arr.values.length} de ${arr.length} posições`
+        ? `${arr.values.length} de ${arr.length} posições`
         : `${arr.length} ${arr.length === 1 ? 'posição' : 'posições'}`;
 
-    const cells = cellsOf(block);
-    while (cells.length > arr.values.length) cells.pop()?.remove();
     const list = /** @type {HTMLElement} */ (block.querySelector('.cells'));
+    while (list.children.length > arr.values.length) list.lastElementChild?.remove();
     while (list.children.length < arr.values.length) list.append(createCell(list.children.length));
     arr.values.forEach((value, i) => {
       const cell = /** @type {HTMLElement} */ (list.children[i]);
@@ -256,11 +306,10 @@
       if (!p) {
         p = el('span', 'pointer');
         p.dataset.name = arrow.name;
-        const head = el('span', 'pointer-head');
-        head.textContent = '▲';
+        p.style.setProperty('--ptr', `var(--cs-ptr-${colorOf(arrow.name)})`);
         const label = el('span', 'pointer-name');
         label.textContent = arrow.name;
-        p.append(head, label);
+        p.append(el('span', 'pointer-head'), label);
         layer.append(p);
       }
       const x = cell.offsetLeft + cell.offsetWidth / 2;
@@ -275,8 +324,7 @@
     for (const p of Array.from(layer.querySelectorAll('.pointer'))) {
       if (!keep.has(/** @type {HTMLElement} */ (p).dataset.name)) p.remove();
     }
-    const rows = Math.max(0, ...stack.values());
-    layer.style.setProperty('--rows', String(rows));
+    layer.style.setProperty('--rows', String(Math.max(0, ...stack.values())));
 
     // Leitores de tela: a caixa diz quem aponta para ela.
     cells.forEach((cell, i) => {
@@ -284,6 +332,16 @@
       const base = cell.dataset.label ?? '';
       cell.setAttribute('aria-label', names.length ? `${base}, apontada por ${names.join(', ')}` : base);
     });
+  }
+
+  /** @param {string} name */
+  function colorOf(name) {
+    let c = pointerColor.get(name);
+    if (c === undefined) {
+      c = pointerColor.size % POINTER_COLORS;
+      pointerColor.set(name, c);
+    }
+    return c;
   }
 
   /** @param {HTMLElement} block */
@@ -311,5 +369,6 @@
     return path.split(/[\\/]/).pop() || path;
   }
 
+  updateChrome();
   vscode.postMessage({ type: 'ready' });
 })();
