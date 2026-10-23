@@ -89,7 +89,9 @@ async function probeLocals(): Promise<unknown> {
   for (const v of variables as { name: string; variablesReference: number }[]) {
     if (v.variablesReference <= 0) continue;
     const children = await s.customRequest('variables', { variablesReference: v.variablesReference });
-    out[v.name] = { variable: v, children: children.variables.slice(0, 4) };
+    const first = children.variables[0];
+    const nested = first?.variablesReference > 0 ? (await s.customRequest("variables", { variablesReference: first.variablesReference })).variables.slice(0, 4) : undefined;
+    out[v.name] = { variable: v, children: children.variables.slice(0, 4), nested };
   }
   return out;
 }
@@ -146,6 +148,39 @@ describe('Java Debugger real', () => {
     const s = snaps[snaps.length - 1];
     assert.deepEqual(s.arrays.find((a) => a.name === 'letras')?.values, ["'r'", "'a'", "'d'", "'a'", "'r'"]);
     assert.deepEqual(s.scalars?.find((v) => v.name === 'ehPalindromo'), { name: 'ehPalindromo', value: 'true' });
+  });
+
+  /** Mudanças de todos os passos de uma sessão, com as frases que o aluno leria. */
+  const allChanges = (snaps: Snapshot[]) => snaps.flatMap((s, k) => diff(snaps[k - 1], s, snaps[k - 2]));
+
+  it('Pilha: Stack empilha e desempilha pelo topo', async () => {
+    const snaps = await debugSample('Pilha', 6, 7);
+    const pratos = snaps.map((s) => s.arrays.find((a) => a.name === 'pratos')).filter((a) => a !== undefined);
+    assert.ok(pratos.every((a) => a.kind === 'stack'), `nem todo passo virou pilha: ${JSON.stringify(pratos)}`);
+    assert.deepEqual(pratos.at(-1)?.values, ['"azul"', '"verde"', '"amarelo"']);
+    const changes = allChanges(snaps);
+    assert.ok(changes.some((c) => c.kind === 'insert' && c.structure === 'stack' && !c.shifted), 'nenhum push no topo');
+    assert.ok(
+      changes.some((c) => c.kind === 'remove' && c.structure === 'stack' && c.value === '"vermelho"' && !c.shifted),
+      'o pop do "vermelho" não saiu do topo',
+    );
+  });
+
+  it('Fila: LinkedList como Queue tira da frente', async () => {
+    const snaps = await debugSample('Fila', 7, 7);
+    assert.equal(snaps.at(-1)?.arrays.find((a) => a.name === 'banco')?.kind, 'queue');
+    assert.ok(
+      allChanges(snaps).some((c) => c.kind === 'remove' && c.structure === 'queue' && c.index === 0 && c.value === '"Ana"'),
+      'Ana não saiu da frente',
+    );
+  });
+
+  it('Parenteses: ArrayDeque com push vira pilha com o topo certo e chars legíveis', async () => {
+    const snaps = await debugSample('Parenteses', 11, 9);
+    const abertos = snaps.at(-1)?.arrays.find((a) => a.name === 'abertos');
+    assert.equal(abertos?.kind, 'stack');
+    // "{" entrou primeiro e está no fundo; "[" está no topo.
+    assert.deepEqual(abertos?.values, ["'{'", "'['"]);
   });
 
   it('InverterArray: lê os dois ponteiros', async () => {

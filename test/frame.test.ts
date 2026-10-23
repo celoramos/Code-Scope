@@ -1,5 +1,5 @@
 import * as assert from 'node:assert/strict';
-import { makeFrame } from '../src/model/frame';
+import { makeFrame, peekNote } from '../src/model/frame';
 import { History } from '../src/model/history';
 import type { Snapshot } from '../src/model/snapshot';
 
@@ -39,5 +39,27 @@ describe('makeFrame', () => {
     const h = new History();
     h.push(snap([5, 1], 0));
     assert.deepEqual(makeFrame(h.current()!).explanation, ['Primeiro passo: arr tem 2 posições.']);
+  });
+});
+
+describe('peekNote', () => {
+  const stack = (values: string[]) => ({
+    line: 11,
+    file: 'Pilha.java',
+    arrays: [{ name: 'pratos', values, length: values.length, kind: 'stack' as const }],
+    pointers: [],
+  });
+
+  it('explica que peek não tira o item', () => {
+    assert.equal(
+      peekNote('String deCima = pratos.peek();', stack(['"azul"', '"verde"']), []),
+      'peek() só olhou o topo de pratos: "verde" continua lá.',
+    );
+  });
+
+  it('fica quieto quando não é peek ou quando a pilha mudou', () => {
+    assert.equal(peekNote('pratos.pop();', stack(['"azul"']), []), undefined);
+    const removed = [{ kind: 'remove' as const, array: 'pratos', index: 1, value: '"x"', shifted: false, structure: 'stack' as const }];
+    assert.equal(peekNote('pratos.peek();', stack(['"azul"']), removed), undefined);
   });
 });

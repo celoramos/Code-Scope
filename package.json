@@ -2,7 +2,7 @@
   "name": "code-scope",
   "displayName": "Code Scope",
   "description": "Mostra o código rodando de forma visual durante o debug, para ensinar programação.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "code-scope",
   "license": "MIT",
   "repository": {

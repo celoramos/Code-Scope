@@ -84,13 +84,13 @@ describe('diff', () => {
       pointers: [],
     });
     assert.deepEqual(diff(list(['a', 'c']), list(['a', 'b', 'c'])), [
-      { kind: 'insert', array: 'lista', index: 1, value: 'b', shifted: true },
+      { kind: 'insert', array: 'lista', index: 1, value: 'b', shifted: true, structure: 'list' },
     ]);
     assert.deepEqual(diff(list(['a']), list(['a', 'b'])), [
-      { kind: 'insert', array: 'lista', index: 1, value: 'b', shifted: false },
+      { kind: 'insert', array: 'lista', index: 1, value: 'b', shifted: false, structure: 'list' },
     ]);
     assert.deepEqual(diff(list(['a', 'b', 'c']), list(['b', 'c'])), [
-      { kind: 'remove', array: 'lista', index: 0, value: 'a', shifted: true },
+      { kind: 'remove', array: 'lista', index: 0, value: 'a', shifted: true, structure: 'list' },
     ]);
     // Dois itens de uma vez não têm uma posição única que explique: vira redimensionamento.
     assert.deepEqual(diff(list(['a']), list(['a', 'b', 'c'])), [

@@ -599,6 +599,279 @@ kbd {
   border-radius: var(--cs-radius-sm);
 }
 
+/*
+ * Saída de um item: a cópia vai embora na direção da estrutura enquanto
+ * encolhe, e os vizinhos fecham o espaço no mesmo movimento. A margem
+ * negativa final desconta o gap, para não sobrar um salto de 4px no fim.
+ */
+.cell.ghost {
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cell.ghost .cell-value {
+  background: var(--cs-change-bg);
+  border-color: var(--cs-change);
+}
+
+.cell.ghost-array {
+  animation: cs-ghost-down var(--cs-move) var(--cs-ease) forwards;
+}
+
+.cell.ghost-queue {
+  animation: cs-ghost-left var(--cs-move) var(--cs-ease) forwards;
+}
+
+.cell.ghost-stack {
+  animation: cs-ghost-up var(--cs-move) var(--cs-ease) forwards;
+}
+
+@keyframes cs-ghost-down {
+  from {
+    max-width: 8em;
+  }
+  to {
+    max-width: 0;
+    margin-inline-end: calc(-1 * var(--cs-space-1));
+    opacity: 0;
+    transform: translateY(70%);
+  }
+}
+
+@keyframes cs-ghost-left {
+  from {
+    max-width: 8em;
+  }
+  to {
+    max-width: 0;
+    margin-inline-end: calc(-1 * var(--cs-space-1));
+    opacity: 0;
+    transform: translateX(-90%);
+  }
+}
+
+@keyframes cs-ghost-up {
+  from {
+    max-height: calc(var(--cs-cell-size) + 2px);
+  }
+  to {
+    max-height: 0;
+    margin-bottom: calc(-1 * var(--cs-space-1));
+    opacity: 0;
+    transform: translateY(-120%);
+  }
+}
+
+/* ---------- Pilha ---------- */
+
+/*
+ * A torre não rola: precisa de espaço em cima para o item cair e para o que
+ * sai subir. Ela fica presa pela base (flex-end) numa altura reservada para
+ * --reserve itens, então empilhar não empurra os pratos de baixo.
+ */
+.array.is-stack .array-track {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: calc(var(--reserve, 4) * (var(--cs-cell-size) + var(--cs-space-1)) + var(--cs-space-2) * 2 + var(--cs-space-4));
+  overflow: visible;
+  padding: var(--cs-space-4) 4.5em 0 var(--cs-space-2);
+}
+
+/* Um tubo aberto em cima: o único lugar por onde se entra e se sai. */
+.array.is-stack .cells {
+  flex-direction: column-reverse;
+  align-items: stretch;
+  min-width: 7em;
+  min-height: calc(var(--cs-cell-size) + var(--cs-space-2) * 2);
+  padding: var(--cs-space-2);
+  border: 2px solid var(--cs-line);
+  border-top: none;
+  border-radius: 0 0 var(--cs-radius) var(--cs-radius);
+}
+
+/* Na pilha os pratos são largos; na fila cada item ocupa o que o valor pede, para caber na barra lateral. */
+.array.is-stack .cell-value {
+  min-width: 5em;
+}
+
+/* Os pratos têm a largura do tubo. */
+.array.is-stack .cell {
+  align-items: stretch;
+}
+
+.array.is-stack .cell-value {
+  max-width: none;
+}
+
+.array.is-stack .cell-index,
+.array.is-queue .cell-index {
+  display: none;
+}
+
+.array.is-stack .cells:empty::before,
+.array.is-queue .cells:empty::before {
+  content: 'vazia';
+  align-self: center;
+  margin: auto;
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+/* Push: o item cai do alto, passa um pouco do lugar e assenta. */
+.cell.drop-in .cell-value {
+  animation: cs-drop calc(var(--cs-move) * 1.4) var(--cs-ease), cs-flash var(--cs-flash) var(--cs-ease);
+}
+
+@keyframes cs-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-180%);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(8%);
+  }
+  75% {
+    transform: translateY(-3%);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* ---------- Fila ---------- */
+
+.array.is-queue .array-track {
+  display: flex;
+  align-items: center;
+  gap: var(--cs-space-1);
+  padding-bottom: 2.2em; /* espaço para as etiquetas "frente" e "fim" */
+}
+
+/* A esteira: as bordas de cima e de baixo são os trilhos. */
+.array.is-queue .cells {
+  flex: 0 0 auto;
+  align-items: center;
+  min-width: 6em;
+  min-height: var(--cs-cell-size);
+  padding: var(--cs-space-2) var(--cs-space-1);
+  border-block: 2px solid var(--cs-line);
+}
+
+.lane-end {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+  color: var(--cs-muted);
+  font-size: 0.8em;
+}
+
+.lane-end svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Offer: o item chega pela entrada, à direita, e encosta no último. */
+.cell.enter-back .cell-value {
+  animation: cs-enter-back calc(var(--cs-move) * 1.2) var(--cs-ease), cs-flash var(--cs-flash) var(--cs-ease);
+}
+
+@keyframes cs-enter-back {
+  0% {
+    opacity: 0;
+    transform: translateX(160%);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-6%);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* ---------- Etiquetas das pontas ---------- */
+
+.markers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.marker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  transition: transform var(--cs-move) var(--cs-ease);
+}
+
+.marker.no-move {
+  transition: none;
+}
+
+/* Pilha: etiqueta à direita do topo, com a ponta apontando para ele. */
+.marker.is-stack {
+  --ptr: var(--cs-ptr-0);
+  transform: translate(var(--x), calc(var(--y) - 50%));
+}
+
+.marker.is-stack .marker-head {
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 6px solid var(--ptr);
+}
+
+/* Fila: etiquetas embaixo da frente e do fim, com a ponta para cima. */
+.marker.is-queue {
+  flex-direction: column;
+  transform: translate(calc(var(--x) - 50%), var(--y));
+}
+
+.marker.is-queue[data-label='frente'] {
+  --ptr: var(--cs-ptr-2);
+}
+
+.marker.is-queue[data-label='fim'] {
+  --ptr: var(--cs-ptr-1);
+}
+
+.marker.is-queue .marker-head {
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid var(--ptr);
+}
+
+.marker-head {
+  width: 0;
+  height: 0;
+}
+
+.marker-text {
+  padding: 0 var(--cs-space-1);
+  border: 1px solid var(--ptr);
+  border-radius: var(--cs-radius-sm);
+  background: color-mix(in srgb, var(--ptr) 18%, var(--cs-bg));
+  font-size: var(--cs-small);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.array-rule {
+  margin: var(--cs-space-1) 0 var(--cs-space-1);
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+  text-align: center;
+}
+
 /* ---------- Matriz ---------- */
 
 .matrix {
@@ -731,11 +1004,15 @@ kbd {
   .cell.swap-down .cell-value,
   .cell.slide .cell-value,
   .cell.is-inserted .cell-value,
+  .cell.drop-in .cell-value,
+  .cell.enter-back .cell-value,
+  .cell.ghost,
   .array.is-new {
     animation: none;
   }
 
   .pointer,
+  .marker,
   .var {
     transition: none;
   }

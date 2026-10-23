@@ -42,6 +42,9 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
     if (arr.rows) {
       arrows[arr.name] = [];
       axes[arr.name] = matrixAxesFor(arr, snapshot.pointers, [snapshot.code, prev?.code, older?.code]);
+    } else if (arr.kind === 'stack' || arr.kind === 'queue') {
+      // Pilha e fila não têm índice para o aluno: as pontas ganham etiquetas no painel.
+      arrows[arr.name] = [];
     } else {
       arrows[arr.name] = arrowsFor(arr, snapshot.pointers, options.valueNames);
     }
@@ -54,8 +57,31 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
     changes,
     arrows,
     axes,
-    explanation: options.beginnerMode ? explain(changes, prev === undefined, explainFlow(executed, snapshot)) : [],
+    explanation: options.beginnerMode
+      ? explain(changes, prev === undefined, [peekNote(executed?.code, snapshot, changes), explainFlow(executed, snapshot)].filter(isText))
+      : [],
     step: step.index,
     total: step.total,
   };
+}
+
+/**
+ * peek() não muda nada, então o diff não vê. Mas é justamente o que o aluno
+ * precisa entender: olhar a ponta não tira o item de lá.
+ */
+export function peekNote(code: string | undefined, snapshot: Snapshot, changes: Change[]): string | undefined {
+  const m = code && /\b([A-Za-z_$][\w$]*)\s*\.\s*peek\s*\(/.exec(code);
+  if (!m) return undefined;
+  const arr = snapshot.arrays.find((a) => a.name === m[1]);
+  if (!arr || (arr.kind !== 'stack' && arr.kind !== 'queue')) return undefined;
+  if (changes.some((c) => 'array' in c && c.array === arr.name)) return undefined;
+  const value = arr.kind === 'stack' ? arr.values.at(-1) : arr.values[0];
+  if (value === undefined) return undefined;
+  return arr.kind === 'stack'
+    ? `peek() só olhou o topo de ${arr.name}: ${value} continua lá.`
+    : `peek() só olhou a frente da fila ${arr.name}: ${value} continua lá.`;
+}
+
+function isText(s: string | undefined): s is string {
+  return s !== undefined;
 }

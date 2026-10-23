@@ -1,6 +1,6 @@
 import type { ArrayVar, Snapshot } from './snapshot';
 
-export type Structure = 'array' | 'list' | 'matrix';
+export type Structure = 'array' | 'list' | 'stack' | 'queue' | 'matrix';
 
 /*
  * Em matrizes, "array" é o nome da linha ("grade[1]"), então as mudanças de
@@ -11,9 +11,9 @@ export type Change =
   /** steps 2: a troca terminou agora, mas começou no passo anterior (via variável auxiliar). */
   | { kind: 'swap'; array: string; a: number; b: number; steps: 1 | 2 }
   /** Lista ganhou um item; shifted diz se havia itens depois dele, que andaram para a direita. */
-  | { kind: 'insert'; array: string; index: number; value: string; shifted: boolean }
+  | { kind: 'insert'; array: string; index: number; value: string; shifted: boolean; structure: Structure }
   /** Lista perdeu um item; shifted diz se os itens seguintes voltaram uma posição. */
-  | { kind: 'remove'; array: string; index: number; value: string; shifted: boolean }
+  | { kind: 'remove'; array: string; index: number; value: string; shifted: boolean; structure: Structure }
   | { kind: 'array-added'; array: string; length: number; structure: Structure; cols?: number }
   | { kind: 'array-removed'; array: string }
   | { kind: 'array-resized'; array: string; from: number; to: number }
@@ -38,8 +38,8 @@ export function diff(prev: Snapshot | undefined, next: Snapshot, older?: Snapsho
     } else if (p.rows && arr.rows) {
       changes.push(...matrixChanges(p, arr, oldest?.get(arr.name)));
     } else if (p.length !== arr.length) {
-      // Array não cresce: tamanho diferente é outro array. Só listas ganham e perdem itens.
-      const list = arr.kind === 'list' ? listChange(p, arr) : undefined;
+      // Array não cresce: tamanho diferente é outro array. Só coleções ganham e perdem itens.
+      const list = arr.kind && arr.kind !== 'array' ? listChange(p, arr) : undefined;
       changes.push(list ?? { kind: 'array-resized', array: arr.name, from: p.length, to: arr.length });
     } else {
       changes.push(...completeTwoStepSwaps(arrayChanges(p, arr), oldest?.get(arr.name), arr));
@@ -123,13 +123,19 @@ function listChange(prev: ArrayVar, next: ArrayVar): Change | undefined {
   const complete = prev.values.length === prev.length && next.values.length === next.length;
   if (!complete || Math.abs(prev.length - next.length) !== 1) return undefined;
 
-  const [longer, shorter] = next.length > prev.length ? [next.values, prev.values] : [prev.values, next.values];
-  for (let k = 0; k < longer.length; k++) {
+  const grew = next.length > prev.length;
+  const [longer, shorter] = grew ? [next.values, prev.values] : [prev.values, next.values];
+  // Com valores repetidos mais de uma posição explica a diferença. Escolhe a que a
+  // estrutura usaria: inserção no fim, remoção no topo da pilha ou na frente da fila.
+  const fromEnd = grew || next.kind === 'stack';
+  const order = longer.map((_, i) => (fromEnd ? longer.length - 1 - i : i));
+  for (const k of order) {
     if (longer.every((v, i) => i === k || v === shorter[i < k ? i : i - 1])) {
       const shifted = k < longer.length - 1;
-      return next.length > prev.length
-        ? { kind: 'insert', array: next.name, index: k, value: longer[k], shifted }
-        : { kind: 'remove', array: next.name, index: k, value: longer[k], shifted };
+      const structure = next.kind ?? 'list';
+      return grew
+        ? { kind: 'insert', array: next.name, index: k, value: longer[k], shifted, structure }
+        : { kind: 'remove', array: next.name, index: k, value: longer[k], shifted, structure };
     }
   }
   return undefined;
@@ -165,7 +171,7 @@ function added(a: ArrayVar): Change {
     const cols = Math.max(0, ...a.rows.map((r) => r.length));
     return { kind: 'array-added', array: a.name, length: a.length, structure: 'matrix', cols };
   }
-  return { kind: 'array-added', array: a.name, length: a.length, structure: a.kind === 'list' ? 'list' : 'array' };
+  return { kind: 'array-added', array: a.name, length: a.length, structure: a.kind ?? 'array' };
 }
 
 function byName(arrays: ArrayVar[]): Map<string, ArrayVar> {

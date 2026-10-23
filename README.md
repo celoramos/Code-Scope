@@ -4,16 +4,22 @@ Extensão do VS Code que mostra o código rodando de forma visual, para quem est
 
 Tudo acontece dentro do VS Code: o painel fica na barra lateral, ao lado do seu código, e usa as cores do seu tema. Não abre navegador, não precisa de conta e não envia nada para a internet.
 
-Enquanto você debuga um programa Java, um painel lateral desenha os arrays, as listas e as matrizes das variáveis locais. A cada F10 ele anima o que mudou e explica em português o que aconteceu:
+Enquanto você debuga um programa Java, um painel lateral desenha as variáveis locais: arrays, matrizes, listas, pilhas e filas. É o "quer que eu desenhe?" da programação. A cada F10 ele anima o que mudou e explica em português o que aconteceu:
 
 - a caixa alterada pisca e fica marcada;
 - uma troca aparece como as duas caixas se cruzando, mesmo quando o código usa uma variável `temp` e leva dois passos;
 - `i`, `j`, `inicio` e `fim` viram setas coloridas que deslizam embaixo das caixas;
-- numa lista, o item novo surge e os seguintes abrem espaço;
+- numa lista, o item novo surge e os seguintes abrem espaço; o que sai vai embora e os vizinhos fecham o buraco;
+- numa pilha, o `push` faz o item cair no topo da torre e o `pop` faz ele subir e sumir, com a etiqueta "topo" acompanhando;
+- numa fila, o `offer` faz o item entrar pela direita da esteira e o `poll` tira quem está na frente, pela esquerda;
 - numa matriz, a linha e a coluna lidas pelo código ficam marcadas e a célula onde elas se cruzam ganha contorno;
 - o texto diz o que mudou e por qual caminho o programa foi: "numeros[0] e numeros[1] trocaram de lugar", "a condição da linha 8 foi falsa: o programa pulou o bloco do if", "fim de uma volta do laço".
 
 ![Code Scope rodando o BubbleSort passo a passo](docs/demo.gif)
+
+| Pilha | Fila |
+|---|---|
+| ![Pilha de pratos: push e pop pelo topo](docs/pilha.gif) | ![Fila do banco: entra pelo fim, sai pela frente](docs/fila.gif) |
 
 | Matriz | Lista |
 |---|---|
@@ -29,7 +35,7 @@ Enquanto você debuga um programa Java, um painel lateral desenha os arrays, as 
 | Código | A linha que acabou de executar e a próxima, com a mesma cor que o editor usa para a linha parada. |
 | Explicação | Uma frase por mudança, mais o caminho do programa (if, laço, break). Pode ser desligada. |
 | Variáveis | Inteiros, booleans, chars, doubles e Strings locais. Os inteiros que viram seta levam a cor da seta. |
-| Estruturas | Arrays (`int[]`, `char[]`, `String[]`...), matrizes (`int[][]`) e listas (`ArrayList`, `LinkedList`...). |
+| Estruturas | Arrays (`int[]`, `char[]`, `String[]`...), matrizes (`int[][]`), listas (`ArrayList`...), pilhas (`Stack`, ou `Deque`/`ArrayDeque` usado com `push` e `pop`) e filas (`Queue`, ou `LinkedList`/`ArrayDeque` usado com `offer` e `poll`). |
 
 ## Requisitos
 
@@ -80,6 +86,9 @@ Na janela do Extension Development Host:
 | `Palindromo.java` | `char[]` com aspas simples; o boolean `ehPalindromo` entre as variáveis |
 | `Matriz.java` | Grade 2 por 3 com a linha `i` e a coluna `j` marcadas, célula a célula |
 | `ListaDeCompras.java` | Lista nascendo vazia, itens entrando no fim e no meio, item saindo do começo |
+| `Pilha.java` | Pilha de pratos: `push` no topo, `peek` que só olha, `pop` que tira o último que entrou |
+| `Fila.java` | Fila do banco: clientes entram pelo fim e são atendidos pela frente |
+| `Parenteses.java` | Uso clássico de pilha: conferir se `{[()]}` está balanceado, empilhando cada abertura |
 
 Com o painel em foco: setas esquerda e direita andam um passo, Home e End vão para o primeiro e para o último.
 
@@ -139,14 +148,15 @@ O CI roda os dois a cada push e publica o `.vsix` como artefato.
 - Matrizes de três ou mais dimensões mostram o terceiro nível como texto (`int[3]`).
 - Uma lista que ganha ou perde mais de um item num só passo aparece como redimensionada, sem animação de deslize.
 - Fora de matrizes, um inteiro vira seta pelo valor: qualquer inteiro que caiba nos índices aponta para uma caixa, a menos que o nome esteja em `codeScope.valueNames`.
+- Pilha e fila são reconhecidas pelo nome da variável, lendo o arquivo inteiro: o tipo vem da primeira declaração com esse nome, e os métodos usados (`push`, `poll`...) são somados de todos os lugares. Duas variáveis com o mesmo nome usadas de jeitos diferentes no mesmo arquivo podem ser classificadas errado.
 - Se você usar F5 (continue) entre breakpoints em vez de F10, o painel mostra a diferença acumulada entre as duas paradas e a linha "Executou" é a do breakpoint anterior.
 
 ## Roadmap
 
 1. `HashMap` e `HashSet`
-2. Pilha e fila
-3. Recursão, com a pilha de chamadas
-4. Stack vs heap, com setas de referência entre objetos
+2. Recursão, com a pilha de chamadas
+3. Stack vs heap, com setas de referência entre objetos
+4. Lista ligada desenhada como nós e setas
 5. Suporte a JavaScript e Python
 
 ## Contribuindo

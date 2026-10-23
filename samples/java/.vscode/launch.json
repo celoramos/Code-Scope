@@ -36,6 +36,24 @@
       "name": "Palindromo",
       "request": "launch",
       "mainClass": "Palindromo"
+    },
+    {
+      "type": "java",
+      "name": "Pilha",
+      "request": "launch",
+      "mainClass": "Pilha"
+    },
+    {
+      "type": "java",
+      "name": "Fila",
+      "request": "launch",
+      "mainClass": "Fila"
+    },
+    {
+      "type": "java",
+      "name": "Parenteses",
+      "request": "launch",
+      "mainClass": "Parenteses"
     }
   ]
 }

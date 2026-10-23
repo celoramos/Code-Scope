@@ -7,6 +7,7 @@ import {
   isArrayVariable,
   isRangeGroup,
   pickLocalScope,
+  unboxedValue,
 } from '../src/debug/javaAdapter';
 
 describe('javaAdapter', () => {
@@ -60,5 +61,13 @@ describe('javaAdapter', () => {
     assert.equal(cleanValue('"abc" (id=31)'), '"abc"');
     assert.equal(cleanValue('Integer@12'), 'Integer');
     assert.equal(cleanValue('5'), '5');
+  });
+});
+
+describe('unboxedValue', () => {
+  it('lê o valor que o adaptador real devolve para Character e Integer', () => {
+    assert.equal(unboxedValue('Character@46 "["', 'Character'), "'['");
+    assert.equal(unboxedValue('Integer@12 "42"', 'Integer'), '42');
+    assert.equal(unboxedValue('7', 'Integer'), '7');
   });
 });

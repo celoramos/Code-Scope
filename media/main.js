@@ -20,12 +20,12 @@
   const arraysEl = byId('arrays');
 
   /**
-   * @typedef {{ name: string, values: string[], length: number, kind?: 'array' | 'list', rows?: ArrayVar[] }} ArrayVar
+   * @typedef {{ name: string, values: string[], length: number, kind?: 'array' | 'list' | 'stack' | 'queue', rows?: ArrayVar[] }} ArrayVar
    * @typedef {{ name: string, value: number }} Pointer
    * @typedef {{ name: string, value: string }} Scalar
    * @typedef {{ name: string, index: number }} Arrow
    * @typedef {{ row?: Arrow, col?: Arrow }} Axes
-   * @typedef {{ kind: string, array?: string, index?: number, a?: number, b?: number, name?: string }} Change
+   * @typedef {{ kind: string, array?: string, index?: number, a?: number, b?: number, name?: string, value?: string }} Change
    * @typedef {{ line: number, code?: string }} LineRef
    * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[] },
    *             executed?: LineRef, changes: Change[], arrows: Record<string, Arrow[]>, axes: Record<string, Axes>,
@@ -156,7 +156,7 @@
     const seen = new Set();
     for (const arr of s.arrays) {
       seen.add(arr.name);
-      const kind = arr.rows ? 'matrix' : 'array';
+      const kind = arr.rows ? 'matrix' : arr.kind === 'stack' || arr.kind === 'queue' ? arr.kind : 'array';
       let block = blocks.get(arr.name);
       if (block && block.dataset.kind !== kind) {
         block.remove();
@@ -164,17 +164,18 @@
       }
       const isNew = !block;
       if (!block) {
-        block = arr.rows ? createMatrixBlock(arr.name) : createBlock(arr.name);
+        block = kind === 'matrix' ? createMatrixBlock(arr.name) : createBlock(arr.name, kind);
         block.dataset.kind = kind;
         blocks.set(arr.name, block);
       }
       arraysEl.appendChild(block); // mantém a ordem das variáveis
-      if (arr.rows) {
+      if (kind === 'matrix') {
         updateMatrix(block, arr, frame.axes[arr.name] ?? {}, frame.changes, isNew);
       } else {
         updateBlock(block, arr);
         animateBlock(block, arr.name, frame.changes, isNew);
-        updateArrows(block, frame.arrows[arr.name] ?? []);
+        if (kind === 'array') updateArrows(block, frame.arrows[arr.name] ?? []);
+        else updateMarkers(block, kind);
       }
     }
     for (const [name, block] of blocks) {
@@ -279,20 +280,57 @@
   }
 
   /** @param {string} name */
-  function createBlock(name) {
-    const block = el('article', 'array');
+  /**
+   * @param {string} name
+   * @param {'array' | 'stack' | 'queue'} kind
+   */
+  function createBlock(name, kind) {
+    const block = el('article', `array is-${kind}`);
     const header = el('header', 'array-header');
     const title = el('h3', 'array-name');
     title.textContent = name;
     header.append(title, el('span', 'array-meta'));
     const track = el('div', 'array-track');
     const cells = el('ol', 'cells');
-    cells.setAttribute('aria-label', `Posições de ${name}`);
-    const pointers = el('div', 'pointers');
-    pointers.setAttribute('aria-hidden', 'true'); // as setas já estão no aria-label das caixas
-    track.append(cells, pointers);
+    const markers = el('div', kind === 'array' ? 'pointers' : 'markers');
+    markers.setAttribute('aria-hidden', 'true'); // setas e etiquetas já estão no aria-label das caixas
     block.append(header, track);
+
+    if (kind === 'stack') {
+      cells.setAttribute('aria-label', `Pilha ${name}, do fundo para o topo`);
+      track.append(cells, markers);
+      block.append(rule('Último a entrar, primeiro a sair.'));
+    } else if (kind === 'queue') {
+      cells.setAttribute('aria-label', `Fila ${name}, da frente para o fim`);
+      track.append(laneEnd('saída'), cells, laneEnd('entrada'), markers);
+      block.append(rule('Primeiro a entrar, primeiro a sair.'));
+    } else {
+      cells.setAttribute('aria-label', `Posições de ${name}`);
+      track.append(cells, markers);
+    }
     return block;
+  }
+
+  /** Lembrete da regra da estrutura, embaixo do desenho. @param {string} text */
+  function rule(text) {
+    const p = el('p', 'array-rule');
+    p.textContent = text;
+    return p;
+  }
+
+  /**
+   * Ponta da esteira da fila. As duas setas apontam para a esquerda: é o
+   * sentido em que a fila anda.
+   * @param {'saída' | 'entrada'} label
+   */
+  function laneEnd(label) {
+    const end = el('div', `lane-end ${label === 'saída' ? 'is-exit' : 'is-entry'}`);
+    end.setAttribute('aria-hidden', 'true');
+    end.innerHTML = '<svg viewBox="0 0 16 16"><path d="M10 3.5 5.5 8l4.5 4.5" /></svg>';
+    const text = el('span', 'lane-label');
+    text.textContent = label;
+    end.append(text);
+    return end;
   }
 
   /**
@@ -301,15 +339,24 @@
    */
   function updateBlock(block, arr) {
     const meta = /** @type {HTMLElement} */ (block.querySelector('.array-meta'));
-    const unit = arr.kind === 'list' ? ['item', 'itens'] : ['posição', 'posições'];
+    const collection = arr.kind === 'list' || arr.kind === 'stack' || arr.kind === 'queue';
+    const unit = collection ? ['item', 'itens'] : ['posição', 'posições'];
     const count =
       arr.values.length < arr.length
         ? `${arr.values.length} de ${arr.length} ${unit[1]}`
         : `${arr.length} ${arr.length === 1 ? unit[0] : unit[1]}`;
-    meta.textContent = arr.kind === 'list' ? `lista, ${count}` : count;
+    const noun = { list: 'lista', stack: 'pilha', queue: 'fila' }[arr.kind ?? ''];
+    meta.textContent = noun ? (arr.length === 0 ? `${noun} vazia` : `${noun}, ${count}`) : count;
     block.classList.toggle('is-list', arr.kind === 'list');
+    if (arr.kind === 'stack') {
+      // A torre reserva altura e nunca encolhe: a base fica parada e os itens entram e saem por cima.
+      const reserve = Math.max(4, arr.values.length, Number(block.dataset.reserve ?? 0));
+      block.dataset.reserve = String(reserve);
+      block.style.setProperty('--reserve', String(reserve));
+    }
 
     const list = /** @type {HTMLElement} */ (block.querySelector('.cells'));
+    for (const ghost of Array.from(list.querySelectorAll('.ghost'))) ghost.remove();
     while (list.children.length > arr.values.length) list.lastElementChild?.remove();
     while (list.children.length < arr.values.length) list.append(createCell(list.children.length));
     arr.values.forEach((value, i) => {
@@ -346,13 +393,15 @@
     resetCells(cells);
     void block.offsetWidth; // reinicia as animações CSS
     if (isNew) block.classList.add('is-new');
-    animateCells(cells, name, changes)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const mode = /** @type {'array' | 'stack' | 'queue'} */ (block.dataset.kind ?? 'array');
+    const list = /** @type {HTMLElement} */ (block.querySelector('.cells'));
+    animateCells(cells, name, changes, mode, list)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
   /** @param {HTMLElement[]} cells */
   function resetCells(cells) {
     for (const cell of cells) {
-      cell.classList.remove('is-changed', 'swap-up', 'swap-down', 'slide', 'is-inserted');
+      cell.classList.remove('is-changed', 'swap-up', 'swap-down', 'slide', 'is-inserted', 'drop-in', 'enter-back');
       cell.style.removeProperty('--dx');
     }
   }
@@ -363,9 +412,11 @@
    * @param {HTMLElement[]} cells
    * @param {string} name
    * @param {Change[]} changes
+   * @param {'array' | 'stack' | 'queue' | 'matrix'} [mode]
+   * @param {HTMLElement} [list] onde pôr o fantasma de um item que saiu
    * @returns {HTMLElement | undefined}
    */
-  function animateCells(cells, name, changes) {
+  function animateCells(cells, name, changes, mode = 'array', list) {
     /** @type {HTMLElement | undefined} */
     let first;
     // Distância entre duas caixas vizinhas: o quanto um item anda quando a lista abre ou fecha espaço.
@@ -385,15 +436,114 @@
         b.classList.add('is-changed', 'swap-down');
         first ??= a;
       } else if (c.kind === 'insert' && c.index !== undefined && cells[c.index]) {
-        cells[c.index].classList.add('is-changed', 'is-inserted');
-        cells.slice(c.index + 1).forEach((cell) => slide(cell, -step));
+        // Pilha: o item cai no topo. Fila: entra pela direita. Lista: surge no lugar e empurra os seguintes.
+        const entry = { stack: 'drop-in', queue: 'enter-back' }[mode] ?? 'is-inserted';
+        cells[c.index].classList.add('is-changed', entry);
+        if (entry === 'is-inserted') cells.slice(c.index + 1).forEach((cell) => slide(cell, -step));
         first ??= cells[c.index];
-      } else if (c.kind === 'remove' && c.index !== undefined) {
-        cells.slice(c.index).forEach((cell) => slide(cell, step));
-        first ??= cells[c.index];
+      } else if (c.kind === 'remove' && c.index !== undefined && list) {
+        // O item que saiu continua um instante na tela, indo embora; os outros fecham o espaço junto.
+        first ??= ghostOut(list, cells[c.index], c.value ?? '', mode);
       }
     }
     return first;
+  }
+
+  /**
+   * Cópia do item removido, posta onde ele estava, que sai na direção da
+   * estrutura (sobe do topo da pilha, sai pela frente da fila, cai da lista)
+   * enquanto encolhe; os vizinhos ocupam o espaço ao mesmo tempo.
+   * @param {HTMLElement} list
+   * @param {HTMLElement | undefined} before
+   * @param {string} value
+   * @param {string} mode
+   */
+  function ghostOut(list, before, value, mode) {
+    const ghost = el('li', `cell ghost ghost-${mode}`);
+    ghost.setAttribute('aria-hidden', 'true');
+    const idx = el('span', 'cell-index');
+    const v = el('span', 'cell-value');
+    v.textContent = value;
+    ghost.append(idx, v);
+    list.insertBefore(ghost, before ?? null);
+    ghost.addEventListener('animationend', (e) => {
+      if (e.target !== ghost) return;
+      ghost.remove();
+      // Sem o fantasma os vizinhos assentam no lugar final; as etiquetas vão atrás.
+      const block = /** @type {HTMLElement | null} */ (list.closest('.array'));
+      const kind = block?.dataset.kind;
+      if (block && (kind === 'stack' || kind === 'queue')) updateMarkers(block, kind);
+    });
+    // Sem animação (velocidade desligada ou movimento reduzido) não haverá animationend.
+    const style = getComputedStyle(ghost);
+    if (style.animationName === 'none' || parseFloat(style.animationDuration) === 0) {
+      ghost.remove();
+      return undefined;
+    }
+    return ghost;
+  }
+
+  /**
+   * Etiquetas que dizem o papel de cada ponta: "topo" na pilha, "frente" e
+   * "fim" na fila. São elementos fixos que só mudam de lugar, então deslizam
+   * quando a ponta muda.
+   * @param {HTMLElement} block
+   * @param {'stack' | 'queue'} kind
+   */
+  function updateMarkers(block, kind) {
+    const layer = /** @type {HTMLElement} */ (block.querySelector('.markers'));
+    const cells = cellsOf(block);
+    /** @type {[string, HTMLElement | undefined][]} */
+    const wanted =
+      kind === 'stack'
+        ? [['topo', cells.at(-1)]]
+        : [
+            ['frente', cells[0]],
+            ['fim', cells.length > 1 ? cells.at(-1) : undefined],
+          ];
+    for (const [label, cell] of wanted) {
+      let m = /** @type {HTMLElement | null} */ (layer.querySelector(`[data-label="${label}"]`));
+      if (!cell) {
+        m?.remove();
+        continue;
+      }
+      const appearing = !m;
+      if (!m) {
+        m = el('span', `marker is-${kind}`);
+        m.dataset.label = label;
+        const head = el('span', 'marker-head');
+        const text = el('span', 'marker-text');
+        text.textContent = cells.length === 1 && kind === 'queue' ? 'frente e fim' : label;
+        m.append(head, text);
+        layer.append(m);
+      }
+      const text = /** @type {HTMLElement} */ (m.querySelector('.marker-text'));
+      text.textContent = kind === 'queue' && label === 'frente' && cells.length === 1 ? 'frente e fim' : label;
+      // Medidas de layout (offset*), não getBoundingClientRect: o item pode estar no meio
+      // da animação de entrada, e a etiqueta deve ir para onde ele vai parar.
+      const value = /** @type {HTMLElement} */ (cell.querySelector('.cell-value'));
+      const left = cell.offsetLeft + value.offsetLeft;
+      const top = cell.offsetTop + value.offsetTop;
+      // Pilha: etiqueta à direita do item, no meio da altura. Fila: embaixo, no meio da largura.
+      const x = kind === 'stack' ? left + value.offsetWidth + 6 : left + value.offsetWidth / 2;
+      const y = kind === 'stack' ? top + value.offsetHeight / 2 : top + value.offsetHeight + 4;
+      m.style.setProperty('--x', `${x}px`);
+      m.style.setProperty('--y', `${y}px`);
+      if (appearing) {
+        m.classList.add('no-move');
+        void m.offsetWidth;
+        m.classList.remove('no-move');
+      }
+    }
+    // Cada caixa também diz o próprio papel para leitores de tela.
+    cells.forEach((cell, i) => {
+      const base = cell.dataset.label ?? '';
+      const role =
+        kind === 'stack'
+          ? i === cells.length - 1 ? ', topo' : ''
+          : [i === 0 ? 'frente' : '', i === cells.length - 1 ? 'fim' : ''].filter(Boolean).join(' e ');
+      cell.setAttribute('aria-label', role ? `${base}${kind === 'stack' ? role : `, ${role}`}` : base);
+    });
   }
 
   /**
@@ -574,7 +724,7 @@
 
   /** @param {HTMLElement} block */
   function cellsOf(block) {
-    return /** @type {HTMLElement[]} */ (Array.from(block.querySelectorAll('.cell')));
+    return /** @type {HTMLElement[]} */ (Array.from(block.querySelectorAll('.cell:not(.ghost)')));
   }
 
   /** @param {string} id */

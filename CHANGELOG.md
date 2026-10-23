@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.0
+
+### Novo
+
+- Pilha desenhada como uma torre aberta em cima: `push` faz o item cair no topo, `pop` faz ele subir e sumir, e a etiqueta "topo" acompanha. A torre fica presa pela base, então empilhar não empurra os itens de baixo.
+- Fila desenhada como uma esteira com saída e entrada: `offer` entra pela direita, `poll` sai pela frente, com as etiquetas "frente" e "fim".
+- O papel da coleção vem do código: `Stack` e `Queue` pelo tipo, e `ArrayDeque`/`LinkedList` pelos métodos usados (`push`/`pop` ou `offer`/`poll`). A ordem do `ArrayDeque` usado como pilha é corrigida para o topo ficar em cima.
+- Explicações com a regra de cada estrutura ("na pilha, sai sempre o último que entrou") e uma nota para `peek()`, que só olha a ponta sem tirar nada.
+- Item removido de lista, pilha ou fila sai animado, e os vizinhos fecham o espaço no mesmo movimento.
+- Exemplos novos: Pilha, Fila e Parenteses.
+
+### Corrigido
+
+- Elementos de coleções com tipos embrulhados (`Character`, `Integer`...) apareciam como `'Character'`; agora o valor de verdade é lido.
+
 ## 0.2.0
 
 ### Corrigido

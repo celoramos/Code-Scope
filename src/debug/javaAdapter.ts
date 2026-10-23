@@ -54,6 +54,23 @@ export function formatElement(v: DapVariable): string {
   return value;
 }
 
+/**
+ * Primitivo embrulhado em objeto (Character, Integer...). Dentro de coleções o
+ * adaptador mostra só "Character@41"; o valor de verdade está no campo "value".
+ */
+export function isBoxed(v: DapVariable): boolean {
+  return v.variablesReference > 0 && /^(Character|Integer|Long|Short|Byte|Double|Float|Boolean)@\d+$/.test(v.value);
+}
+
+/**
+ * Valor de um primitivo embrulhado depois de resolvido. O adaptador real devolve
+ * algo como 'Character@46 "["' (variável lazy) ou só "[" (campo value).
+ */
+export function unboxedValue(value: string, boxType: string | undefined): string {
+  const raw = /^\w+@\d+\s+"(.*)"$/.exec(value)?.[1] ?? cleanValue(value);
+  return boxType === 'Character' ? `'${raw.replace(/^'(.*)'$/, '$1')}'` : raw;
+}
+
 const SCALAR_TYPES = new Set(['boolean', 'Boolean', 'char', 'Character', 'double', 'Double', 'float', 'Float', 'String']);
 
 /**

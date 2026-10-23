@@ -92,8 +92,8 @@ describe('explain', () => {
   it('lista, matriz e variável simples', () => {
     assert.deepEqual(
       explain([
-        { kind: 'insert', array: 'lista', index: 1, value: '"leite"', shifted: true },
-        { kind: 'remove', array: 'lista', index: 2, value: '"café"', shifted: false },
+        { kind: 'insert', array: 'lista', index: 1, value: '"leite"', shifted: true, structure: 'list' },
+        { kind: 'remove', array: 'lista', index: 2, value: '"café"', shifted: false, structure: 'list' },
         { kind: 'set', array: 'grade[1]', index: 2, from: '6', to: '60' },
         { kind: 'scalar', name: 'achou', from: 'false', to: 'true' },
       ]),
@@ -111,8 +111,8 @@ describe('explain', () => {
   });
 
   it('o caminho do programa substitui o "nada mudou" e vem depois das mudanças', () => {
-    assert.deepEqual(explain([], false, 'A condição foi falsa.'), ['A condição foi falsa.']);
-    assert.deepEqual(explain([{ kind: 'pointer', name: 'j', from: 0, to: 1 }], false, 'Volta.'), [
+    assert.deepEqual(explain([], false, ['A condição foi falsa.']), ['A condição foi falsa.']);
+    assert.deepEqual(explain([{ kind: 'pointer', name: 'j', from: 0, to: 1 }], false, ['Volta.']), [
       'j avançou de 0 para 1.',
       'Volta.',
     ]);

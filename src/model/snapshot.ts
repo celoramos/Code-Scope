@@ -10,8 +10,12 @@ export interface ArrayVar {
   values: string[];
   /** Tamanho real; pode ser maior que values.length se foi truncado. */
   length: number;
-  /** "list" para coleções como ArrayList, que crescem e encolhem. Sem valor, é array. */
-  kind?: 'array' | 'list';
+  /**
+   * Sem valor, é array. "list" para coleções que crescem e encolhem (ArrayList).
+   * "stack" e "queue" têm uma ordem combinada: na pilha, values[0] é o fundo e
+   * o último é o topo; na fila, values[0] é a frente, quem sai primeiro.
+   */
+  kind?: 'array' | 'list' | 'stack' | 'queue';
   /**
    * Linhas de uma matriz (array de arrays). Cada linha se chama "nome[i]".
    * Quando existe, values guarda só um resumo de cada linha.

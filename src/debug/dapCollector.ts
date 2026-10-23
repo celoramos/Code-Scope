@@ -7,11 +7,13 @@ import {
   formatElement,
   integralValue,
   isArrayVariable,
+  isBoxed,
   isEmptyList,
   isListVariable,
   isRangeGroup,
   pickLocalScope,
   scalarValue,
+  unboxedValue,
 } from './javaAdapter';
 
 export interface Limits {
@@ -123,7 +125,17 @@ async function readArray(
     const i = elementIndex(c.name);
     if (i !== undefined && i < count) byIndex[i] = c;
   }
-  const values = Array.from({ length: count }, (_, i) => (byIndex[i] ? formatElement(byIndex[i]) : '?'));
+  const unboxed: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const c = byIndex[i];
+    if (c && isBoxed(c)) {
+      // Variável "lazy" devolve o próprio valor como único filho; objeto comum devolve os campos.
+      const fields = await variables(session, c.variablesReference);
+      const inner = fields.find((f) => f.name === 'value') ?? (fields.length === 1 ? fields[0] : undefined);
+      if (inner) unboxed[i] = unboxedValue(inner.value, c.type);
+    }
+  }
+  const values = Array.from({ length: count }, (_, i) => unboxed[i] ?? (byIndex[i] ? formatElement(byIndex[i]) : '?'));
   const array: ArrayVar = { name, values, length };
   if (isListVariable(v)) array.kind = 'list';
 

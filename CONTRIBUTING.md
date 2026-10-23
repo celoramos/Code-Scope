@@ -40,7 +40,7 @@ Se mudou algo visual, teste no VS Code com um tema claro e um escuro, e com anim
 
 | Pasta | O que tem |
 |---|---|
-| `src/debug` | Conversa com o debugger pelo Debug Adapter Protocol. `javaAdapter.ts` concentra tudo que é específico do Java. |
+| `src/debug` | Conversa com o debugger pelo Debug Adapter Protocol. O que é específico do Java fica em `javaAdapter.ts` (formato das respostas do debugger) e `javaSource.ts` (o que só o código-fonte diz, como uma coleção ser usada como pilha ou fila). |
 | `src/model` | O modelo neutro de linguagem: `Snapshot`, diff entre passos, histórico, setas, textos explicativos. Não importa nada do VS Code. |
 | `src/webview` | O provider do painel e o protocolo de mensagens entre extensão e painel. |
 | `media` | HTML, CSS e JS do painel, sem framework. |

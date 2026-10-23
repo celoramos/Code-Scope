@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { readSettings } from './config';
 import { collectSnapshot } from './debug/dapCollector';
+import { applyCollectionRoles } from './debug/javaSource';
 import { registerStopTracker } from './debug/trackerFactory';
 import { makeFrame } from './model/frame';
 import { History } from './model/history';
@@ -73,7 +74,10 @@ export class ScopeController implements vscode.Disposable {
       if (thread === undefined) return;
       const collected = await collectSnapshot(session, thread, readSettings().limits);
       if (!collected) return;
-      collected.snapshot.code = await readLine(collected.snapshot.file, collected.snapshot.line);
+      const snap = collected.snapshot;
+      const source = await readSource(snap.file);
+      snap.code = source?.lines[snap.line - 1]?.trim();
+      if (source && snap.file.toLowerCase().endsWith('.java')) applyCollectionRoles(snap, source.text);
       if (gen !== this.generation) return;
       this.log.debug('scopes', JSON.stringify(collected.raw.scopes));
       this.log.debug('locals', JSON.stringify(collected.raw.locals));
@@ -137,12 +141,12 @@ async function firstThread(session: vscode.DebugSession): Promise<number | undef
   return threads[0]?.id;
 }
 
-/** Texto da linha no arquivo; sem arquivo legível, o painel só mostra o número. */
-async function readLine(file: string, line: number): Promise<string | undefined> {
+/** Texto do arquivo; sem arquivo legível, o painel só mostra o número da linha. */
+async function readSource(file: string): Promise<{ text: string; lines: string[] } | undefined> {
   if (!file) return undefined;
   try {
-    const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(file));
-    return line >= 1 && line <= doc.lineCount ? doc.lineAt(line - 1).text.trim() : undefined;
+    const text = (await vscode.workspace.openTextDocument(vscode.Uri.file(file))).getText();
+    return { text, lines: text.split(/\r?\n/) };
   } catch {
     return undefined;
   }
