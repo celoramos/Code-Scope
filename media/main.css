@@ -1,17 +1,26 @@
 /*
- * Tokens do painel. Cores e fonte vêm do tema do VS Code: o painel vive dentro
- * do editor e herda a temperatura dele em vez de ter paleta própria.
+ * Tokens do painel. Cores e fontes vêm do tema do VS Code: o painel vive
+ * dentro do editor e herda a temperatura dele em vez de ter paleta própria.
+ * Nenhuma regra abaixo do :root digita cor; tamanhos fora da escala são
+ * registrados onde aparecem.
  */
 :root {
   --cs-fg: var(--vscode-foreground);
   --cs-muted: var(--vscode-descriptionForeground);
   --cs-bg: var(--vscode-sideBar-background, var(--vscode-editor-background));
   --cs-focus: var(--vscode-focusBorder);
+  --cs-cell-bg: var(--vscode-input-background);
+  --cs-cell-border: var(--vscode-panel-border, var(--vscode-widget-border, var(--vscode-contrastBorder)));
 
   /* Base 4px: a barra lateral é estreita, densidade alta. */
   --cs-space-1: 4px;
   --cs-space-2: 8px;
   --cs-space-3: 12px;
+  --cs-space-4: 16px;
+
+  /* Caixa quadrada que cabe um número de 3 dígitos na fonte do editor. */
+  --cs-cell-size: 2.5em;
+  --cs-mono: var(--vscode-editor-font-family);
 }
 
 body {
@@ -23,16 +32,97 @@ body {
   font-size: var(--vscode-font-size);
 }
 
+.location {
+  margin: 0 0 var(--cs-space-2);
+  font-family: var(--cs-mono);
+  color: var(--cs-muted);
+}
+
 .status {
+  margin: 0 0 var(--cs-space-3);
   color: var(--cs-muted);
   text-wrap: pretty;
 }
 
-.raw {
-  font-family: var(--vscode-editor-font-family);
-  font-size: var(--vscode-editor-font-size);
-  white-space: pre-wrap;
-  word-break: break-all;
+.status:empty {
+  display: none;
+}
+
+.arrays {
+  display: grid;
+  gap: var(--cs-space-4);
+}
+
+/* Item de grid tem min-width auto: sem isto o array longo alarga o painel. */
+.array {
+  min-width: 0;
+}
+
+.array-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cs-space-2);
+  margin-bottom: var(--cs-space-1);
+}
+
+.array-name {
+  font-family: var(--cs-mono);
+  font-weight: 600;
+}
+
+.array-meta {
+  color: var(--cs-muted);
+}
+
+/* Arrays longos rolam na horizontal; o painel nunca rola de lado. */
+.array-track {
+  position: relative;
+  overflow-x: auto;
+  padding-bottom: var(--cs-space-1);
+}
+
+.cells {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+/* Bordas coladas: cada caixa só desenha a borda esquerda, a última fecha. */
+.cell + .cell .cell-value {
+  border-left-width: 0;
+}
+
+.cell-index {
+  font-family: var(--cs-mono);
+  color: var(--cs-muted);
+  font-size: 0.85em;
+  line-height: 1.6;
+}
+
+.cell-value {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--cs-cell-size);
+  max-width: 8em;
+  height: var(--cs-cell-size);
+  padding: 0 var(--cs-space-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--cs-mono);
+  background: var(--cs-cell-bg);
+  border: 1px solid var(--cs-cell-border);
 }
 
 :focus-visible {

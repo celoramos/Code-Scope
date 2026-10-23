@@ -36,7 +36,7 @@ export class ScopeController implements vscode.Disposable {
       this.log.debug('scopes', JSON.stringify(collected.raw.scopes));
       this.log.debug('locals', JSON.stringify(collected.raw.locals));
       this.log.info('snapshot', JSON.stringify(collected.snapshot));
-      this.view.post({ type: 'raw', snapshot: collected.snapshot, raw: collected.raw });
+      this.view.post({ type: 'render', frame: { snapshot: collected.snapshot } });
     } catch (err) {
       if (gen !== this.generation) return;
       this.log.error('falha ao ler variáveis', err instanceof Error ? err : String(err));

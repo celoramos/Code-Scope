@@ -2,9 +2,12 @@ import * as vscode from 'vscode';
 import type { Snapshot } from '../model/snapshot';
 
 /** Mensagens que a extensão envia para o painel. */
-export type ToWebview =
-  | { type: 'status'; text: string }
-  | { type: 'raw'; snapshot: Snapshot; raw: unknown };
+export type ToWebview = { type: 'status'; text: string } | { type: 'render'; frame: Frame };
+
+/** Tudo que o painel precisa para desenhar um passo. */
+export interface Frame {
+  snapshot: Snapshot;
+}
 
 /** Mensagens que o painel envia para a extensão. */
 export type FromWebview = { type: 'ready' };
@@ -52,9 +55,11 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
 </head>
 <body>
   <main id="app">
+    <p id="location" class="location" hidden></p>
     <p id="status" class="status" role="status" aria-live="polite">
       Aguardando debug. Coloque um breakpoint num programa Java e aperte F5.
     </p>
+    <section id="arrays" class="arrays" aria-label="Arrays"></section>
   </main>
   <script nonce="${nonce}" src="${js}"></script>
 </body>
