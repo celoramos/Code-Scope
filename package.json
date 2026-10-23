@@ -1,0 +1,60 @@
+{
+  "name": "code-scope",
+  "displayName": "Code Scope",
+  "description": "Mostra o código rodando de forma visual durante o debug, para ensinar programação.",
+  "version": "0.0.1",
+  "publisher": "code-scope",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/celoramos/Code-Scope.git"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Debuggers",
+    "Education",
+    "Visualization"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onDebug"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codeScope",
+          "title": "Code Scope",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "codeScope": [
+        {
+          "type": "webview",
+          "id": "codeScope.panel",
+          "name": "Visualização"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "npm run check-types && node esbuild.js",
+    "check-types": "tsc --noEmit",
+    "watch": "node esbuild.js --watch",
+    "package": "npm run check-types && node esbuild.js --production",
+    "test": "mocha"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.17.0",
+    "@types/vscode": "^1.90.0",
+    "esbuild": "^0.25.0",
+    "mocha": "^11.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

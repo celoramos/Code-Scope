@@ -1,0 +1,9 @@
+.vscode/**
+src/**
+test/**
+samples/**
+node_modules/**
+esbuild.js
+tsconfig.json
+.mocharc.json
+**/*.map

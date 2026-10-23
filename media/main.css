@@ -1,0 +1,34 @@
+/*
+ * Tokens do painel. Cores e fonte vêm do tema do VS Code: o painel vive dentro
+ * do editor e herda a temperatura dele em vez de ter paleta própria.
+ */
+:root {
+  --cs-fg: var(--vscode-foreground);
+  --cs-muted: var(--vscode-descriptionForeground);
+  --cs-bg: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  --cs-focus: var(--vscode-focusBorder);
+
+  /* Base 4px: a barra lateral é estreita, densidade alta. */
+  --cs-space-1: 4px;
+  --cs-space-2: 8px;
+  --cs-space-3: 12px;
+}
+
+body {
+  margin: 0;
+  padding: var(--cs-space-2) var(--cs-space-3);
+  color: var(--cs-fg);
+  background: var(--cs-bg);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+}
+
+.status {
+  color: var(--cs-muted);
+  text-wrap: pretty;
+}
+
+:focus-visible {
+  outline: 1px solid var(--cs-focus);
+  outline-offset: 2px;
+}
