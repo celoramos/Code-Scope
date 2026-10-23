@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "BubbleSort",
+      "request": "launch",
+      "mainClass": "BubbleSort"
+    },
+    {
+      "type": "java",
+      "name": "BuscaLinear",
+      "request": "launch",
+      "mainClass": "BuscaLinear"
+    },
+    {
+      "type": "java",
+      "name": "InverterArray",
+      "request": "launch",
+      "mainClass": "InverterArray"
+    }
+  ]
+}

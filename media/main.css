@@ -28,6 +28,13 @@ body {
   text-wrap: pretty;
 }
 
+.raw {
+  font-family: var(--vscode-editor-font-family);
+  font-size: var(--vscode-editor-font-size);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 :focus-visible {
   outline: 1px solid var(--cs-focus);
   outline-offset: 2px;
