@@ -7,3 +7,4 @@ esbuild.js
 tsconfig.json
 .mocharc.json
 **/*.map
+docs/**
