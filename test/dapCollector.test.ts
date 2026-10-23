@@ -1,4 +1,5 @@
 import * as assert from 'node:assert/strict';
+import { javaAdapter } from '../src/debug/adapters/java';
 import { collectSnapshot, type Session } from '../src/debug/dapCollector';
 
 /** Sessão falsa com as respostas que o Java Debugger real deu num BubbleSort parado. */
@@ -33,7 +34,7 @@ function fakeJavaSession(opts: { paging?: boolean } = {}): Session & { requests:
 
 describe('collectSnapshot', () => {
   it('converte as variáveis do Java num Snapshot', async () => {
-    const got = await collectSnapshot(fakeJavaSession(), 1);
+    const got = await collectSnapshot(fakeJavaSession(), 1, javaAdapter);
     assert.deepEqual(got?.snapshot, {
       line: 8,
       file: '/x/BubbleSort.java',
@@ -76,7 +77,7 @@ describe('collectSnapshot', () => {
         return { variables: vars[args.variablesReference] ?? [] };
       },
     };
-    const got = (await collectSnapshot(session, 1))!.snapshot;
+    const got = (await collectSnapshot(session, 1, javaAdapter))!.snapshot;
     assert.deepEqual(got.arrays, [
       {
         name: 'grade',
@@ -97,12 +98,12 @@ describe('collectSnapshot', () => {
   });
 
   it('respeita o limite de elementos', async () => {
-    const got = await collectSnapshot(fakeJavaSession(), 1, { maxElements: 3, maxArrays: 20 });
+    const got = await collectSnapshot(fakeJavaSession(), 1, javaAdapter, { maxElements: 3, maxArrays: 20 });
     assert.deepEqual(got?.snapshot.arrays[0], { name: 'numeros', values: ['5', '1', '4'], length: 5 });
   });
 
   it('funciona quando o adaptador recusa paginação', async () => {
-    const got = await collectSnapshot(fakeJavaSession({ paging: false }), 1);
+    const got = await collectSnapshot(fakeJavaSession({ paging: false }), 1, javaAdapter);
     assert.deepEqual(got?.snapshot.arrays[0].values, ['5', '1', '4', '2', '8']);
   });
 });

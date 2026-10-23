@@ -1,7 +1,8 @@
 import * as assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { applyCollectionRoles, collectionRole } from '../src/debug/javaSource';
+import { applyCollectionRoles, javaAdapter } from '../src/debug/adapters';
+import { collectionRole } from '../src/debug/adapters/java';
 
 const sample = (name: string) => fs.readFileSync(path.join(__dirname, '..', 'samples', 'java', `${name}.java`), 'utf8');
 
@@ -36,7 +37,7 @@ describe('applyCollectionRoles', () => {
       arrays: [{ name: 'abertos', values: ["'['", "'{'"], length: 2, kind: 'list' as const }],
       pointers: [],
     };
-    applyCollectionRoles(snap, sample('Parenteses'));
+    applyCollectionRoles(snap, sample('Parenteses'), javaAdapter);
     assert.deepEqual(snap.arrays[0], { name: 'abertos', values: ["'{'", "'['"], length: 2, kind: 'stack' });
   });
 });

@@ -18,7 +18,7 @@ body:
     attributes:
       label: Código que você estava debugando
       description: Cole o trecho (ou o arquivo inteiro, se for pequeno) e diga em qual linha estava o breakpoint.
-      render: java
+      render: text
   - type: textarea
     id: log
     attributes:
@@ -28,5 +28,5 @@ body:
   - type: input
     id: versoes
     attributes:
-      label: Versões
-      description: Versão do VS Code, do Code Scope e do Java (por exemplo "VS Code 1.143, Code Scope 0.2.0, JDK 21").
+      label: Versões e linguagem
+      description: Versão do VS Code, do Code Scope, a linguagem e o debugger (por exemplo "VS Code 1.143, Code Scope 0.4.0, Python 3.12 com debugpy").

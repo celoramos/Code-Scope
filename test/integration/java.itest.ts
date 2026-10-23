@@ -1,99 +1,26 @@
 import * as assert from 'node:assert/strict';
-import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import type { CodeScopeApi } from '../../src/extension';
 import { diff } from '../../src/model/diff';
 import { makeFrame } from '../../src/model/frame';
 import type { Snapshot } from '../../src/model/snapshot';
+import { allChanges, debugFile, samplesRoot, visibleAtFirstStop } from './helpers';
 
-const samples = path.resolve(__dirname, '..', 'samples', 'java');
-const dumpDir = path.resolve(__dirname);
-
-/** Se o painel estava visível na primeira parada do último debugSample. */
-let visibleAtFirstStop = false;
-
-async function api(): Promise<CodeScopeApi> {
-  const ext = vscode.extensions.getExtension<CodeScopeApi>('code-scope.code-scope');
-  assert.ok(ext, 'extensão Code Scope não encontrada');
-  return ext.activate();
-}
-
-async function waitFor<T>(what: string, check: () => T | undefined, timeoutMs = 120_000): Promise<T> {
-  const start = Date.now();
-  for (;;) {
-    const v = check();
-    if (v) return v;
-    if (Date.now() - start > timeoutMs) throw new Error(`tempo esgotado esperando ${what}`);
-    await new Promise((r) => setTimeout(r, 200));
-  }
-}
-
-/**
- * Debuga um sample: breakpoint na linha indicada, depois F10 várias vezes.
- * Grava em out-test/<nome>.json o que foi coletado, para inspeção.
- */
-async function debugSample(name: string, breakpointLine: number, steps: number): Promise<Snapshot[]> {
-  const cs = await api();
-  const uri = vscode.Uri.file(path.join(samples, `${name}.java`));
-  await vscode.window.showTextDocument(uri);
-
-  const java = vscode.extensions.getExtension('redhat.java');
-  const javaApi = (await java?.activate()) as { serverReady?: () => Promise<boolean> } | undefined;
-  await javaApi?.serverReady?.();
-
-  vscode.debug.removeBreakpoints(vscode.debug.breakpoints);
-  vscode.debug.addBreakpoints([
-    new vscode.SourceBreakpoint(new vscode.Location(uri, new vscode.Position(breakpointLine - 1, 0))),
-  ]);
-
-  const folder = vscode.workspace.workspaceFolders?.[0];
-  const ended = new Promise<void>((resolve) => {
-    const d = vscode.debug.onDidTerminateDebugSession(() => {
-      d.dispose();
-      resolve();
-    });
+/** Debuga samples/java/<nome>.java com a configuração de mesmo nome do launch.json. */
+function debugSample(name: string, breakpointLine: number, steps: number): Promise<Snapshot[]> {
+  return debugFile({
+    file: path.join(samplesRoot, 'java', `${name}.java`),
+    breakpointLine,
+    steps,
+    config: name,
+    dump: name,
+    async before() {
+      // O debugger do Java só acha a classe depois que o language server terminou de carregar.
+      const java = vscode.extensions.getExtension('redhat.java');
+      const javaApi = (await java?.activate()) as { serverReady?: () => Promise<boolean> } | undefined;
+      await javaApi?.serverReady?.();
+    },
   });
-  assert.ok(await vscode.debug.startDebugging(folder, name), `não iniciou o debug de ${name}`);
-
-  // startDebugging limpa o histórico; espera a primeira parada.
-  await waitFor('a primeira parada', () => cs.snapshots().length >= 1 || undefined, 240_000);
-  const raw = cs.lastRaw();
-  // O painel abre na primeira parada; dá um instante para o VS Code trocar a barra lateral.
-  await new Promise((r) => setTimeout(r, 1500));
-  visibleAtFirstStop = cs.panelVisible();
-
-  for (let k = 0; k < steps && vscode.debug.activeDebugSession; k++) {
-    const n = cs.snapshots().length;
-    await vscode.commands.executeCommand('workbench.action.debug.stepOver');
-    await waitFor(`o passo ${k + 1}`, () => cs.snapshots().length > n || !vscode.debug.activeDebugSession || undefined, 30_000);
-  }
-
-  const snaps = cs.snapshots();
-  const probe = await probeLocals();
-  fs.writeFileSync(path.join(dumpDir, `${name}.json`), JSON.stringify({ raw, probe, snapshots: snaps }, null, 2));
-  await vscode.debug.stopDebugging();
-  await ended;
-  return snaps;
-}
-
-/** Abre um nível de cada variável local na parada atual, para documentar formatos novos. */
-async function probeLocals(): Promise<unknown> {
-  const s = vscode.debug.activeDebugSession;
-  const thread = vscode.debug.activeStackItem;
-  if (!s || !thread || !('threadId' in thread)) return undefined;
-  const { stackFrames } = await s.customRequest('stackTrace', { threadId: thread.threadId, levels: 1 });
-  const { scopes } = await s.customRequest('scopes', { frameId: stackFrames[0].id });
-  const { variables } = await s.customRequest('variables', { variablesReference: scopes[0].variablesReference });
-  const out: Record<string, unknown> = {};
-  for (const v of variables as { name: string; variablesReference: number }[]) {
-    if (v.variablesReference <= 0) continue;
-    const children = await s.customRequest('variables', { variablesReference: v.variablesReference });
-    const first = children.variables[0];
-    const nested = first?.variablesReference > 0 ? (await s.customRequest("variables", { variablesReference: first.variablesReference })).variables.slice(0, 4) : undefined;
-    out[v.name] = { variable: v, children: children.variables.slice(0, 4), nested };
-  }
-  return out;
 }
 
 describe('Java Debugger real', () => {
@@ -149,9 +76,6 @@ describe('Java Debugger real', () => {
     assert.deepEqual(s.arrays.find((a) => a.name === 'letras')?.values, ["'r'", "'a'", "'d'", "'a'", "'r'"]);
     assert.deepEqual(s.scalars?.find((v) => v.name === 'ehPalindromo'), { name: 'ehPalindromo', value: 'true' });
   });
-
-  /** Mudanças de todos os passos de uma sessão, com as frases que o aluno leria. */
-  const allChanges = (snaps: Snapshot[]) => snaps.flatMap((s, k) => diff(snaps[k - 1], s, snaps[k - 2]));
 
   it('Pilha: Stack empilha e desempilha pelo topo', async () => {
     const snaps = await debugSample('Pilha', 6, 7);

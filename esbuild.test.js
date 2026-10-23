@@ -3,7 +3,7 @@ const esbuild = require('esbuild');
 // Testes de integração rodam dentro do extension host, então viram CommonJS como a extensão.
 esbuild
   .build({
-    entryPoints: ['test/integration/suite.ts', 'test/integration/java.itest.ts'],
+    entryPoints: ['test/integration/suite.ts', 'test/integration/java.itest.ts', 'test/integration/javascript.itest.ts'],
     bundle: true,
     format: 'cjs',
     platform: 'node',

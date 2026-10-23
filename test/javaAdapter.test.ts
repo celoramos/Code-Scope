@@ -1,14 +1,15 @@
 import * as assert from 'node:assert/strict';
+import { isRangeGroup } from '../src/debug/adapters/adapter';
 import {
   arrayLength,
   cleanValue,
   elementIndex,
   integralValue,
   isArrayVariable,
-  isRangeGroup,
+
   pickLocalScope,
   unboxedValue,
-} from '../src/debug/javaAdapter';
+} from '../src/debug/adapters/java';
 
 describe('javaAdapter', () => {
   it('escolhe o escopo Local', () => {

@@ -37,6 +37,12 @@ describe('explainFlow', () => {
     assert.equal(explainFlow(undefined, temp), undefined);
   });
 
+  it('Python: if, elif e for com dois-pontos', () => {
+    assert.match(explainFlow({ line: 3, code: 'if numeros[j] > numeros[j + 1]:' }, { line: 4 })!, /linha 3 foi verdadeira/);
+    assert.match(explainFlow({ line: 5, code: 'elif x == 0:' }, { line: 8 })!, /linha 5 foi falsa/);
+    assert.match(explainFlow({ line: 2, code: 'for j in range(n - 1 - i):' }, { line: 3 })!, /laço na linha 2 é verdadeira/);
+  });
+
   it('else if conta como condição', () => {
     assert.match(explainFlow({ line: 4, code: '} else if (x > 2) {' }, { line: 5 })!, /verdadeira/);
   });

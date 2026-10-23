@@ -14,4 +14,4 @@ body:
     attributes:
       label: Um exemplo de código (opcional)
       description: Um programa curto onde a ideia faria diferença.
-      render: java
+      render: text

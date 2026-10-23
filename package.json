@@ -1,8 +1,8 @@
 {
   "name": "code-scope",
   "displayName": "Code Scope",
-  "description": "Mostra o código rodando de forma visual durante o debug, para ensinar programação.",
-  "version": "0.3.0",
+  "description": "Mostra o código rodando de forma visual durante o debug, para ensinar programação. Java, JavaScript, TypeScript, Python e qualquer linguagem com debugger no VS Code.",
+  "version": "0.4.0",
   "publisher": "code-scope",
   "license": "MIT",
   "repository": {
@@ -22,15 +22,20 @@
     "Visualization"
   ],
   "keywords": [
-    "java",
     "debug",
     "visualização",
     "ensino",
     "educação",
     "array",
+    "pilha",
+    "fila",
     "algoritmos",
     "iniciantes",
-    "estrutura de dados"
+    "estrutura de dados",
+    "java",
+    "javascript",
+    "typescript",
+    "python"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [

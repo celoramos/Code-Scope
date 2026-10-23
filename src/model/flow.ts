@@ -1,8 +1,9 @@
 /**
  * Explica o caminho que o programa tomou entre duas paradas, olhando só para
- * o texto das linhas. Vale para linguagens com sintaxe de C (Java, JavaScript):
- * "if", "for" e "while" no começo da linha. Outra família de sintaxe precisa de
- * outras regras.
+ * o texto das linhas: "if", "for" e "while" no começo da linha. Vale para a
+ * família de C (Java, JavaScript, C#, C, Go), para Python ("elif") e para
+ * Rust e Kotlin, que escrevem os laços do mesmo jeito. Linguagens com outra
+ * forma de laço ("loop", "repeat") só não ganham a frase de fluxo.
  */
 
 export interface LineRef {
@@ -10,7 +11,7 @@ export interface LineRef {
   code?: string;
 }
 
-const CONDITION = /^(?:\}\s*)?(?:else\s+)?if\b/;
+const CONDITION = /^(?:\}\s*)?(?:else\s+if|elif|if)\b/;
 const LOOP = /^(?:for|while)\b/;
 
 export function explainFlow(executed: LineRef | undefined, next: LineRef): string | undefined {

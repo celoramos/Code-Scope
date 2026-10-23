@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { readSettings } from './config';
 import { collectSnapshot } from './debug/dapCollector';
-import { applyCollectionRoles } from './debug/javaSource';
+import { applyCollectionRoles, pickAdapter } from './debug/adapters';
 import { registerStopTracker } from './debug/trackerFactory';
 import { makeFrame } from './model/frame';
 import { History } from './model/history';
@@ -72,13 +72,14 @@ export class ScopeController implements vscode.Disposable {
     try {
       const thread = threadId ?? (await firstThread(session));
       if (thread === undefined) return;
-      const collected = await collectSnapshot(session, thread, readSettings().limits);
+      const collected = await collectSnapshot(session, thread, (file) => pickAdapter(session.type, file), readSettings().limits);
       if (!collected) return;
       const snap = collected.snapshot;
       const source = await readSource(snap.file);
       snap.code = source?.lines[snap.line - 1]?.trim();
-      if (source && snap.file.toLowerCase().endsWith('.java')) applyCollectionRoles(snap, source.text);
+      if (source) applyCollectionRoles(snap, source.text, collected.adapter);
       if (gen !== this.generation) return;
+      this.log.debug(`adaptador: ${collected.adapter.id} (sessão ${session.type})`);
       this.log.debug('scopes', JSON.stringify(collected.raw.scopes));
       this.log.debug('locals', JSON.stringify(collected.raw.locals));
       this.log.info('snapshot', JSON.stringify(collected.snapshot));

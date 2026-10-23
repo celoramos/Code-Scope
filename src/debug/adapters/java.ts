@@ -1,9 +1,16 @@
-import type { DapScope, DapVariable } from './dap';
+import type { DapScope, DapVariable } from '../dap';
+import {
+  asInteger,
+  methodsCalledOn,
+  numericIndex,
+  type CollectionRole,
+  type LanguageAdapter,
+  type VariableShape,
+} from './adapter';
 
 /*
- * Regras de leitura do que o Java Debugger (vscjava.vscode-java-debug) devolve.
- * Formatos observados no adaptador real (teste de integração, Java Pack com
- * VS Code 1.143):
+ * Java Debugger (vscjava.vscode-java-debug). Formatos observados no adaptador
+ * real (teste de integração, Java Pack com VS Code 1.143):
  *   escopo:    um único escopo chamado "Local"
  *   array:     value "int[5]@10", type "int[]", indexedVariables 5
  *   elemento:  name "0", value "5", evaluateName "numeros[0]"
@@ -12,16 +19,14 @@ import type { DapScope, DapVariable } from './dap';
  *   lista:     "ArrayList@11 size=4", type "ArrayList", indexedVariables 4,
  *              filhos "0", "1"... com value "\"arroz\"" e type "String"
  *   char:      value "r", sem aspas, type "char"
- * Também aceitamos "[0]" e "(id=10)", formatos de outros adaptadores e de
- * versões antigas, porque o value é texto livre no protocolo. O canal de log
- * "Code Scope" mostra o que realmente chegou.
+ *   embrulho:  dentro de coleções, "Character@41" (lazy); aberto, vira 'Character@46 "["'
+ * Também aceitamos "[0]" e "(id=10)", formatos de versões antigas.
  */
 
 const ARRAY_VALUE = /^[\w.$]+\[(\d+)\](?:\[\])*/;
-const INDEX_NAME = /^\[?(\d+)\]?$/;
-const RANGE_NAME = /^\[?(\d+)\.\.(\d+)\]?$/;
-const INTEGER = /^-?\d+$/;
 const INTEGRAL_TYPES = new Set(['int', 'short', 'long', 'byte', 'Integer', 'Short', 'Long', 'Byte']);
+const SCALAR_TYPES = new Set(['boolean', 'Boolean', 'char', 'Character', 'double', 'Double', 'float', 'Float', 'String']);
+const BOXED = /^(Character|Integer|Long|Short|Byte|Double|Float|Boolean)@\d+$/;
 
 /** Escolhe o escopo de variáveis locais; cai no primeiro barato se o nome for outro. */
 export function pickLocalScope(scopes: DapScope[]): DapScope | undefined {
@@ -59,7 +64,7 @@ export function formatElement(v: DapVariable): string {
  * adaptador mostra só "Character@41"; o valor de verdade está no campo "value".
  */
 export function isBoxed(v: DapVariable): boolean {
-  return v.variablesReference > 0 && /^(Character|Integer|Long|Short|Byte|Double|Float|Boolean)@\d+$/.test(v.value);
+  return v.variablesReference > 0 && BOXED.test(v.value);
 }
 
 /**
@@ -70,8 +75,6 @@ export function unboxedValue(value: string, boxType: string | undefined): string
   const raw = /^\w+@\d+\s+"(.*)"$/.exec(value)?.[1] ?? cleanValue(value);
   return boxType === 'Character' ? `'${raw.replace(/^'(.*)'$/, '$1')}'` : raw;
 }
-
-const SCALAR_TYPES = new Set(['boolean', 'Boolean', 'char', 'Character', 'double', 'Double', 'float', 'Float', 'String']);
 
 /**
  * Variável simples que não é índice: boolean, char, double, String.
@@ -91,25 +94,69 @@ export function arrayLength(v: DapVariable): number | undefined {
 }
 
 /** "3" ou "[3]" vira 3; qualquer outro nome vira undefined. */
-export function elementIndex(name: string): number | undefined {
-  const m = INDEX_NAME.exec(name);
-  return m ? Number(m[1]) : undefined;
-}
-
-/** Grupo de paginação "[0..99]" ou "0..99" que um adaptador pode criar para arrays grandes. */
-export function isRangeGroup(name: string): boolean {
-  return RANGE_NAME.test(name);
-}
+export const elementIndex = numericIndex;
 
 /** Inteiro simples que pode servir de índice (i, j, min...). */
 export function integralValue(v: DapVariable): number | undefined {
   if (v.variablesReference > 0) return undefined;
   if (v.type !== undefined && !INTEGRAL_TYPES.has(v.type)) return undefined;
-  const raw = cleanValue(v.value);
-  return INTEGER.test(raw) ? Number(raw) : undefined;
+  return asInteger(cleanValue(v.value));
 }
 
 /** Tira o "@10" (ou o antigo "(id=10)") que o Java põe em objetos; o resto fica como veio. */
 export function cleanValue(value: string): string {
   return value.replace(/\s*\(id=\d+\)$/, '').replace(/@\d+$/, '');
 }
+
+/*
+ * Pilha ou fila, pelo código-fonte. O debugger diz a classe (Stack, ArrayDeque,
+ * LinkedList), mas não como o programa usa: o mesmo ArrayDeque pode ser pilha
+ * ou fila.
+ *
+ * Detalhe que muda o desenho: Stack (filha de Vector) empilha no fim, então o
+ * topo é o último elemento; ArrayDeque e LinkedList empilham no começo
+ * (push = addFirst), então o topo é o elemento 0.
+ */
+export function collectionRole(source: string, name: string): CollectionRole | undefined {
+  const n = name.replace(/\$/g, '\\$');
+  const declared = new RegExp(`\\b(\\w+)\\s*(?:<[^;=()]*>)?\\s+${n}\\s*[=;]`).exec(source)?.[1];
+  const created = new RegExp(`\\b${n}\\s*=\\s*new\\s+(\\w+)`).exec(source)?.[1];
+  const ops = methodsCalledOn(source, name).map((c) => c.method);
+
+  if (declared === 'Stack' || created === 'Stack') return { role: 'stack', topFirst: false };
+  if (declared === 'Queue' || ops.some((op) => /^(offer|poll|element)$/.test(op))) return { role: 'queue', topFirst: false };
+  if (ops.some((op) => /^(push|pop)$/.test(op))) return { role: 'stack', topFirst: true };
+  return undefined;
+}
+
+export const javaAdapter: LanguageAdapter = {
+  id: 'java',
+  label: 'Java',
+  debugTypes: ['java'],
+  extensions: ['.java'],
+
+  localScopes(scopes) {
+    const s = pickLocalScope(scopes);
+    return s ? [s] : [];
+  },
+
+  shape(v): VariableShape {
+    if (isEmptyList(v)) return { kind: 'empty-list' };
+    if (isArrayVariable(v)) {
+      return { kind: 'sequence', length: arrayLength(v) ?? 0, collection: isListVariable(v) ? 'list' : 'array' };
+    }
+    const n = integralValue(v);
+    if (n !== undefined) return { kind: 'integer', value: n };
+    const s = scalarValue(v);
+    return s !== undefined ? { kind: 'scalar', value: s } : { kind: 'skip' };
+  },
+
+  elementIndex,
+  formatElement,
+
+  unbox(v) {
+    return isBoxed(v) ? (inner) => unboxedValue(inner.value, v.type) : undefined;
+  },
+
+  collectionRole,
+};
