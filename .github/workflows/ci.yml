@@ -25,7 +25,7 @@ jobs:
           path: code-scope.vsix
 
   integration:
-    name: Integração com o Java Debugger
+    name: Integração com os debuggers de Java, JavaScript e Python
     # Windows é onde o teste foi validado e não precisa de servidor X para abrir o VS Code.
     runs-on: windows-latest
     timeout-minutes: 20
@@ -39,5 +39,11 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+      - uses: actions/setup-python@v5
+        id: python
+        with:
+          python-version: '3.12'
       - run: npm ci
       - run: npm run test:integration
+        env:
+          CODE_SCOPE_PYTHON: ${{ steps.python.outputs.python-path }}

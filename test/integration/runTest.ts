@@ -19,7 +19,7 @@ async function main() {
 
   cp.spawnSync(
     cli,
-    [...cliArgs, '--extensions-dir', extensionsDir, '--install-extension', 'vscjava.vscode-java-pack'],
+    [...cliArgs, '--extensions-dir', extensionsDir, '--install-extension', 'vscjava.vscode-java-pack', '--install-extension', 'ms-python.debugpy'],
     { encoding: 'utf-8', stdio: 'inherit', shell: process.platform === 'win32' },
   );
 

@@ -29,10 +29,10 @@ Rode antes de abrir o pull request:
 ```bash
 npm run compile            # checa os tipos (extensão e painel) e gera dist/
 npm test                   # testes unitários, rápidos
-npm run test:integration   # debuga os exemplos de Java e JavaScript com os debuggers reais
+npm run test:integration   # debuga os exemplos de Java, JavaScript e Python com os debuggers reais
 ```
 
-O teste de integração baixa um VS Code isolado em `.vscode-test/` na primeira vez e leva alguns minutos. Ele não mexe no seu VS Code. O CI roda os três a cada pull request.
+O teste de integração baixa um VS Code isolado em `.vscode-test/` na primeira vez e leva alguns minutos. Os testes de Python precisam de um interpretador; o README (seção Testes) explica como usar um Python portátil, sem instalar nada. Ele não mexe no seu VS Code. O CI roda os três a cada pull request.
 
 Se mudou algo visual, teste no VS Code com um tema claro e um escuro, e com animações desligadas (`codeScope.animationSpeed: desligada`).
 

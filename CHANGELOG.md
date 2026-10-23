@@ -6,10 +6,11 @@
 
 - Funciona com qualquer linguagem que tenha debugger no VS Code. Cada linguagem tem um adaptador que traduz o formato do seu debugger; as que não têm usam o modo genérico.
 - JavaScript e TypeScript: arrays, matrizes, pilha (`push`/`pop`) e fila (`push`/`shift`), validados com o debugger real do Node que vem no VS Code. Variáveis de `let` e `const` dentro de laços aparecem, e as que o Node põe em todo módulo (`__dirname`, `require`...) ficam de fora.
-- Python: `list`, `tuple`, `deque`, matrizes, pilha (`append`/`pop()`) e fila (`pop(0)`/`popleft()`). Implementado pelo formato documentado do debugpy, ainda sem validação com o debugger real.
+- Python: `list`, `tuple`, `deque`, matrizes, pilha (`append`/`pop()`) e fila (`pop(0)`/`popleft()`), validados com o debugpy real. A troca `a, b = b, a` é reconhecida num passo só.
 - Modo genérico para C#, C/C++, Go, Rust e outras: coleções indexadas, inteiros e valores simples.
 - A explicação de fluxo entende `elif` e a sintaxe do Python.
 - Exemplos em JavaScript e Python, e um workspace que abre os exemplos das três linguagens no F5.
+- Testes de integração com os debuggers reais de JavaScript e Python, também no CI.
 
 ## 0.3.0
 

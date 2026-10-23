@@ -1,14 +1,17 @@
 import { asInteger, methodsCalledOn, numericIndex, type CollectionRole, type LanguageAdapter, type VariableShape } from './adapter';
 
 /*
- * Python pelo debugpy (extensão ms-python.debugpy). Formatos do debugpy:
+ * Python pelo debugpy (extensão ms-python.debugpy). Formatos observados no
+ * debugpy real (1.8.20, teste de integração com Python 3.12):
  *   escopos:   "Locals" e "Globals"
- *   list:      value "[5, 1, 4]", type "list"; filhos "0", "1"... mais "len()"
- *              e grupos como "special variables"
- *   tuple:     type "tuple"; deque: type "deque", value "deque([...])"
- *   int:       value "5", type "int"; str: value "'abc'", type "str"; bool: "True"
- * Ainda sem validação com o debugpy real: conferido com os formatos acima nos
- * testes unitários. O canal de log "Code Scope" mostra o que realmente chegou.
+ *   list:      value "[5, 1, 4, 2, 8]", type "list", sem indexedVariables;
+ *              filhos "special variables", "function variables", "0", "1"...
+ *              e "len()"
+ *   deque:     value "deque(['coxinha'])", type "deque", com um filho "maxlen";
+ *              vazio, value "deque([])"
+ *   int:       value "5", type "int"; str: value "'pastel'", type "str"
+ * Pelo formato documentado, sem exemplo que confirme ainda: tuple (type
+ * "tuple") e bool (value "True", type "bool").
  */
 
 const LISTS = new Set(['list', 'deque']);

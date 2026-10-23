@@ -35,7 +35,7 @@ O Code Scope conversa com o debugger pelo **Debug Adapter Protocol**, o protocol
 |---|---|---|---|
 | Java | Debugger for Java (`vscjava.vscode-java-debug`) | arrays, matrizes, `ArrayList`, `Stack`, `Queue`, `ArrayDeque` | validada com o debugger real |
 | JavaScript e TypeScript | o que já vem no VS Code (Node, Chrome, Edge) | arrays, matrizes, pilha (`push`/`pop`), fila (`push`/`shift`) | validada com o debugger real no Node; no navegador usa o mesmo adaptador, ainda sem teste |
-| Python | Python Debugger (`ms-python.debugpy`) | `list`, `tuple`, `deque`, matrizes, pilha (`append`/`pop()`), fila (`pop(0)`/`popleft()`) | implementada; ainda sem validação com o debugpy real |
+| Python | Python Debugger (`ms-python.debugpy`) | `list`, `tuple`, `deque`, matrizes, pilha (`append`/`pop()`), fila (`pop(0)`/`popleft()`) | validada com o debugger real |
 | Outras (C#, C/C++, Go, Rust, PHP...) | qualquer debugger do VS Code | coleções que o debugger marca como indexadas, inteiros e valores simples | modo genérico: mostra o que o protocolo garante e deixa de fora o que não entende |
 
 As explicações de fluxo (if, laços, break) entendem a família de C (Java, JavaScript, C#, C, Go) e Python. Se o painel não reconhecer alguma coisa na sua linguagem, abra uma [issue](https://github.com/celoramos/Code-Scope/issues/new/choose) com o log (veja abaixo): é assim que um adaptador novo começa.
@@ -153,14 +153,15 @@ debugger da linguagem -- evento "stopped" --> trackerFactory
 | Comando | O que faz |
 |---|---|
 | `npm test` | Testes unitários do modelo, dos adaptadores e do coletor, com respostas gravadas dos debuggers reais |
-| `npm run test:integration` | Baixa um VS Code isolado em `.vscode-test/`, instala o Java Extension Pack só nele e debuga os exemplos de Java e JavaScript de verdade. Seu VS Code não é tocado. Leva alguns minutos na primeira vez |
+| `npm run test:integration` | Baixa um VS Code isolado em `.vscode-test/`, instala nele o Java Extension Pack e o Python Debugger e debuga os exemplos de Java, JavaScript e Python de verdade. Seu VS Code não é tocado. Leva alguns minutos na primeira vez |
 
 O CI roda os dois a cada push e publica o `.vsix` como artefato.
+
+Os testes de Python precisam de um interpretador. Aponte um com a variável `CODE_SCOPE_PYTHON` ou, sem instalar nada, descompacte o *Windows embeddable package* do python.org em `.vscode-test/python` e renomeie o arquivo `python3XX._pth` que vem nele. Sem interpretador, eles são pulados com um aviso.
 
 ## Limites conhecidos
 
 - Lê só as variáveis locais da função atual; campos de objetos e chamadas anteriores na pilha ainda não aparecem.
-- Python ainda não foi conferido com o debugpy real; os testes usam o formato documentado.
 - No modo genérico, só aparecem coleções que o debugger marca como indexadas ou cujo tamanho está escrito no valor.
 - Matrizes de três ou mais dimensões mostram o terceiro nível como texto.
 - Uma lista que ganha ou perde mais de um item num só passo aparece como redimensionada, sem animação de deslize.
@@ -170,7 +171,7 @@ O CI roda os dois a cada push e publica o `.vsix` como artefato.
 
 ## Roadmap
 
-1. Validar Python com o debugpy real e adicionar `dict`
+1. `dict` do Python
 2. `HashMap`, `HashSet` e objetos de JavaScript
 3. Recursão, com a pilha de chamadas
 4. Stack vs heap, com setas de referência entre objetos
