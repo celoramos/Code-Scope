@@ -47,7 +47,19 @@ The panel speaks English and Portuguese and follows the language of your VS Code
 |---|---|
 | ![Matrix with row i and column j highlighted](docs/matriz.png) | ![ArrayList receiving an item in the middle](docs/lista.png) |
 
-*Panel captures made with data from real Java Debugger sessions.*
+| Recursion tree | Error explained |
+|---|---|
+| ![fib(4): every call with what it returned](docs/recursao.png) | ![Index out of range: the position that does not exist](docs/erro.png) |
+
+| Binary search | Graph |
+|---|---|
+| ![The condition with its values, the compared position and the discarded half](docs/busca.png) | ![Breadth-first search: visited, current and waiting nodes](docs/grafo.png) |
+
+| List of objects | Binary tree |
+|---|---|
+| ![Each student inside its position, with melhor pointing to one](docs/objetos.png) | ![A binary search tree growing one insertion at a time](docs/arvore.png) |
+
+*Panel captures made with data from real debugger sessions (Java, JavaScript and Python), saved with the panel's own "Save image" button.*
 
 ## Languages
 
