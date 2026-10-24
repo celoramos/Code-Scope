@@ -82,9 +82,9 @@ describe('collectSnapshot', () => {
     };
     const got = await collectSnapshot(session, 1, javaAdapter);
     assert.deepEqual(got?.snapshot.calls, [
-      { name: 'main', line: 12, vars: [] },
-      { name: 'fatorial', line: 6, vars: [{ name: 'n', value: '4' }] },
-      { name: 'fatorial', line: 3, vars: [{ name: 'n', value: '3' }] },
+      { name: 'main', line: 12, owner: 'Fatorial', vars: [] },
+      { name: 'fatorial', line: 6, owner: 'Fatorial', vars: [{ name: 'n', value: '4' }] },
+      { name: 'fatorial', line: 3, owner: 'Fatorial', vars: [{ name: 'n', value: '3' }] },
     ]);
   });
 
@@ -125,7 +125,9 @@ describe('collectSnapshot', () => {
   });
 
   it('nomes de função: classe, parâmetros, construtor e código de fora', () => {
-    assert.deepEqual(functionName('Fatorial.fatorial(int)'), { name: 'fatorial', program: false });
+    assert.deepEqual(functionName('Fatorial.fatorial(int)'), { name: 'fatorial', program: false, owner: 'Fatorial' });
+    assert.deepEqual(functionName('Heranca$Cachorro.falar()'), { name: 'falar', program: false, owner: 'Cachorro' });
+    assert.deepEqual(functionName('Cachorro.falar'), { name: 'falar', program: false, owner: 'Cachorro' });
     assert.deepEqual(functionName('Referencias$Conta.<init>(String,double)'), { name: 'new Conta', program: false });
     assert.deepEqual(functionName('global.fatorial'), { name: 'fatorial', program: false });
     assert.deepEqual(functionName('<module>'), { name: '<module>', program: true });

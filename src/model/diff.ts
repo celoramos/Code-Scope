@@ -1,6 +1,6 @@
 import type { ArrayVar, Snapshot } from './snapshot';
 
-export type Structure = 'array' | 'list' | 'stack' | 'queue' | 'matrix';
+export type Structure = 'array' | 'list' | 'stack' | 'queue' | 'matrix' | 'text';
 
 /*
  * Em matrizes, "array" é o nome da linha ("grade[1]"), então as mudanças de
@@ -16,7 +16,7 @@ export type Change =
   | { kind: 'remove'; array: string; index: number; value: string; shifted: boolean; structure: Structure }
   | { kind: 'array-added'; array: string; length: number; structure: Structure; cols?: number }
   | { kind: 'array-removed'; array: string }
-  | { kind: 'array-resized'; array: string; from: number; to: number }
+  | { kind: 'array-resized'; array: string; from: number; to: number; structure?: Structure }
   | { kind: 'pointer'; name: string; from?: number; to?: number }
   | { kind: 'scalar'; name: string; from?: string; to?: string }
   /** Dicionário: chave nova (sem from) ou valor trocado. */
@@ -45,7 +45,7 @@ export function diff(prev: Snapshot | undefined, next: Snapshot, older?: Snapsho
     } else if (p.length !== arr.length) {
       // Array não cresce: tamanho diferente é outro array. Só coleções ganham e perdem itens.
       const list = arr.kind && arr.kind !== 'array' ? listChange(p, arr) : undefined;
-      changes.push(list ?? { kind: 'array-resized', array: arr.name, from: p.length, to: arr.length });
+      changes.push(list ?? { kind: 'array-resized', array: arr.name, from: p.length, to: arr.length, ...(arr.kind === 'text' ? { structure: 'text' as const } : {}) });
     } else {
       changes.push(...completeTwoStepSwaps(arrayChanges(p, arr), oldest?.get(arr.name), arr));
     }

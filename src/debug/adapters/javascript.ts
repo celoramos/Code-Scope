@@ -33,7 +33,8 @@ export const javascriptAdapter: LanguageAdapter = {
   extensions: ['.js', '.mjs', '.cjs', '.ts', '.mts', '.cts', '.jsx', '.tsx'],
 
   localScopes(scopes) {
-    return scopes.filter((s) => /^(block|local)\b/i.test(s.name));
+    // O "e" de um catch fica num escopo próprio ("Catch Block").
+    return scopes.filter((s) => /^(block|local|catch)\b/i.test(s.name));
   },
 
   shape(v): VariableShape {
@@ -66,6 +67,14 @@ export const javascriptAdapter: LanguageAdapter = {
   isNull: (v) => v.value === 'null' || v.value === 'undefined',
   // O js-debug não mostra identidade no valor; quem decide é o próprio JavaScript.
   identityExpr: (a, b) => `(${a}) === (${b})`,
+
+  // "SyntaxError: mensagem\n    at ..." (a pilha vem junto no valor).
+  caughtError(v) {
+    if (!v.type || !/Error$/.test(v.type) || v.variablesReference <= 0) return undefined;
+    const first = v.value.split('\n')[0];
+    const m = /^(\w+):\s*(.*)$/.exec(first);
+    return { type: m?.[1] ?? v.type, ...(m ? { message: m[2] } : {}) };
+  },
 
   mapEntry(child) {
     if (child.name.startsWith('[[') || child.name === '__proto__' || child.name === 'size') return undefined;

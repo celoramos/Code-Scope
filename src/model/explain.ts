@@ -29,6 +29,7 @@ function sentence(c: Change, m: Messages): string {
     case 'swap':
       return c.steps === 2 ? m.swapTwoSteps(c.array, c.a, c.b) : m.swap(c.array, c.a, c.b);
     case 'array-added':
+      if (c.structure === 'text') return m.textCreated(c.array, c.length);
       if (c.structure === 'list' || c.structure === 'stack' || c.structure === 'queue') {
         return m.collectionCreated(c.structure, c.array, c.length);
       }
@@ -37,8 +38,10 @@ function sentence(c: Change, m: Messages): string {
     case 'array-removed':
       return m.arrayRemoved(c.array);
     case 'array-resized':
+      if (c.structure === 'text') return m.textChanged(c.array, c.to);
       return m.arrayResized(c.array, c.from, c.to);
     case 'insert':
+      if (c.structure === 'text') return m.textAppend(c.array, c.value, c.shifted);
       if (c.structure === 'stack' && !c.shifted) return m.pushed(c.array, c.value);
       if (c.structure === 'queue' && !c.shifted) return m.enqueued(c.array, c.value);
       return c.shifted ? m.insertedShifting(c.array, c.value, c.index) : m.insertedAtEnd(c.array, c.value, c.index);

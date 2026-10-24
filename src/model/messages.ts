@@ -65,6 +65,8 @@ export interface Messages {
   /** JavaScript: a posição inexistente vira undefined, e o erro vem ao usar esse undefined. */
   errorUndefinedFromIndex(array: string, index: number): string;
   errorKind(kind: ErrorKindName, message: string): string;
+  handledTitle(type: string): string;
+  handledJump(line: number, name: string): string;
 
   /** vars já vem como "n = 3, i = 0". */
   callEntered(name: string, vars: string): string;
@@ -74,6 +76,8 @@ export interface Messages {
   callReturning(name: string, value: string): string;
   /** Uma chamada inteira aconteceu dentro do passo (F10 por cima dela). */
   callGaveBack(name: string, value: string): string;
+  callPolymorphic(method: string, owner: string, base: string): string;
+  callInherited(method: string, owner: string, from: string): string;
 
   /** "o objeto Conta ('Ana')": value é o primeiro campo simples. */
   objectLabel(type: string, value: string): string;
@@ -90,6 +94,12 @@ export interface Messages {
   fieldNull(path: string): string;
   arrayAlias(first: string, other: string): string;
 
+  graphVisited(node: string, visited: number, total: number): string;
+  graphCurrent(node: string): string;
+  intDivision(a: number, b: number, result: number, exact: string): string;
+  floorDivision(a: number, b: number, result: number, exact: string): string;
+  floatPrecision(name: string, value: string): string;
+  overflow(name: string, from: number, to: number): string;
   shadowStarted(name: string, inner: string, outer: string): string;
   shadowEnded(name: string, value: string): string;
   shadowField(name: string, owner: string): string;
@@ -99,6 +109,9 @@ export interface Messages {
   conditionResult(keyword: string, line: number, result: boolean): string;
   /** A parte que decidiu sozinha: as seguintes nem rodam. */
   shortCircuit(part: string, value: boolean): string;
+  textCreated(name: string, letters: number): string;
+  textAppend(name: string, letter: string, middle: boolean): string;
+  textChanged(name: string, letters: number): string;
   mapCreated(name: string, length: number): string;
   describeMap(name: string, length: number): string;
   mapPutNew(name: string, key: string, value: string): string;
@@ -186,6 +199,9 @@ const pt: Messages = {
       other: 'O programa parou por causa de um erro que ninguém tratou.',
     })[kind],
 
+  handledTitle: (type) => `Erro tratado: ${type}`,
+  handledJump: (line, name) =>
+    `A linha ${line} deu erro, e o programa pulou direto para o catch: o resto do try não rodou. O erro ficou guardado em ${name}, e o programa continua.`,
   callEntered: (name, vars) =>
     `O programa entrou na função ${name}${vars ? `, com ${vars}` : ''}. Quem chamou fica esperando ela terminar.`,
   callRecursive: (name, vars, copies) =>
@@ -194,6 +210,10 @@ const pt: Messages = {
     `${name} terminou${value !== undefined ? ` e devolveu ${value}` : ''}. ${to ? `A chamada de ${to}` : 'Quem chamou'} continua de onde parou.`,
   callReturning: (name, value) => `${name} chegou ao return: vai devolver ${value} para quem chamou.`,
   callGaveBack: (name, value) => `A chamada de ${name} rodou inteira neste passo e devolveu ${value}.`,
+  callPolymorphic: (method, owner, base) =>
+    `O objeto é um ${owner}, então rodou o ${method} de ${owner}, e não o de ${base}: cada classe pode ter a sua versão do mesmo método (polimorfismo).`,
+  callInherited: (method, owner, from) =>
+    `${owner} não escreve ${method}, então rodou o ${method} de ${from}: ${owner} herda de ${from} o que não reescreve (herança).`,
 
   objectLabel: (type, value) => `o objeto ${type} (${value})`,
   newObjectLabel: (type, value) => `um objeto ${type} novo (${value})`,
@@ -210,6 +230,15 @@ const pt: Messages = {
   fieldNull: (path) => `${path} agora não aponta para nada: a ligação acabou ali.`,
   arrayAlias: (first, other) => `${other} não é uma cópia: ${first} e ${other} são o mesmo array. Mudar um muda o outro.`,
 
+  graphVisited: (node, n, total) => `${node} foi marcado como visitado (${n} de ${total}): a busca não vai entrar nele de novo.`,
+  graphCurrent: (node) => `A busca agora está em ${node} e vai olhar as ligações dele.`,
+  intDivision: (a, b, res, exact) =>
+    `${a} / ${b} deu ${res}, e não ${exact}: dividir dois inteiros joga fora a parte decimal. Para ter ${exact}, um dos dois precisa ser número com vírgula (${a} / ${b}.0).`,
+  floorDivision: (a, b, res, exact) => `${a} // ${b} dá ${res}: o // divide e joga fora a parte decimal (${a} / ${b} daria ${exact}).`,
+  floatPrecision: (name, value) =>
+    `${name} ficou ${value}, e não um número redondo: o computador guarda números com vírgula em binário, e alguns, como 0.1, não cabem exatos. Por isso não se compara números com vírgula usando ==.`,
+  overflow: (name, from, to) =>
+    `${name} passou do maior valor que um int guarda (${from > 0 ? '2147483647' : '-2147483648'}) e deu a volta para ${to}. Isso se chama overflow; para números maiores, use long.`,
   shadowStarted: (name, inner, outer) =>
     `Agora existem duas variáveis ${name}: a deste bloco (${inner}) esconde a de fora (${outer}). Até o bloco terminar, ${name} é a de dentro.`,
   shadowEnded: (name, value) => `O bloco terminou e a ${name} de dentro deixou de existir: ${name} volta a ser a de fora (${value}).`,
@@ -218,6 +247,10 @@ const pt: Messages = {
   rangeNarrowed: (arr, from, to, dropped) =>
     `A busca descartou ${ptPositions(dropped)} de ${arr}: agora só olha de ${from} a ${to}.`,
   rangeEmpty: (arr) => `Não sobrou nenhuma posição de ${arr} para olhar: a busca terminou sem achar.`,
+  textCreated: (name, n) => `O texto ${name} foi criado com ${count(n, 'letra', 'letras')}${n === 0 ? ' (vazio)' : ''}.`,
+  textAppend: (name, letter, middle) =>
+    `${name} ganhou ${letter} ${middle ? 'no meio' : 'no fim'}. Na verdade o + criou um texto novo juntando os dois: um texto não muda depois de criado, a variável é que passa a guardar o novo.`,
+  textChanged: (name, n) => `${name} agora guarda outro texto, com ${count(n, 'letra', 'letras')}.`,
   conditionResult: (kw, line, result) => {
     const loop = kw === 'while' || kw === 'for';
     const then = loop
@@ -310,6 +343,9 @@ const en: Messages = {
       other: 'The program stopped because of an error that nobody handled.',
     })[kind],
 
+  handledTitle: (type) => `Handled error: ${type}`,
+  handledJump: (line, name) =>
+    `Line ${line} raised an error, and the program jumped straight to the catch: the rest of the try did not run. The error is stored in ${name}, and the program goes on.`,
   callEntered: (name, vars) =>
     `The program entered the function ${name}${vars ? `, with ${vars}` : ''}. The caller waits for it to finish.`,
   callRecursive: (name, vars, copies) =>
@@ -318,6 +354,10 @@ const en: Messages = {
     `${name} finished${value !== undefined ? ` and returned ${value}` : ''}. ${to ? `The call of ${to}` : 'The caller'} continues where it stopped.`,
   callReturning: (name, value) => `${name} reached the return: it will give ${value} back to the caller.`,
   callGaveBack: (name, value) => `The call of ${name} ran entirely in this step and returned ${value}.`,
+  callPolymorphic: (method, owner, base) =>
+    `The object is a ${owner}, so ${owner}'s ${method} ran, not ${base}'s: each class can have its own version of the same method (polymorphism).`,
+  callInherited: (method, owner, from) =>
+    `${owner} does not write ${method}, so ${from}'s ${method} ran: ${owner} inherits from ${from} whatever it does not rewrite (inheritance).`,
 
   objectLabel: (type, value) => `the ${type} object (${value})`,
   newObjectLabel: (type, value) => `a new ${type} object (${value})`,
@@ -334,6 +374,15 @@ const en: Messages = {
   fieldNull: (path) => `${path} now points to nothing: the chain ends there.`,
   arrayAlias: (first, other) => `${other} is not a copy: ${first} and ${other} are the same array. Changing one changes the other.`,
 
+  graphVisited: (node, n, total) => `${node} was marked as visited (${n} of ${total}): the search will not enter it again.`,
+  graphCurrent: (node) => `The search is now at ${node} and will look at its connections.`,
+  intDivision: (a, b, res, exact) =>
+    `${a} / ${b} gave ${res}, not ${exact}: dividing two integers throws away the decimal part. To get ${exact}, one of them must be a decimal number (${a} / ${b}.0).`,
+  floorDivision: (a, b, res, exact) => `${a} // ${b} is ${res}: // divides and throws away the decimal part (${a} / ${b} would be ${exact}).`,
+  floatPrecision: (name, value) =>
+    `${name} became ${value}, not a round number: the computer stores decimal numbers in binary, and some, like 0.1, do not fit exactly. That is why you do not compare decimal numbers with ==.`,
+  overflow: (name, from, to) =>
+    `${name} went past the largest value an int can hold (${from > 0 ? '2147483647' : '-2147483648'}) and wrapped around to ${to}. This is called overflow; for bigger numbers, use long.`,
   shadowStarted: (name, inner, outer) =>
     `Now there are two variables called ${name}: the one in this block (${inner}) hides the outer one (${outer}). Until the block ends, ${name} means the inner one.`,
   shadowEnded: (name, value) => `The block ended and the inner ${name} no longer exists: ${name} is the outer one again (${value}).`,
@@ -342,6 +391,10 @@ const en: Messages = {
   rangeNarrowed: (arr, from, to, dropped) =>
     `The search discarded ${enPositions(dropped)} of ${arr}: now it only looks from ${from} to ${to}.`,
   rangeEmpty: (arr) => `No position of ${arr} is left to look at: the search ended without finding it.`,
+  textCreated: (name, n) => `The text ${name} was created with ${count(n, 'letter', 'letters')}${n === 0 ? ' (empty)' : ''}.`,
+  textAppend: (name, letter, middle) =>
+    `${name} got ${letter} ${middle ? 'in the middle' : 'at the end'}. Actually, + created a new text joining the two: a text does not change after it is created, the variable just holds the new one.`,
+  textChanged: (name, n) => `${name} now holds another text, with ${count(n, 'letter', 'letters')}.`,
   conditionResult: (kw, line, result) => {
     const loop = kw === 'while' || kw === 'for';
     const then = loop

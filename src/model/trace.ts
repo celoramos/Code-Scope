@@ -38,6 +38,10 @@ export function traceValues(s: Snapshot): Map<string, string> {
   for (const v of s.scalars ?? []) out.set(v.name, v.value);
   for (const a of s.arrays) {
     if (a.rows) continue;
+    if (a.kind === 'text') {
+      out.set(a.name, `"${a.values.map((v) => v.slice(1, -1)).join('')}"`);
+      continue;
+    }
     out.set(a.name, a.length <= MAX_INLINE_ARRAY ? `[${a.values.join(', ')}]` : `[${a.length}]`);
   }
   for (const m of s.maps ?? []) {

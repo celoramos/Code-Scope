@@ -16,6 +16,21 @@ export interface HeapView {
   objects: ObjectView[];
   /** Variáveis locais que apontam para null. */
   nulls: string[];
+  /**
+   * Objetos guardados em arrays, desenhados dentro da posição: por array, a
+   * posição, os outros campos e as variáveis que apontam para aquele objeto.
+   */
+  cells: Record<string, CellObject[]>;
+}
+
+export interface CellObject {
+  index: number;
+  id: string;
+  /** Campos além do valor principal, já como "nota: 8.5". */
+  details: string[];
+  /** Classe do objeto, quando o array mistura classes (Cachorro, Gato...). */
+  type?: string;
+  names: string[];
 }
 
 export interface NodeView {
@@ -87,7 +102,20 @@ export function heapView(s: Snapshot): HeapView {
   // Um campo null com o mesmo nome em outro nó do tipo também é ligação.
   const linksOf = (type: string) => [...(selfLinks.get(type) ?? [])].filter((f) => !BACK.test(f) || (selfLinks.get(type)?.size ?? 0) === 1);
 
-  const view: HeapView = { lists: [], trees: [], objects: [], nulls: (s.refs ?? []).filter((r) => r.ref === null).map((r) => r.name) };
+  const view: HeapView = { lists: [], trees: [], objects: [], nulls: (s.refs ?? []).filter((r) => r.ref === null).map((r) => r.name), cells: {} };
+  // Objeto num array aparece dentro da posição; sem cartão separado.
+  for (const a of s.arrays) {
+    // A classe só aparece quando o array mistura classes: é aí que ela importa (polimorfismo).
+    const types = new Set((a.refs ?? []).map((id) => (id ? byId.get(id)?.type : undefined)).filter(Boolean));
+    a.refs?.forEach((id, index) => {
+      const o = id ? byId.get(id) : undefined;
+      if (!o || !id) return;
+      const main = nodeValue(o);
+      const details = o.fields.filter((f) => f.ref === undefined && f.value !== main).slice(0, 2).map((f) => `${f.name}: ${f.value}`);
+      (view.cells[a.name] ??= []).push({ index, id, details, names: namesOf(id), ...(types.size > 1 ? { type: o.type } : {}) });
+    });
+  }
+  const inCells = new Set(Object.values(view.cells).flatMap((list) => list.map((c) => c.id)));
   const used = new Set<string>();
   const nodeOf = (o: HeapObject): NodeView => ({ id: o.id, value: nodeValue(o), names: namesOf(o.id) });
 
@@ -134,7 +162,7 @@ export function heapView(s: Snapshot): HeapView {
   }
 
   for (const o of heap) {
-    if (used.has(o.id)) continue;
+    if (used.has(o.id) || inCells.has(o.id)) continue;
     view.objects.push({
       id: o.id,
       type: o.type,
@@ -283,6 +311,9 @@ function isNode(o: HeapObject, s: Snapshot): boolean {
 function describeObject(o: HeapObject | undefined, existed: boolean, m: (typeof MESSAGES)[Language], s: Snapshot): string {
   if (!o) return '?';
   const value = nodeValue(o);
+  // Objeto guardado num array: o nome da posição diz mais que o tipo ("turma[2] (Caio)").
+  const inArray = s.arrays.flatMap((a) => (a.refs ?? []).map((id, i) => (id === o.id ? `${a.name}[${i}]` : undefined))).find(Boolean);
+  if (inArray) return `${inArray} (${value})`;
   if (isNode(o, s)) return existed ? m.nodeLabel(value) : m.newNodeLabel(value);
   return existed ? m.objectLabel(o.type, value) : m.newObjectLabel(o.type, value);
 }

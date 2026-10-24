@@ -343,6 +343,94 @@ kbd {
   font-size: var(--cs-small);
 }
 
+/* ---------- Modo de adivinhar ---------- */
+
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cs-space-2);
+}
+
+/* Botão liga e desliga, com a mesma altura dos controles do VS Code. */
+.toggle-button {
+  min-height: 24px;
+  margin-left: auto;
+  padding: 0 var(--cs-space-2);
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius-sm);
+  background: none;
+  color: var(--cs-muted);
+  font: inherit;
+  font-size: var(--cs-small);
+  cursor: pointer;
+}
+
+.toggle-button:hover {
+  background: var(--cs-cell-bg);
+}
+
+.toggle-button.is-on {
+  border-color: var(--cs-active);
+  background: color-mix(in srgb, var(--cs-active) 14%, var(--cs-bg));
+  color: var(--cs-fg);
+}
+
+.predict {
+  margin: var(--cs-space-2) 0 0;
+  padding: var(--cs-space-2);
+  border: 1px dashed var(--cs-active);
+  border-radius: var(--cs-radius-sm);
+}
+
+.predict-question {
+  display: block;
+  margin-bottom: var(--cs-space-1);
+}
+
+.predict-row {
+  display: flex;
+  gap: var(--cs-space-1);
+}
+
+.predict-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 24px;
+  padding: 0 var(--cs-space-2);
+  border: 1px solid var(--vscode-input-border, var(--cs-line));
+  border-radius: var(--cs-radius-sm);
+  background: var(--vscode-input-background, var(--cs-cell-bg));
+  color: var(--vscode-input-foreground, var(--cs-fg));
+  font-family: var(--cs-mono);
+}
+
+.predict-save {
+  min-height: 24px;
+  padding: 0 var(--cs-space-3);
+  border: 0;
+  border-radius: var(--cs-radius-sm);
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.predict-save:hover {
+  background: var(--vscode-button-hoverBackground, var(--vscode-button-background));
+}
+
+.predict-status {
+  margin: var(--cs-space-1) 0 0;
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+.predict-status:empty {
+  display: none;
+}
+
 /* ---------- Condição da próxima linha ---------- */
 
 .condition {
@@ -1112,6 +1200,11 @@ kbd {
   background: color-mix(in srgb, var(--cs-error) 10%, var(--cs-bg));
 }
 
+.error-card.is-handled {
+  border-left-color: var(--cs-change);
+  background: color-mix(in srgb, var(--cs-change) 10%, var(--cs-bg));
+}
+
 .error-title {
   margin: 0 0 var(--cs-space-1);
   font-size: 1em;
@@ -1409,6 +1502,38 @@ kbd {
   font-weight: 600;
 }
 
+/* ---------- Objetos dentro de arrays ---------- */
+
+/* A posição guarda um objeto: o valor principal na caixa e os outros campos embaixo. */
+.cell-object {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 2px;
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+  line-height: 1.3;
+}
+
+.cell-type {
+  font-family: var(--vscode-font-family);
+  font-weight: 600;
+}
+
+.cell-detail {
+  color: var(--cs-muted);
+  white-space: nowrap;
+}
+
+.cell.is-object {
+  padding: 0 2px;
+}
+
+.cell.is-field-changed .cell-value {
+  border-color: var(--cs-change);
+  background: var(--cs-change-bg);
+}
+
 /* ---------- Comparação e intervalo de busca ---------- */
 
 /* As duas posições que a próxima condição compara: contorno na cor da linha ativa. */
@@ -1428,6 +1553,131 @@ kbd {
   color: var(--cs-muted);
   font-size: var(--cs-small);
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Grafo ---------- */
+
+.graph {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  margin: 0 auto;
+}
+
+.graph-edge {
+  stroke: var(--cs-muted);
+  stroke-width: 1.2;
+}
+
+.graph-arrow {
+  fill: var(--cs-muted);
+}
+
+.graph-node circle {
+  fill: var(--cs-cell-bg);
+  stroke: var(--cs-line);
+  stroke-width: 1.2;
+  transition: fill var(--cs-move) var(--cs-ease), stroke var(--cs-move) var(--cs-ease);
+}
+
+.graph-node text {
+  fill: var(--cs-fg);
+  font-family: var(--cs-mono);
+  font-size: 11px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.graph-node.is-visited circle {
+  fill: color-mix(in srgb, var(--cs-true) 30%, var(--cs-cell-bg));
+  stroke: var(--cs-true);
+}
+
+.graph-node.is-waiting circle {
+  stroke: var(--cs-change);
+  stroke-dasharray: 3 2;
+}
+
+.graph-node.is-current circle {
+  stroke: var(--cs-active);
+  stroke-width: 3;
+}
+
+.graph-order {
+  fill: var(--cs-muted);
+  font-size: 9px;
+}
+
+.graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--cs-space-3);
+  margin: var(--cs-space-1) 0 0;
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+.graph-key::before {
+  content: '';
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: var(--cs-space-1);
+  border: 1px solid var(--cs-line);
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.graph-key.is-visited::before {
+  border-color: var(--cs-true);
+  background: color-mix(in srgb, var(--cs-true) 30%, var(--cs-cell-bg));
+}
+
+.graph-key.is-current::before {
+  border: 2px solid var(--cs-active);
+}
+
+.graph-key.is-waiting::before {
+  border: 1px dashed var(--cs-change);
+}
+
+/* ---------- Árvore de recursão ---------- */
+
+.call-tree {
+  grid-template-columns: repeat(var(--cols), minmax(3.6em, 1fr));
+  grid-template-rows: repeat(var(--rows), 3.4em);
+}
+
+.call-node {
+  gap: 0;
+}
+
+.call-node-label {
+  position: relative;
+  padding: 1px var(--cs-space-1);
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius-sm);
+  background: var(--cs-cell-bg);
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+  white-space: nowrap;
+}
+
+.call-node.is-active .call-node-label {
+  border-color: var(--cs-active);
+  background: color-mix(in srgb, var(--cs-active) 14%, var(--cs-cell-bg));
+}
+
+.call-node.is-done .call-node-label {
+  color: var(--cs-muted);
+}
+
+.call-node-returned {
+  color: var(--cs-fg);
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+  font-weight: 600;
 }
 
 /* ---------- Dicionários ---------- */

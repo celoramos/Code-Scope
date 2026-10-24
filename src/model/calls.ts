@@ -1,3 +1,4 @@
+import { inheritedFrom, overriddenIn, type ClassInfo } from './classes';
 import { MESSAGES, type Language } from './messages';
 import type { CallFrame, Scalar, Snapshot } from './snapshot';
 
@@ -12,6 +13,8 @@ export type CallChange =
       recursive: boolean;
       /** Quantas chamadas da mesma função estão na pilha agora. */
       copies: number;
+      /** Classe do objeto do método, quando é método. */
+      owner?: string;
       vars: Scalar[];
     }
   | {
@@ -49,7 +52,8 @@ export function callChanges(prev: Snapshot | undefined, next: Snapshot): CallCha
   }
   for (let k = common; k < b.length; k++) {
     const copies = b.slice(0, k + 1).filter((f) => f.name === b[k].name).length;
-    changes.push({ kind: 'call', name: b[k].name, depth: k, recursive: copies > 1, copies, vars: b[k].vars });
+    const owner = b[k].owner;
+    changes.push({ kind: 'call', name: b[k].name, depth: k, recursive: copies > 1, copies, vars: b[k].vars, ...(owner ? { owner } : {}) });
   }
   return changes;
 }
@@ -63,6 +67,19 @@ function returnedValue(prev: Snapshot, next: Snapshot, name: string, wasTop: boo
   if (isLast && next.returned && !next.returned.pending && (next.returned.function ?? name) === name) return next.returned.value;
   if (wasTop && prev.returned?.pending) return prev.returned.value;
   return undefined;
+}
+
+/**
+ * O método que rodou é a versão de uma subclasse: bichos[i].falar() rodou o
+ * falar de Cachorro, e não o de Animal.
+ */
+export function polymorphismNote(c: CallChange, classes: Record<string, ClassInfo> | undefined, language: Language): string | undefined {
+  if (c.kind !== 'call' || !c.owner || !classes) return undefined;
+  const m = MESSAGES[language];
+  const base = overriddenIn(classes, c.owner, c.name);
+  if (base) return m.callPolymorphic(c.name, c.owner, base);
+  const from = inheritedFrom(classes, c.owner, c.name);
+  return from ? m.callInherited(c.name, c.owner, from) : undefined;
 }
 
 /** Frase do modo iniciante para uma chamada que começou ou terminou. */

@@ -20,6 +20,7 @@
   const varsEl = byId('vars');
   const arraysEl = byId('arrays');
   const heapEl = byId('heap');
+  const callTreeEl = byId('call-tree');
   const statsEl = byId('stats');
   const mapsEl = byId('maps');
   const callsEl = byId('calls');
@@ -44,32 +45,36 @@
   document.documentElement.style.setProperty('--cs-empty-label', JSON.stringify(t('empty')));
 
   /**
-   * @typedef {{ name: string, values: string[], length: number, kind?: 'array' | 'list' | 'stack' | 'queue', rows?: ArrayVar[], id?: string }} ArrayVar
+   * @typedef {{ name: string, values: string[], length: number, kind?: 'array' | 'list' | 'stack' | 'queue' | 'text', rows?: ArrayVar[], id?: string }} ArrayVar
    * @typedef {{ name: string, value: number }} Pointer
    * @typedef {{ name: string, value: string }} Scalar
    * @typedef {{ name: string, index: number }} Arrow
    * @typedef {{ row?: Arrow, col?: Arrow }} Axes
    * @typedef {{ kind: string, array?: string, map?: string, key?: string, from?: string | number, to?: string | number, index?: number, a?: number, b?: number, name?: string, value?: string }} Change
    * @typedef {{ line: number, code?: string }} LineRef
-   * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[], calls?: CallFrame[], maps?: MapVar[], condition?: Condition },
+   * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[], calls?: CallFrame[], maps?: MapVar[], condition?: Condition, refs?: { name: string, ref: string | null }[] },
    *             executed?: LineRef, changes: Change[], arrows: Record<string, Arrow[]>, axes: Record<string, Axes>,
    *             explanation: string[], trace: Trace, error?: ErrorView, calls?: CallChange[], heap?: HeapView, heapDelta?: HeapDelta,
-   *             focus?: Record<string, ArrayFocus>, shadows?: Record<string, string>, stats?: { comparisons: number, swaps: number },
+   *             focus?: Record<string, ArrayFocus>, prediction?: { target: string }, answers?: Record<string, string>, graphs?: GraphViewT[], callTree?: CallTreeT, shadows?: Record<string, string>, stats?: { comparisons: number, swaps: number },
    *             step: number, total: number }} Frame
-   * @typedef {{ name: string, line: number, program?: boolean, vars: Scalar[] }} CallFrame
+   * @typedef {{ name: string, line: number, program?: boolean, owner?: string, vars: Scalar[] }} CallFrame
    * @typedef {{ kind: 'call' | 'return', name: string, depth: number, value?: string }} CallChange
    * @typedef {{ id: string, value: string, names: string[] }} NodeViewT
    * @typedef {NodeViewT & { children: (TreeNodeViewT | null)[] }} TreeNodeViewT
    * @typedef {{ type: string, link: string, nodes: NodeViewT[], cycle: boolean }} ListViewT
    * @typedef {{ type: string, links: string[], root: TreeNodeViewT }} TreeViewT
    * @typedef {{ id: string, type: string, names: string[], fields: { name: string, value: string, ref?: string | null, target?: string }[], truncated?: boolean }} ObjectViewT
-   * @typedef {{ lists: ListViewT[], trees: TreeViewT[], objects: ObjectViewT[], nulls: string[] }} HeapView
+   * @typedef {{ index: number, id: string, details: string[], names: string[], type?: string }} CellObjectT
+   * @typedef {{ name: string, nodes: string[], edges: string[][], directed: boolean, visited: string[], current?: string, frontier: string[] }} GraphViewT
+   * @typedef {{ lists: ListViewT[], trees: TreeViewT[], objects: ObjectViewT[], nulls: string[], cells?: Record<string, CellObjectT[]> }} HeapView
    * @typedef {{ added: string[], fields: Record<string, string[]> }} HeapDelta
+   * @typedef {{ id: number, name: string, label: string, returned?: string, done: boolean, active: boolean, children: CallNodeT[] }} CallNodeT
+   * @typedef {{ root: CallNodeT, calls: number, repeated: Record<string, number> }} CallTreeT
    * @typedef {{ name: string, entries: { key: string, value: string }[], length: number }} MapVar
    * @typedef {{ compare?: number[], range?: { from: number, to: number, names: string[] } }} ArrayFocus
    * @typedef {{ text: string, values?: string, value?: boolean, skipped?: boolean }} ConditionPart
    * @typedef {{ keyword: string, line: number, text: string, parts: ConditionPart[], ops: string[], result?: boolean }} Condition
-   * @typedef {{ type: string, message: string, kind: string, title: string, sentences: string[], missing?: { array: string, index: number } }} ErrorView
+   * @typedef {{ type: string, message: string, kind: string, title: string, sentences: string[], handled?: boolean, missing?: { array: string, index: number } }} ErrorView
    * @typedef {{ columns: string[], showCalls?: boolean, rows: { step: number, line: number, call?: string, values: (string | null | undefined)[], changed: boolean[] }[], hidden: number }} Trace
    */
 
@@ -183,6 +188,7 @@
     fileEl.textContent = basename(s.file);
     renderCode(frame.executed, { line: s.line, code: s.code });
     renderCondition(s.condition);
+    renderPredict(frame, checkGuess(frame));
 
     explanationEl.replaceChildren(
       ...frame.explanation.map((text) => {
@@ -193,6 +199,7 @@
     );
     renderError(frame.error);
     renderCalls(s.calls ?? [], frame.calls ?? []);
+    renderCallTree(frame.callTree);
     renderVars(s.pointers, s.scalars ?? [], frame.changes, arrowNames, frame.shadows);
     renderTrace(frame.trace, frame.step);
 
@@ -226,8 +233,9 @@
         animateBlock(block, arr.name, frame.changes, isNew);
         if (kind === 'array') updateMissing(block, arr.name, frame.error?.missing);
         if (kind === 'array') updateArrows(block, frame.arrows[arr.name] ?? []);
-        if (kind === 'array') updateFocus(block, frame.focus?.[arr.name]);
         else updateMarkers(block, kind);
+        if (kind === 'array') updateFocus(block, frame.focus?.[arr.name]);
+        updateCellObjects(block, frame.heap?.cells?.[arr.name], frame.heapDelta);
       }
     }
     for (const [name, block] of blocks) {
@@ -237,8 +245,44 @@
       }
     }
     renderStats(frame.stats);
-    renderMaps(s.maps ?? [], frame.changes);
+    renderMaps(s.maps ?? [], frame.changes, frame.graphs ?? []);
     renderHeap(frame.heap, frame.heapDelta);
+  }
+
+  /**
+   * Posições que guardam objetos: embaixo do valor principal vão os outros
+   * campos e as variáveis que apontam para aquele objeto (melhor = turma[0]).
+   * @param {HTMLElement} block
+   * @param {CellObjectT[] | undefined} objects
+   * @param {HeapDelta | undefined} delta
+   */
+  function updateCellObjects(block, objects, delta) {
+    const cells = cellsOf(block);
+    for (const cell of cells) {
+      cell.classList.remove('is-object', 'is-field-changed');
+      cell.querySelector('.cell-object')?.remove();
+    }
+    for (const o of objects ?? []) {
+      const cell = cells[o.index];
+      if (!cell) continue;
+      cell.classList.add('is-object');
+      if (delta?.fields[o.id]?.length) cell.classList.add('is-field-changed');
+      const extra = el('div', 'cell-object');
+      if (o.type) {
+        const type = el('span', 'cell-type');
+        type.textContent = o.type;
+        extra.append(type);
+      }
+      for (const d of o.details) {
+        const line = el('span', 'cell-detail');
+        line.textContent = d;
+        extra.append(line);
+      }
+      if (o.names.length > 0) extra.append(nameRow(o.names));
+      cell.append(extra);
+      const base = cell.getAttribute('aria-label') ?? '';
+      cell.setAttribute('aria-label', [base, ...o.details, ...o.names].filter(Boolean).join(', '));
+    }
   }
 
   /**
@@ -268,10 +312,117 @@
    */
   function renderStats(stats) {
     const parts = [];
-    if (stats?.comparisons) parts.push(t('statsComparisons', stats.comparisons));
-    if (stats?.swaps) parts.push(t('statsSwaps', stats.swaps));
+    if (stats?.comparisons) parts.push(stats.comparisons === 1 ? t('statsComparison1') : t('statsComparisons', stats.comparisons));
+    if (stats?.swaps) parts.push(stats.swaps === 1 ? t('statsSwap1') : t('statsSwaps', stats.swaps));
     statsEl.textContent = parts.join(' · ');
     statsEl.hidden = parts.length === 0;
+  }
+
+  /**
+   * Grafo: os nós num círculo e as ligações entre eles. Visitado fica
+   * preenchido, o atual ganha contorno forte, quem espera na fila ou na pilha
+   * fica tracejado com a ordem de saída.
+   * @param {GraphViewT} g
+   */
+  function renderGraph(g) {
+    const block = heapCard('graph', g.name, t('graphMeta', g.nodes.length, g.edges.length));
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const size = 200;
+    const radius = g.nodes.length <= 2 ? 50 : 72;
+    // Ordem no círculo seguindo as ligações (em profundidade): vizinhos ficam lado a lado
+    // e as linhas quase não se cruzam no meio.
+    /** @type {Map<string, string[]>} */
+    const adj = new Map(g.nodes.map((n) => [n, []]));
+    for (const [a, b] of g.edges) {
+      adj.get(a)?.push(b);
+      adj.get(b)?.push(a);
+    }
+    /** @type {string[]} */
+    const ring = [];
+    /** @param {string} n */
+    const visit = (n) => {
+      if (ring.includes(n)) return;
+      ring.push(n);
+      for (const m of adj.get(n) ?? []) visit(m);
+    };
+    for (const n of g.nodes) visit(n);
+    /** @type {Map<string, { x: number, y: number }>} */
+    const pos = new Map();
+    ring.forEach((n, i) => {
+      const angle = (i / g.nodes.length) * Math.PI * 2 - Math.PI / 2;
+      pos.set(n, { x: size / 2 + radius * Math.cos(angle), y: size / 2 + radius * Math.sin(angle) });
+    });
+    const svg = document.createElementNS(svgNs, 'svg');
+    svg.setAttribute('class', 'graph');
+    svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', t('graphLabel', g.name, g.nodes.join(', '), g.visited.join(', ') || '-'));
+    const r = 15;
+    for (const [a, b] of g.edges) {
+      const p = pos.get(a);
+      const q = pos.get(b);
+      if (!p || !q) continue;
+      // A linha começa e termina na borda dos círculos, para a ponta da seta aparecer.
+      const dx = q.x - p.x;
+      const dy = q.y - p.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const line = document.createElementNS(svgNs, 'line');
+      line.setAttribute('x1', String(p.x + (dx / len) * r));
+      line.setAttribute('y1', String(p.y + (dy / len) * r));
+      line.setAttribute('x2', String(q.x - (dx / len) * (r + (g.directed ? 3 : 0))));
+      line.setAttribute('y2', String(q.y - (dy / len) * (r + (g.directed ? 3 : 0))));
+      line.setAttribute('class', 'graph-edge');
+      if (g.directed) line.setAttribute('marker-end', 'url(#cs-arrow)');
+      svg.append(line);
+    }
+    if (g.directed) {
+      const defs = document.createElementNS(svgNs, 'defs');
+      defs.innerHTML = '<marker id="cs-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="graph-arrow" /></marker>';
+      svg.prepend(defs);
+    }
+    for (const n of g.nodes) {
+      const p = pos.get(n);
+      if (!p) continue;
+      const order = g.frontier.indexOf(n);
+      const cls = ['graph-node'];
+      if (g.visited.includes(n)) cls.push('is-visited');
+      if (g.current === n) cls.push('is-current');
+      if (order >= 0) cls.push('is-waiting');
+      const group = document.createElementNS(svgNs, 'g');
+      group.setAttribute('class', cls.join(' '));
+      const circle = document.createElementNS(svgNs, 'circle');
+      circle.setAttribute('cx', String(p.x));
+      circle.setAttribute('cy', String(p.y));
+      circle.setAttribute('r', String(r));
+      const label = document.createElementNS(svgNs, 'text');
+      label.setAttribute('x', String(p.x));
+      label.setAttribute('y', String(p.y));
+      label.textContent = n;
+      group.append(circle, label);
+      if (order >= 0) {
+        const badge = document.createElementNS(svgNs, 'text');
+        badge.setAttribute('x', String(p.x + r));
+        badge.setAttribute('y', String(p.y - r));
+        badge.setAttribute('class', 'graph-order');
+        badge.textContent = String(order + 1);
+        group.append(badge);
+      }
+      svg.append(group);
+    }
+    const track = el('div', 'array-track');
+    track.append(svg);
+    const legend = el('p', 'graph-legend');
+    for (const [cls, text] of [
+      ['is-visited', t('legendVisited')],
+      ['is-current', t('legendCurrent')],
+      ['is-waiting', t('legendWaiting')],
+    ]) {
+      const item = el('span', `graph-key ${cls}`);
+      item.textContent = text;
+      legend.append(item);
+    }
+    block.append(track, legend);
+    return block;
   }
 
   /**
@@ -279,10 +430,13 @@
    * valor trocado pisca.
    * @param {MapVar[]} maps
    * @param {Change[]} changes
+   * @param {GraphViewT[]} [graphs] dicionários que são grafos: desenhados como grafo
    */
-  function renderMaps(maps, changes) {
+  function renderMaps(maps, changes, graphs = []) {
+    const graphNames = new Set(graphs.map((g) => g.name));
     mapsEl.replaceChildren(
-      ...maps.map((map) => {
+      ...graphs.map(renderGraph),
+      ...maps.filter((map) => !graphNames.has(map.name)).map((map) => {
         const n = map.length;
         const block = heapCard('map', map.name, n === 0 ? t('emptyMap') : n === 1 ? t('oneKey') : t('keys', n));
         const puts = changes.filter((c) => c.kind === 'map-put' && c.map === map.name);
@@ -433,14 +587,19 @@
     const known = new Set([
       ...(s?.arrays.map((a) => a.name) ?? []),
       ...(s?.pointers.map((p) => p.name) ?? []),
+      ...(s?.refs?.map((r) => r.name) ?? []),
+      ...(s?.maps?.map((m) => m.name) ?? []),
+      ...(s?.scalars?.map((v) => v.name) ?? []),
       // Quem acabou de sair de escopo não está mais no snapshot, mas aparece na frase.
       ...(current?.changes.map((c) => c.name ?? c.array ?? '') ?? []),
     ]);
     /** @type {(string | HTMLElement)[]} */
     const out = [];
     let last = 0;
-    for (const m of text.matchAll(/[A-Za-z_$][\w$]*((?:\[\d+\])+)?/g)) {
-      if (!m[1] && !known.has(m[0])) continue;
+    // "turma[1].nota" e "inicio.proximo" viram um trecho de código só.
+    for (const m of text.matchAll(/[A-Za-z_$][\w$]*((?:\[\d+\])+)?((?:\.[A-Za-z_$][\w$]*)+)?/g)) {
+      const root = m[0].split(/[.[]/)[0];
+      if (!m[1] && !known.has(root)) continue;
       if (m.index > last) out.push(text.slice(last, m.index));
       const code = el('code', 'code');
       code.textContent = m[0];
@@ -565,14 +724,15 @@
    */
   function updateBlock(block, arr) {
     const meta = /** @type {HTMLElement} */ (block.querySelector('.array-meta'));
-    const collection = arr.kind === 'list' || arr.kind === 'stack' || arr.kind === 'queue';
-    const unit = collection ? [t('item'), t('items')] : [t('position'), t('positions')];
+    const collection = arr.kind === 'list' || arr.kind === 'stack' || arr.kind === 'queue' || arr.kind === 'text';
+    const unit = arr.kind === 'text' ? [t('letter'), t('letters')] : collection ? [t('item'), t('items')] : [t('position'), t('positions')];
     const count =
       arr.values.length < arr.length
         ? t('partial', arr.values.length, arr.length, unit[1])
         : `${arr.length} ${arr.length === 1 ? unit[0] : unit[1]}`;
     const noun = collection ? t(arr.kind ?? '') : undefined;
-    meta.textContent = noun ? (arr.length === 0 ? t('emptyCollection', noun) : t('collectionCount', noun, count)) : count;
+    const empty = arr.kind === 'text' ? t('emptyText') : t('emptyCollection', noun ?? '');
+    meta.textContent = noun ? (arr.length === 0 ? empty : t('collectionCount', noun, count)) : count;
     block.classList.toggle('is-list', arr.kind === 'list');
     if (arr.kind === 'stack') {
       // A torre reserva altura e nunca encolhe: a base fica parada e os itens entram e saem por cima.
@@ -947,6 +1107,7 @@
     errorEl.hidden = !error;
     if (!error) return;
     errorTitleEl.textContent = error.title;
+    errorEl.classList.toggle('is-handled', !!error.handled);
     errorTextEl.replaceChildren(
       ...error.sentences.map((text) => {
         const li = el('li', 'error-item');
@@ -1195,6 +1356,105 @@
   }
 
   /**
+   * Árvore de recursão: as folhas ganham as colunas em ordem e cada chamada
+   * fica centrada em cima das que ela fez. Quem ainda roda tem a borda da
+   * linha ativa; quem terminou mostra o que devolveu.
+   * @param {CallTreeT | undefined} tree
+   */
+  function renderCallTree(tree) {
+    callTreeEl.hidden = !tree;
+    if (!tree) {
+      callTreeEl.replaceChildren();
+      return;
+    }
+    /** @type {{ node: CallNodeT, x: number, y: number, parent?: { x: number, y: number } }[]} */
+    const placed = [];
+    let column = 0;
+    let depth = 0;
+    /**
+     * @param {CallNodeT} node
+     * @param {number} y
+     * @returns {number} a coluna do nó
+     */
+    const place = (node, y) => {
+      depth = Math.max(depth, y);
+      const xs = node.children.map((c) => place(c, y + 1));
+      const x = xs.length > 0 ? (xs[0] + xs[xs.length - 1]) / 2 : column++;
+      const spot = { node, x, y };
+      placed.push(spot);
+      return x;
+    };
+    // O tronco (main, código principal) fica de fora: a árvore começa na primeira chamada que chama a si mesma.
+    /** @type {CallNodeT[]} */
+    const queue = [tree.root];
+    let top = tree.root;
+    while (queue.length > 0) {
+      const n = /** @type {CallNodeT} */ (queue.shift());
+      if (isRecursive(n)) {
+        top = n;
+        break;
+      }
+      queue.push(...n.children);
+    }
+    place(top, 0);
+    const byId = new Map(placed.map((p) => [p.node.id, p]));
+    for (const p of placed) {
+      for (const c of p.node.children) {
+        const child = byId.get(c.id);
+        if (child) child.parent = { x: p.x, y: p.y };
+      }
+    }
+
+    const block = heapCard('call-tree', t('callTreeTitle'), t('callTreeMeta', tree.calls));
+    const track = el('div', 'array-track');
+    const area = el('div', 'tree call-tree');
+    area.style.setProperty('--cols', String(Math.max(column, 1)));
+    area.style.setProperty('--rows', String(depth + 1));
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'tree-edges');
+    svg.setAttribute('viewBox', `0 0 ${Math.max(column, 1) * 2} ${(depth + 1) * 2}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.setAttribute('aria-hidden', 'true');
+    for (const p of placed) {
+      if (!p.parent) continue;
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', String(p.parent.x * 2 + 1));
+      line.setAttribute('y1', String(p.parent.y * 2 + 0.6));
+      line.setAttribute('x2', String(p.x * 2 + 1));
+      line.setAttribute('y2', String(p.y * 2 + 0.6));
+      line.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.append(line);
+    }
+    area.append(svg);
+    for (const p of placed) {
+      const cell = el('div', `tree-node call-node${p.node.active ? ' is-active' : ''}${p.node.done ? ' is-done' : ''}`);
+      cell.style.setProperty('--x', String(p.x));
+      cell.style.setProperty('--y', String(p.y));
+      const box = el('span', 'call-node-label');
+      box.textContent = p.node.label;
+      cell.append(box);
+      if (p.node.returned !== undefined) {
+        const ret = el('span', 'call-node-returned');
+        ret.textContent = `= ${p.node.returned}`;
+        cell.append(ret);
+      }
+      area.append(cell);
+    }
+    track.append(area);
+    block.append(track);
+    const rule = el('p', 'array-rule');
+    const worst = Object.entries(tree.repeated).sort((a, b) => b[1] - a[1])[0];
+    rule.textContent = worst ? `${t('callTreeRule')} ${t('callTreeRepeated', worst[0], worst[1])}` : t('callTreeRule');
+    block.append(rule);
+    callTreeEl.replaceChildren(block);
+  }
+
+  /** @param {CallNodeT} n */
+  function isRecursive(n) {
+    return n.children.some((c) => c.name === n.name);
+  }
+
+  /**
    * Pilha de chamadas: um cartão por chamada, a atual em cima. Só aparece com
    * duas funções ou mais em andamento; o código de fora das funções não conta.
    * Quem acabou de entrar desce no topo; quem terminou sobe e some, dizendo o
@@ -1237,7 +1497,7 @@
       const li = el('li', `call-frame${isTop ? ' is-current' : ''}${entered.has(k) ? ' is-entering' : ''}${call.program ? ' is-program' : ''}`);
       const head = el('div', 'call-head');
       const name = el('span', 'call-name');
-      name.textContent = call.program ? t('programFrame') : call.name;
+      name.textContent = call.program ? t('programFrame') : call.owner ? `${call.owner}.${call.name}` : call.name;
       const line = el('span', 'call-line');
       line.textContent = isTop ? t('callRunning') : t('callLine', call.line);
       head.append(name, line);
@@ -1390,8 +1650,108 @@
     return path.split(/[\\/]/).pop() || path;
   }
 
+  // ---------- Modo de adivinhar ----------
+  // O palpite fica guardado até o passo seguinte chegar; o placar fica no estado do painel.
+  /** @type {{ step: number, target: string, guess: string } | undefined} */
+  let pending;
+  /** @type {{ on?: boolean, right?: number, total?: number }} */
+  const predictState = { ...((vscode.getState() ?? {}).predict ?? {}) };
+  const predictToggle = byId('predict-toggle');
+  const predictEl = byId('predict');
+  const predictForm = /** @type {HTMLFormElement} */ (byId('predict-form'));
+  const predictQuestion = byId('predict-question');
+  const predictInput = /** @type {HTMLInputElement} */ (byId('predict-input'));
+  const predictStatus = byId('predict-status');
+
+  function savePredict() {
+    vscode.setState({ ...(vscode.getState() ?? {}), predict: predictState });
+  }
+
+  predictToggle.addEventListener('click', () => {
+    predictState.on = !predictState.on;
+    pending = undefined;
+    savePredict();
+    if (current) renderPredict(current, undefined);
+  });
+
+  predictForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const guess = predictInput.value.trim();
+    if (!current?.prediction || guess === '') return;
+    pending = { step: current.step, target: current.prediction.target, guess };
+    predictForm.hidden = true;
+    predictStatus.textContent = t('predictSaved', pending.target, guess);
+    vscode.postMessage({ type: 'focus-editor' });
+  });
+
+  /**
+   * Confere o palpite do passo anterior e, se o modo estiver ligado, pergunta
+   * pela próxima linha. Só pergunta no passo mais recente: no histórico o
+   * aluno já sabe a resposta.
+   * @param {Frame} frame
+   * @param {string | undefined} verdict
+   */
+  function renderPredict(frame, verdict) {
+    predictToggle.setAttribute('aria-pressed', String(!!predictState.on));
+    predictToggle.classList.toggle('is-on', !!predictState.on);
+    if (!predictState.on) {
+      predictEl.hidden = true;
+      return;
+    }
+    const ask = frame.step === frame.total && !!frame.prediction && pending?.step !== frame.step;
+    predictEl.hidden = !ask && !verdict && !pending;
+    predictForm.hidden = !ask;
+    if (ask && frame.prediction) {
+      predictQuestion.textContent = t('predictQuestion', frame.prediction.target);
+      predictInput.value = '';
+    }
+    const score = predictState.total ? t('predictScore', predictState.right ?? 0, predictState.total) : '';
+    if (verdict) predictStatus.textContent = [verdict, score].filter(Boolean).join(' ');
+    else if (!pending) predictStatus.textContent = score;
+  }
+
+  /**
+   * O passo novo chegou: confere o palpite guardado com o valor de verdade.
+   * @param {Frame} frame
+   * @returns {string | undefined} a frase do resultado
+   */
+  function checkGuess(frame) {
+    if (!pending) return undefined;
+    if (frame.step !== pending.step + 1) {
+      // Voltou no histórico ou pulou passos: o palpite não vale para este passo.
+      if (frame.step <= pending.step) pending = undefined;
+      return undefined;
+    }
+    const actual = frame.answers?.[pending.target];
+    const guess = pending;
+    pending = undefined;
+    if (actual === undefined) return undefined;
+    const right = sameAnswer(guess.guess, actual);
+    predictState.total = (predictState.total ?? 0) + 1;
+    predictState.right = (predictState.right ?? 0) + (right ? 1 : 0);
+    savePredict();
+    return right ? t('predictRight', guess.target, actual) : t('predictWrong', guess.target, actual, guess.guess);
+  }
+
+  /**
+   * Mesma regra do modelo (src/model/predict.ts): sem aspas, sem espaços, 7 igual a 7.0.
+   * @param {string} guess
+   * @param {string} actual
+   */
+  function sameAnswer(guess, actual) {
+    /** @param {string} s */
+    const clean = (s) => s.trim().replace(/^(["'])(.*)\1$/, '$2').trim();
+    const a = clean(guess);
+    const b = clean(actual);
+    if (a === b) return true;
+    const na = Number(a.replace(',', '.'));
+    const nb = Number(b.replace(',', '.'));
+    if (a !== '' && !Number.isNaN(na) && !Number.isNaN(nb)) return na === nb;
+    return a.toLowerCase() === b.toLowerCase() && /^(true|false)$/i.test(a);
+  }
+
   // Aberto ou fechado, o teste de mesa fica como o aluno deixou.
-  /** @type {{ traceOpen?: boolean }} */
+  /** @type {{ traceOpen?: boolean, predict?: object }} */
   const saved = vscode.getState() ?? {};
   if (saved.traceOpen === false) traceEl.open = false;
   traceEl.addEventListener('toggle', () => vscode.setState({ ...(vscode.getState() ?? {}), traceOpen: traceEl.open }));

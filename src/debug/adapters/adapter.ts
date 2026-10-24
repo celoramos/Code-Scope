@@ -85,6 +85,11 @@ export interface LanguageAdapter {
    * para o que não é entrada ("len()", "[[Prototype]]"...).
    */
   mapEntry?(child: DapVariable): MapEntry | undefined;
+  /**
+   * Variável que guarda um erro capturado (o "e" do catch). messageField:
+   * campo do objeto que tem a mensagem, quando ela não vem no próprio valor.
+   */
+  caughtError?(v: DapVariable): { type: string; message?: string; messageField?: string } | undefined;
 }
 
 export interface MapEntry {

@@ -16,7 +16,9 @@ export type FromWebview =
   | { type: 'ready' }
   | { type: 'back' }
   | { type: 'forward' }
-  | { type: 'goto'; step: number };
+  | { type: 'goto'; step: number }
+  /** Depois do palpite, o foco volta ao editor para o F10 funcionar. */
+  | { type: 'focus-editor' };
 
 export class ScopeViewProvider implements vscode.WebviewViewProvider {
   static readonly viewId = 'codeScope.panel';
@@ -91,13 +93,26 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
         </button>
       </nav>
-      <button id="live" class="link-button" type="button" hidden>${t.live}</button>
+      <div class="toolbar-actions">
+        <button id="live" class="link-button" type="button" hidden>${t.live}</button>
+        <button id="predict-toggle" class="toggle-button" type="button" aria-pressed="false">${t.predictMode}</button>
+      </div>
       <p class="location">
         <span id="file" class="location-file"></span>
         <span id="ended" class="badge" hidden>${t.sessionEnded}</span>
       </p>
       <dl id="code" class="code-lines"></dl>
       <div id="condition" class="condition" hidden></div>
+      <section id="predict" class="predict" aria-live="polite" hidden>
+        <form id="predict-form" class="predict-form" hidden>
+          <label id="predict-question" class="predict-question" for="predict-input"></label>
+          <div class="predict-row">
+            <input id="predict-input" class="predict-input" type="text" autocomplete="off" spellcheck="false">
+            <button id="predict-save" class="predict-save" type="submit">${t.predictSave}</button>
+          </div>
+        </form>
+        <p id="predict-status" class="predict-status"></p>
+      </section>
     </header>
 
     <p id="status" class="status" role="status" aria-live="polite"></p>
@@ -115,6 +130,7 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
       <ol id="call-stack" class="call-stack"></ol>
       <p id="calls-rule" class="array-rule"></p>
     </section>
+    <section id="call-tree" class="arrays heap" aria-label="${t.callTree}" hidden></section>
     <ul id="vars" class="vars" aria-label="${t.variables}"></ul>
     <p id="stats" class="stats" hidden></p>
     <section id="arrays" class="arrays" aria-label="${t.arrays}"></section>

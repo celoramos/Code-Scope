@@ -64,6 +64,12 @@ export const pythonAdapter: LanguageAdapter = {
   isNull: (v) => v.type === 'NoneType' || v.value === 'None',
   // Listas não mostram endereço no valor: "a is b" decide se são a mesma.
   identityExpr: (a, b) => `(${a}) is (${b})`,
+  // 'ValueError("invalid literal for int() with base 10: \'abc\'")'.
+  caughtError(v) {
+    const m = /^(\w*(?:Error|Exception))\((.*)\)$/s.exec(v.value);
+    if (!m || v.type !== m[1]) return undefined;
+    return { type: m[1], message: m[2].replace(/^(["'])(.*)\1$/s, '$2') };
+  },
   mapEntry: (child) =>
     /^(special|function|class) variables$/.test(child.name) || child.name === 'len()' ? undefined : { key: child.name, value: child.value },
 

@@ -16,6 +16,8 @@ export interface ErrorView {
   kind: ErrorKind;
   title: string;
   sentences: string[];
+  /** Erro tratado por um catch: o programa continua. */
+  handled?: boolean;
   /** Posição que o código tentou usar e não existe: o painel desenha uma caixa fantasma. */
   missing?: { array: string; index: number };
 }
@@ -34,6 +36,27 @@ const RULES: [ErrorKind, RegExp][] = [
 export function classifyError(ex: ExceptionInfo): ErrorKind {
   const text = `${ex.type} ${ex.message}`;
   return RULES.find(([, re]) => re.test(text))?.[0] ?? 'other';
+}
+
+/**
+ * Erro tratado: o passo em que o programa entrou no catch. A linha que deu
+ * erro é a que acabou de rodar; o resto do try não rodou.
+ */
+export function explainHandled(prev: Snapshot | undefined, next: Snapshot, language: Language): ErrorView | undefined {
+  const c = next.caught;
+  if (!c || !prev) return undefined;
+  const was = prev.caught;
+  if (was && was.name === c.name && was.type === c.type && was.message === c.message) return undefined;
+  const m = MESSAGES[language];
+  const kind = classifyError({ type: c.type, message: c.message ?? '' });
+  return {
+    type: c.type,
+    message: c.message ?? '',
+    kind,
+    title: m.handledTitle(c.type),
+    handled: true,
+    sentences: [m.handledJump(prev.line, c.name), m.errorKind(kind, c.message ?? '')],
+  };
 }
 
 export function explainError(snapshot: Snapshot, language: Language): ErrorView | undefined {

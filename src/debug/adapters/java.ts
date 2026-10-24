@@ -205,6 +205,12 @@ export const javaAdapter: LanguageAdapter = {
 
   isNull: (v) => v.value === 'null' && v.variablesReference <= 0,
 
+  // "NumberFormatException@30": a mensagem está no campo detailMessage.
+  caughtError(v) {
+    const m = /^([\w.$]*(?:Exception|Error))@\d+$/.exec(v.value);
+    return m && v.variablesReference > 0 ? { type: simpleClassName(m[1]), messageField: 'detailMessage' } : undefined;
+  },
+
   mapEntry(child) {
     // Entrada: 'HashMap$Node@44 "sol":"1"'.
     const m = /^[\w.$]+@\d+\s+(.*)$/.exec(child.value);

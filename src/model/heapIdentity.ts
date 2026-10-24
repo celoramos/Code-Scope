@@ -33,6 +33,8 @@ export function objectPaths(s: Snapshot): Map<string, Set<string>> {
     seen.delete(id);
   };
   for (const r of s.refs ?? []) if (r.ref) walk(r.ref, r.name, 0, new Set());
+  // Objetos guardados em arrays: "turma[1]" também é caminho.
+  for (const a of s.arrays) a.refs?.forEach((id, i) => id && walk(id, `${a.name}[${i}]`, 0, new Set()));
   return paths;
 }
 
@@ -93,4 +95,6 @@ export function alignHeap(prev: Snapshot | undefined, next: Snapshot): void {
     for (const f of o.fields) if (f.ref) f.ref = swap(f.ref);
   }
   for (const r of next.refs ?? []) if (r.ref) r.ref = swap(r.ref);
+  // Posições de array que guardam objetos também apontam pelo id.
+  for (const a of next.arrays) if (a.refs) a.refs = a.refs.map((id) => (id ? swap(id) : id));
 }

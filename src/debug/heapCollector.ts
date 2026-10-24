@@ -32,24 +32,42 @@ export interface HeapOptions {
   userTypes?: ReadonlySet<string>;
 }
 
-export async function collectHeap(
-  session: Session,
-  adapter: LanguageAdapter,
-  locals: DapVariable[],
-  opts: HeapOptions,
-): Promise<{ heap: HeapObject[]; refs: Reference[] }> {
-  const ctx = new HeapContext(session, adapter, opts);
-  const refs: Reference[] = [];
-  for (const v of locals) {
-    const shape = adapter.shape(v);
-    if (shape.kind === 'null') {
-      refs.push({ name: v.name, ref: null });
-    } else if (shape.kind === 'object') {
-      const id = await ctx.visit(v, shape);
-      if (id !== undefined) refs.push({ name: v.name, ref: id });
-    }
+/**
+ * Lê objetos sob demanda durante um passo: as variáveis locais e as posições
+ * de arrays que guardam objetos usam o mesmo contexto, então o mesmo objeto
+ * tem o mesmo id onde quer que apareça.
+ */
+export class HeapCollector {
+  private readonly ctx: HeapContext;
+
+  constructor(session: Session, adapter: LanguageAdapter, opts: HeapOptions) {
+    this.ctx = new HeapContext(session, adapter, opts);
   }
-  return { heap: [...ctx.objects.values()], refs };
+
+  /** id do objeto guardado na variável, se for objeto de uma classe do aluno. */
+  async objectId(v: DapVariable): Promise<string | undefined> {
+    const shape = this.ctx.adapter.shape(v);
+    return shape.kind === 'object' ? this.ctx.visit(v, shape) : undefined;
+  }
+
+  /** Variáveis locais que apontam para objetos (ou para null). */
+  async references(locals: DapVariable[]): Promise<Reference[]> {
+    const refs: Reference[] = [];
+    for (const v of locals) {
+      const shape = this.ctx.adapter.shape(v);
+      if (shape.kind === 'null') {
+        refs.push({ name: v.name, ref: null });
+      } else if (shape.kind === 'object') {
+        const id = await this.ctx.visit(v, shape);
+        if (id !== undefined) refs.push({ name: v.name, ref: id });
+      }
+    }
+    return refs;
+  }
+
+  get heap(): HeapObject[] {
+    return [...this.ctx.objects.values()];
+  }
 }
 
 /**
@@ -86,7 +104,7 @@ class HeapContext {
 
   constructor(
     private readonly session: Session,
-    private readonly adapter: LanguageAdapter,
+    readonly adapter: LanguageAdapter,
     private readonly opts: HeapOptions,
   ) {}
 

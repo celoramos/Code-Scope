@@ -1,3 +1,8 @@
+import { buildCallTree } from '../../src/model/callTree';
+import { explainHeap } from '../../src/model/heap';
+import { numberNotes } from '../../src/model/numbers';
+import { polymorphismNote } from '../../src/model/calls';
+import { graphViews } from '../../src/model/graph';
 import { fieldShadows } from '../../src/model/scope';
 import { heapView } from '../../src/model/heap';
 import * as assert from 'node:assert/strict';
@@ -177,5 +182,64 @@ describe('Python (debugpy) real', function () {
       snaps.some((s) => fieldShadows(s).some((f) => f.name === 'pontos')),
       `campo não reconhecido: ${JSON.stringify(snaps.map((s) => [s.line, s.refs, s.pointers.map((p) => p.name)]))}`,
     );
+  });
+
+  it('Python conceito: lista de objetos com o objeto dentro da posição', async () => {
+    const snaps = await debugScript('turma', 9, 12);
+    const last = [...snaps].reverse().find((s) => s.arrays.some((a) => a.name === 'turma' && a.refs?.every(Boolean) && a.length === 3));
+    assert.ok(last, `turma sem objetos: ${JSON.stringify(snaps.at(-1)?.arrays)}`);
+    const turma = last.arrays.find((a) => a.name === 'turma')!;
+    assert.deepEqual(turma.values.map((v) => v.replace(/["']/g, '')), ['Ana', 'Bia', 'Caio']);
+    const changes = snaps.flatMap((s, k) => (k > 0 ? explainHeap(snaps[k - 1], s, 'pt') : []));
+    assert.ok(changes.some((c) => c.startsWith('turma[1].nota mudou de 6')), `frases: ${changes.join(' | ')}`);
+  });
+
+  it('Python conceito: grafo e a busca andando por ele', async () => {
+    const snaps = await debugScript('grafo', 13, 40);
+    const graphs = snaps.map((s) => graphViews(s)[0]).filter(Boolean);
+    assert.ok(graphs.length > 0, `nenhum grafo: ${JSON.stringify(snaps.at(-1)?.maps)}`);
+    assert.deepEqual(graphs[0].nodes.sort(), ['A', 'B', 'C', 'D']);
+    assert.equal(graphs[0].edges.length, 4);
+    assert.ok(Math.max(...graphs.map((g) => g.visited.length)) >= 3, `visitados: ${graphs.map((g) => g.visited.join('')).join(' ')}`);
+  });
+
+  it('Python conceito: herança e polimorfismo', async () => {
+    const snaps = await debugScript('heranca', 22, 8, 'stepInto');
+    const notes = snaps.flatMap((s, k) => (k > 0 ? callChanges(snaps[k - 1], s).map((c) => polymorphismNote(c, s.classes, 'pt')) : [])).filter(Boolean);
+    assert.ok(notes.some((n) => n?.includes('rodou o falar de Cachorro')), `frases: ${notes.join(' | ')}; donos: ${JSON.stringify(snaps.map((s) => s.calls?.at(-1)?.owner))}`);
+  });
+
+  it('Python conceito: erro tratado no catch', async () => {
+    const snaps = await debugScript('trata_erro', 5, 10);
+    const caught = snaps.find((s) => s.caught);
+    assert.ok(caught, 'o catch não foi reconhecido');
+    assert.equal(caught.caught?.type, 'ValueError');
+    assert.ok(caught.caught?.message, 'sem mensagem do erro');
+  });
+
+  it('Python conceito: texto lido letra por letra', async () => {
+    const snaps = await debugScript('texto', 3, 3);
+    const palavra = snaps.flatMap((s) => s.arrays).find((a) => a.name === 'palavra');
+    assert.equal(palavra?.kind, 'text');
+    assert.deepEqual(palavra?.values, ["'r'", "'a'", "'d'", "'a'", "'r'"]);
+  });
+
+  it('Python conceito: pegadinha de número', async () => {
+    const snaps = await debugScript('numeros', 3, 6);
+    const notes = snaps.flatMap((s, k) => (k > 0 ? numberNotes(snaps[k - 1], s, 'pt') : []));
+    assert.ok(notes.some((n) => n.includes('7 // 2 dá 3')), `frases: ${notes.join(' | ')}`);
+  });
+
+  it('Python conceito: árvore de recursão do fibonacci', async () => {
+    const snaps = await debugScript('fibonacci', 9, 24, 'stepInto');
+    const tree = buildCallTree(snaps);
+    assert.ok(tree, `sem árvore: ${JSON.stringify(snaps.map((s) => s.calls?.map((c) => c.name + c.vars.map((v) => v.value).join(','))))}`);
+    const labels: string[] = [];
+    const walk = (n: { label: string; children: { label: string; children: unknown[] }[] }) => {
+      labels.push(n.label);
+      n.children.forEach((c) => walk(c as never));
+    };
+    walk(tree.root as never);
+    assert.ok(labels.includes('fib(4)') && labels.includes('fib(3)') && labels.includes('fib(2)'), labels.join(' '));
   });
 });

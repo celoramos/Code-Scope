@@ -23,6 +23,9 @@ export interface PanelStrings {
     arrays: string;
     objects: string;
     maps: string;
+    callTree: string;
+    predictMode: string;
+    predictSave: string;
   };
   script: Record<
     | 'idle'
@@ -103,10 +106,31 @@ export interface PanelStrings {
     | 'condResult'
     | 'statsComparisons'
     | 'statsSwaps'
+    | 'statsComparison1'
+    | 'statsSwap1'
     | 'comparing'
     | 'outside'
     | 'hides'
-    | 'outOfScope',
+    | 'outOfScope'
+    | 'callTreeTitle'
+    | 'callTreeMeta'
+    | 'callTreeRule'
+    | 'callTreeRepeated'
+    | 'graphMeta'
+    | 'graphLabel'
+    | 'legendVisited'
+    | 'legendCurrent'
+    | 'legendWaiting'
+    | 'text'
+    | 'letter'
+    | 'letters'
+    | 'emptyText'
+    | 'predictQuestion'
+    | 'predictSaved'
+    | 'predictRight'
+    | 'predictWrong'
+    | 'predictScore'
+    | 'predictOff',
     string
   >;
 }
@@ -133,6 +157,9 @@ const pt: PanelStrings = {
     arrays: 'Arrays',
     objects: 'Objetos',
     maps: 'Dicionários',
+    callTree: 'Árvore de recursão',
+    predictMode: 'Adivinhar antes',
+    predictSave: 'Guardar palpite',
   },
   script: {
     idle: 'Pronto para visualizar',
@@ -213,10 +240,31 @@ const pt: PanelStrings = {
     condResult: 'resultado',
     statsComparisons: '{0} comparações entre posições',
     statsSwaps: '{0} trocas',
+    statsComparison1: '1 comparação entre posições',
+    statsSwap1: '1 troca',
     comparing: 'comparando',
     outside: 'fora da busca',
     hides: 'esconde a {0} de fora ({1})',
     outOfScope: 'saiu de escopo',
+    callTreeTitle: 'Árvore de recursão',
+    callTreeMeta: '{0} chamadas',
+    callTreeRule: 'Cada chamada fica pendurada em quem a chamou. As de borda azul ainda estão rodando.',
+    callTreeRepeated: '{0} foi calculada {1} vezes: a recursão refaz a mesma conta.',
+    graphMeta: 'grafo, {0} nós e {1} ligações',
+    graphLabel: 'Grafo {0} com os nós {1}; visitados: {2}',
+    legendVisited: 'visitado',
+    legendCurrent: 'atual',
+    legendWaiting: 'esperando (ordem)',
+    text: 'texto',
+    letter: 'letra',
+    letters: 'letras',
+    emptyText: 'texto vazio',
+    predictQuestion: 'Antes de apertar F10: quanto vai valer {0} depois desta linha?',
+    predictSaved: 'Palpite guardado: {0} = {1}. Agora aperte F10.',
+    predictRight: 'Acertou! {0} ficou {1}.',
+    predictWrong: 'Quase: {0} ficou {1}, e o seu palpite foi {2}.',
+    predictScore: '{0} de {1} palpites certos',
+    predictOff: 'Modo de adivinhar desligado',
   },
 };
 
@@ -242,6 +290,9 @@ const en: PanelStrings = {
     arrays: 'Arrays',
     objects: 'Objects',
     maps: 'Dictionaries',
+    callTree: 'Recursion tree',
+    predictMode: 'Guess first',
+    predictSave: 'Save guess',
   },
   script: {
     idle: 'Ready to visualize',
@@ -322,10 +373,31 @@ const en: PanelStrings = {
     condResult: 'result',
     statsComparisons: '{0} comparisons between positions',
     statsSwaps: '{0} swaps',
+    statsComparison1: '1 comparison between positions',
+    statsSwap1: '1 swap',
     comparing: 'being compared',
     outside: 'outside the search',
     hides: 'hides the outer {0} ({1})',
     outOfScope: 'out of scope',
+    callTreeTitle: 'Recursion tree',
+    callTreeMeta: '{0} calls',
+    callTreeRule: 'Each call hangs from the one that made it. The ones with a blue border are still running.',
+    callTreeRepeated: '{0} was computed {1} times: the recursion redoes the same work.',
+    graphMeta: 'graph, {0} nodes and {1} edges',
+    graphLabel: 'Graph {0} with nodes {1}; visited: {2}',
+    legendVisited: 'visited',
+    legendCurrent: 'current',
+    legendWaiting: 'waiting (order)',
+    text: 'text',
+    letter: 'letter',
+    letters: 'letters',
+    emptyText: 'empty text',
+    predictQuestion: 'Before pressing F10: what will {0} be after this line?',
+    predictSaved: 'Guess saved: {0} = {1}. Now press F10.',
+    predictRight: 'Right! {0} became {1}.',
+    predictWrong: 'Close: {0} became {1}, and your guess was {2}.',
+    predictScore: '{0} of {1} guesses right',
+    predictOff: 'Guess mode off',
   },
 };
 

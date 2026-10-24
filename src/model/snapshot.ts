@@ -1,3 +1,4 @@
+import type { ClassInfo } from './classes';
 import type { ConditionInfo } from './condition';
 
 /**
@@ -17,12 +18,14 @@ export interface ArrayVar {
    * "stack" e "queue" têm uma ordem combinada: na pilha, values[0] é o fundo e
    * o último é o topo; na fila, values[0] é a frente, quem sai primeiro.
    */
-  kind?: 'array' | 'list' | 'stack' | 'queue';
+  kind?: 'array' | 'list' | 'stack' | 'queue' | 'text';
   /**
    * Linhas de uma matriz (array de arrays). Cada linha se chama "nome[i]".
    * Quando existe, values guarda só um resumo de cada linha.
    */
   rows?: ArrayVar[];
+  /** Posições que guardam objetos: o id do objeto em heap (null nas outras). */
+  refs?: (string | null)[];
   /** Identidade do objeto na memória: duas variáveis com o mesmo id são o mesmo array. */
   id?: string;
 }
@@ -63,7 +66,7 @@ export interface Reference {
 /** Dicionário: chave e valor como o aluno escreveria. */
 export interface MapVar {
   name: string;
-  entries: { key: string; value: string }[];
+  entries: { key: string; value: string; items?: string[] }[];
   /** Tamanho real; pode ser maior que entries.length se foi truncado. */
   length: number;
   id?: string;
@@ -110,6 +113,10 @@ export interface Snapshot {
   returned?: { function?: string; value: string; pending?: boolean };
   /** A condição que a linha parada vai testar, já avaliada parte por parte. */
   condition?: ConditionInfo;
+  /** Erro que um catch capturou e guardou numa variável (o "e"). */
+  caught?: { name: string; type: string; message?: string };
+  /** Classes do arquivo: de quem herdam e que métodos escrevem. */
+  classes?: Record<string, ClassInfo>;
   /** O programa parou por um erro que ninguém tratou. */
   exception?: ExceptionInfo;
 }
@@ -119,6 +126,8 @@ export interface CallFrame {
   /** Nome da função, sem classe nem parâmetros: "fatorial". */
   name: string;
   line: number;
+  /** Classe do objeto cujo método está rodando (Cachorro em bichos[i].falar()). */
+  owner?: string;
   /** Código de fora de qualquer função (o "<module>" do Python). */
   program?: boolean;
   /** Variáveis simples da chamada, já como texto. */

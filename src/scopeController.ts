@@ -5,6 +5,8 @@ import { applyCollectionRoles, pickAdapter } from './debug/adapters';
 import { declaredClasses } from './debug/adapters/adapter';
 import { evaluateCondition } from './debug/conditionEval';
 import { readExceptionInfo, type ExceptionInfoBody } from './debug/exceptionFilters';
+import { parseClasses } from './model/classes';
+import { applyTextRoles } from './model/text';
 import { parseCondition } from './model/condition';
 import { registerPauseOnErrors } from './debug/pauseOnErrors';
 import { registerStopTracker } from './debug/trackerFactory';
@@ -98,6 +100,10 @@ export class ScopeController implements vscode.Disposable {
       const source = await sourceOf(snap.file);
       snap.code = source?.lines[snap.line - 1]?.trim();
       if (source) applyCollectionRoles(snap, source.text, collected.adapter);
+      if (source) applyTextRoles(snap, source.text);
+      // Só vale guardar as classes quando alguma herda de outra: é para explicar polimorfismo.
+      const classes = source ? parseClasses(source.text) : {};
+      if (Object.values(classes).some((c) => c.parent)) snap.classes = classes;
       if (reason === 'exception') snap.exception = await readException(session, thread);
       // A linha parada testa uma condição? Cada parte vira verdadeiro ou falso antes de rodar.
       const parsed = snap.exception ? undefined : parseCondition(snap.code, collected.adapter.id === 'python' ? 'python' : 'c');
@@ -134,6 +140,9 @@ export class ScopeController implements vscode.Disposable {
         break;
       case 'goto':
         if (this.history.goto(msg.step)) this.showCurrent();
+        break;
+      case 'focus-editor':
+        void vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
         break;
     }
   }

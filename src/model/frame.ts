@@ -1,8 +1,9 @@
-import { callChanges, describeCall, returnNote, type CallChange } from './calls';
+import { callChanges, describeCall, polymorphismNote, returnNote, type CallChange } from './calls';
+import { buildCallTree, type CallTree } from './callTree';
 import { diff, type Change } from './diff';
 import { explain } from './explain';
 import { explainCondition } from './condition';
-import { explainError, type ErrorView } from './errors';
+import { explainError, explainHandled, type ErrorView } from './errors';
 import { explainFlow } from './flow';
 import { algorithmStats, arrayFocus, rangeNote, type AlgorithmStats, type ArrayFocus } from './focus';
 import { arrayAliases, explainHeap, heapDelta, heapView, referenceNames, type HeapDelta, type HeapView } from './heap';
@@ -10,6 +11,9 @@ import { MESSAGES, type Language } from './messages';
 import type { Step } from './history';
 import { arrowsFor, matrixAxesFor, VALUE_NAMES, type Arrow, type MatrixAxes } from './pointers';
 import type { Snapshot } from './snapshot';
+import { graphNotes, graphViews, type GraphView } from './graph';
+import { numberNotes } from './numbers';
+import { answers, predictionFor, type Prediction } from './predict';
 import { scopeNotes, shadowChanges, shadows } from './scope';
 import { traceTable, type TraceTable } from './trace';
 
@@ -27,6 +31,14 @@ export interface Frame {
   calls: CallChange[];
   /** Variáveis que escondem outra de mesmo nome, com o valor da escondida. */
   shadows: Record<string, string>;
+  /** Dicionários que são grafos (lista de adjacência), com o estado da busca. */
+  graphs: GraphView[];
+  /** Modo de adivinhar: o que perguntar antes da próxima linha rodar. */
+  prediction?: Prediction;
+  /** Valor de cada variável e posição neste passo, para conferir o palpite do passo anterior. */
+  answers: Record<string, string>;
+  /** Árvore de todas as chamadas, quando a recursão se divide (fib). */
+  callTree?: CallTree;
   /** Posições comparadas e intervalo da busca, por array. */
   focus: Record<string, ArrayFocus>;
   /** Comparações entre posições e trocas desde o começo. */
@@ -82,11 +94,14 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
   const switched = calls.length > 0;
   const changes = switched ? [] : diff(prev, snapshot, older);
   const executed = prev && prev.file === snapshot.file ? { line: prev.line, code: prev.code } : undefined;
+  const error = explainError(snapshot, options.language) ?? (switched ? undefined : explainHandled(prev, snapshot, options.language));
   let explanation: string[] = [];
   if (options.beginnerMode && switched) {
-    explanation = calls.map((c) => describeCall(c, options.language));
+    explanation = calls.flatMap((c) => [describeCall(c, options.language), polymorphismNote(c, snapshot.classes, options.language)].filter(isText));
   } else if (options.beginnerMode) {
-    const heapNotes = prev ? [...explainHeap(prev, snapshot, options.language), ...scopeNotes(prev, snapshot, options.language)] : [];
+    const heapNotes = prev
+      ? [...explainHeap(prev, snapshot, options.language), ...scopeNotes(prev, snapshot, options.language), ...numberNotes(prev, snapshot, options.language), ...graphNotes(prev, snapshot, options.language)]
+      : [];
     // Dois nomes para o mesmo array: as mudanças aparecem nos dois, mas basta contar uma vez.
     const extraNames = new Set([...arrayAliases(snapshot).values()].flatMap((names) => names.slice(1)));
     // raiz = None virando objeto (ou o contrário) é referência: quem explica é explainHeap.
@@ -100,7 +115,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
         !((c.kind === 'scalar' || c.kind === 'pointer') && shadowFlip.has(c.name)),
     );
     // No erro, "nada mudou" só atrapalha: o cartão do erro é o que importa.
-    if (!(snapshot.exception && told.length === 0 && heapNotes.length === 0)) {
+    if (!(error && told.length === 0 && heapNotes.length === 0)) {
       explanation = explain(
         told,
         prev === undefined,
@@ -123,13 +138,17 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
     calls,
     heap: heapView(snapshot),
     focus: arrayFocus(snapshot),
+    callTree: buildCallTree(step.past),
+    prediction: predictionFor(snapshot),
+    answers: answers(snapshot),
+    graphs: graphViews(snapshot),
     shadows: shadows(snapshot),
     stats: algorithmStats(step.past),
     heapDelta: switched ? { added: [], fields: {} } : heapDelta(prev, snapshot),
     arrows,
     axes,
     explanation,
-    error: explainError(snapshot, options.language),
+    error,
     trace: traceTable(step.past, step.index - step.past.length + 1),
     step: step.index,
     total: step.total,

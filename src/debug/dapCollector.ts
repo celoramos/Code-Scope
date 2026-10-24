@@ -1,9 +1,10 @@
 import type * as vscode from 'vscode';
 import type { DapScope, DapStackFrame, DapVariable } from './dap';
-import type { ArrayVar, CallFrame, MapVar, Pointer, Scalar, Snapshot } from '../model/snapshot';
+import type { ArrayVar, CallFrame, HeapObject, MapVar, Pointer, Scalar, Snapshot } from '../model/snapshot';
 import { alignHeap } from '../model/heapIdentity';
 import { isRangeGroup, type LanguageAdapter, type VariableShape } from './adapters/adapter';
-import { collectHeap, linkSameArrays } from './heapCollector';
+import { HeapCollector, linkSameArrays } from './heapCollector';
+import { nodeValue } from '../model/heap';
 
 type Sequence = Extract<VariableShape, { kind: 'sequence' }>;
 
@@ -65,13 +66,23 @@ export async function collectSnapshot(
     else locals.push(v);
   }
 
+  // Objetos dos arrays e das variáveis passam pelo mesmo leitor: o mesmo objeto tem o mesmo id nos dois.
+  const heapReader = new HeapCollector(session, adapter, { frameId: frame.id, userTypes: await opts.userTypes?.(file) });
+  const objectsOf = (c: DapVariable) => heapReader.objectId(c);
   const arrays: ArrayVar[] = [];
   const arrayVars: { array: ArrayVar; v: DapVariable }[] = [];
   const pointers: Pointer[] = [];
   const scalars: Scalar[] = [];
   const maps: MapVar[] = [];
   const elements: Record<string, DapVariable[]> = {};
+  let caught: Snapshot['caught'];
   for (const v of locals) {
+    // O "e" de um catch: o erro que o programa tratou.
+    const error = adapter.caughtError?.(v);
+    if (error) {
+      caught = { name: v.name, type: error.type, ...(await caughtMessage(session, v, error, frame.id)) };
+      continue;
+    }
     const shape = adapter.shape(v);
     switch (shape.kind) {
       case 'empty-list':
@@ -80,7 +91,7 @@ export async function collectSnapshot(
         break;
       case 'sequence': {
         if (arrays.length >= limits.maxArrays) break;
-        const { array, children } = await readSequence(session, adapter, v, v.name, shape, limits.maxElements, true);
+        const { array, children } = await readSequence(session, adapter, v, v.name, shape, limits.maxElements, true, objectsOf);
         if (shape.id) array.id = shape.id;
         arrays.push(array);
         arrayVars.push({ array, v });
@@ -110,11 +121,14 @@ export async function collectSnapshot(
   };
   if (returned) snapshot.returned = returned;
   if (maps.length > 0) snapshot.maps = maps;
+  if (caught) snapshot.caught = caught;
   const shadowed = hidden.flatMap((v) => summarize(adapter, v));
   if (shadowed.length > 0) snapshot.shadowed = shadowed;
 
   await linkSameArrays(session, adapter, arrayVars, frame.id);
-  const { heap, refs } = await collectHeap(session, adapter, locals, { frameId: frame.id, userTypes: await opts.userTypes?.(file) });
+  const refs = await heapReader.references(locals);
+  const heap = heapReader.heap;
+  labelObjectCells(arrays, heap);
   if (heap.length > 0) snapshot.heap = heap;
   if (refs.length > 0) snapshot.refs = refs;
   alignHeap(opts.previous, snapshot);
@@ -175,14 +189,19 @@ export function isUserFrame(f: DapStackFrame): boolean {
  * "global.fatorial" (js-debug) viram "fatorial"; o construtor do Java vira
  * "new Conta". program diz que é o código de fora das funções.
  */
-export function functionName(raw: string): { name: string; program: boolean } {
+export function functionName(raw: string): { name: string; program: boolean; owner?: string } {
   if (raw === '<module>' || raw === '<anonymous>' || raw === '') return { name: raw, program: true };
   const noArgs = raw.replace(/\(.*\)$/, '');
   const parts = noArgs.split('.');
   const last = parts.pop() ?? noArgs;
   if (last === '<init>') return { name: `new ${(parts.pop() ?? '').split('$').pop()}`, program: false };
-  return { name: last, program: false };
+  // A classe do método: "Heranca$Cachorro.falar()" (Java) e "Cachorro.falar" (js-debug) dizem qual versão rodou.
+  const owner = parts.pop()?.split('$').pop();
+  return { name: last, program: false, ...(owner && !NOT_OWNERS.has(owner) ? { owner } : {}) };
 }
+
+/** Prefixos que o debugger põe no nome da função e que não são classes do aluno. */
+const NOT_OWNERS = new Set(['global', 'Object', 'Module', '<anonymous>', 'exports']);
 
 async function readCalls(
   session: Session,
@@ -197,18 +216,27 @@ async function readCalls(
   }
   const calls: CallFrame[] = [];
   for (const [k, f] of user.entries()) {
-    const { name, program } = functionName(f.name);
+    const named = functionName(f.name);
+    const { name, program } = named;
+    let owner = named.owner;
     let vars: Scalar[];
     if (k === 0) {
       vars = [...top.pointers.map((p) => ({ name: p.name, value: String(p.value) })), ...(top.scalars ?? [])];
+      // No Python o nome não traz a classe; o tipo do self traz.
+      const self = top.refs?.find((r) => r.name === 'self' || r.name === 'this');
+      owner = top.heap?.find((o) => o.id === self?.ref)?.type ?? owner;
     } else {
       // Uma chamada que falha em responder não deve esconder as outras.
-      vars = await readLocals(session, adapter, f).then(
-        ({ locals }) => locals.filter((v) => !adapter.returnValue?.(v)).flatMap((v) => summarize(adapter, v)).slice(0, MAX_CALL_VARS),
+      const locals = await readLocals(session, adapter, f).then(
+        (r) => r.locals,
         () => [],
       );
+      vars = locals.filter((v) => !adapter.returnValue?.(v)).flatMap((v) => summarize(adapter, v)).slice(0, MAX_CALL_VARS);
+      const self = locals.find((v) => v.name === 'self' || v.name === 'this');
+      const shape = self ? adapter.shape(self) : undefined;
+      if (shape?.kind === 'object') owner = shape.type;
     }
-    calls.push({ name, line: f.line, ...(program ? { program } : {}), vars });
+    calls.push({ name, line: f.line, ...(program ? { program } : {}), ...(owner && !program ? { owner } : {}), vars });
   }
   return calls.reverse();
 }
@@ -245,6 +273,7 @@ async function readSequence(
   shape: Sequence,
   max: number,
   expandRows: boolean,
+  objects?: (c: DapVariable) => Promise<string | undefined>,
 ): Promise<{ array: ArrayVar; children: DapVariable[] }> {
   let children: DapVariable[];
   if (shape.length === undefined) {
@@ -278,10 +307,19 @@ async function readSequence(
     if (i !== undefined && i < count) byIndex[i] = c;
   }
   const values: string[] = [];
+  const refs: (string | null)[] = [];
   for (let i = 0; i < count; i++) {
     const c = byIndex[i];
+    refs.push(null);
     if (!c) {
       values.push('?');
+      continue;
+    }
+    // Objeto de uma classe do aluno: a posição guarda a referência, e o rótulo vem depois.
+    const ref = objects ? await objects(c) : undefined;
+    if (ref) {
+      refs[i] = ref;
+      values.push(adapter.formatElement(c));
       continue;
     }
     const unbox = adapter.unbox?.(c);
@@ -295,6 +333,7 @@ async function readSequence(
     }
   }
   const array: ArrayVar = { name, values, length };
+  if (refs.some((r) => r !== null)) array.refs = refs;
   if (shape.collection === 'list') array.kind = 'list';
 
   const rowShapes = byIndex.slice(0, count).map((c) => (c ? adapter.shape(c) : undefined));
@@ -321,10 +360,57 @@ async function readMap(session: Session, adapter: LanguageAdapter, v: DapVariabl
   const entries: MapVar['entries'] = [];
   for (const c of children) {
     const e = adapter.mapEntry(c);
-    if (e) entries.push(e);
+    if (!e) continue;
+    const items = entries.length < MAX_LIST_ENTRIES ? await entryList(session, adapter, c, e.value, max) : undefined;
+    entries.push(items ? { ...e, value: `[${items.join(', ')}]`, items } : e);
     if (entries.length >= max) break;
   }
   return entries;
+}
+
+/** Mensagem do erro capturado: no valor (Python, JavaScript) ou num campo do objeto (Java). */
+async function caughtMessage(
+  session: Session,
+  v: DapVariable,
+  error: { message?: string; messageField?: string },
+  frameId: number,
+): Promise<{ message?: string }> {
+  if (error.message !== undefined) return { message: error.message };
+  if (!error.messageField) return {};
+  let fields = await variables(session, v.variablesReference);
+  // Variável "lazy" do Java: o primeiro nível é o próprio objeto; os campos vêm no seguinte.
+  if (!fields.some((f) => f.name === error.messageField) && fields.length === 1 && fields[0].variablesReference > 0) {
+    fields = await variables(session, fields[0].variablesReference);
+  }
+  const field = fields.find((f) => f.name === error.messageField);
+  if (field && field.value !== 'null') return { message: field.value.replace(/^"(.*)"$/s, '$1') };
+  // Último recurso: perguntar ao programa. getMessage() só lê.
+  try {
+    const res = (await session.customRequest('evaluate', { expression: `${v.evaluateName ?? v.name}.getMessage()`, frameId, context: 'watch' })) as { result?: string };
+    return res.result && res.result !== 'null' ? { message: res.result.replace(/^"(.*)"$/s, '$1') } : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Entradas cujo valor é lista são abertas até aqui: é o que um grafo (cidade e vizinhas) precisa. */
+const MAX_LIST_ENTRIES = 20;
+
+/**
+ * Itens da lista guardada numa entrada. No JavaScript e no Python a própria
+ * entrada é a lista; no Java a entrada é um nó com "key" e "value", e a lista
+ * está em "value" ('"A":ImmutableCollections$List12@38' não mostra os itens).
+ */
+async function entryList(session: Session, adapter: LanguageAdapter, c: DapVariable, value: string, max: number): Promise<string[] | undefined> {
+  let list: DapVariable | undefined;
+  if (adapter.shape(c).kind === 'sequence') list = c;
+  else if (c.variablesReference > 0 && /@\d+$/.test(value)) {
+    const inner = (await variables(session, c.variablesReference)).find((k) => k.name === 'value');
+    if (inner && adapter.shape(inner).kind === 'sequence') list = inner;
+  }
+  const shape = list ? adapter.shape(list) : undefined;
+  if (!list || shape?.kind !== 'sequence') return undefined;
+  return (await readSequence(session, adapter, list, '', shape, max, false)).array.values;
 }
 
 async function variables(session: Session, variablesReference: number, extra: object = {}): Promise<DapVariable[]> {
@@ -332,4 +418,15 @@ async function variables(session: Session, variablesReference: number, extra: ob
     variables?: DapVariable[];
   };
   return res.variables ?? [];
+}
+
+/** Posições que guardam objetos mostram o valor principal do objeto ("Ana"), não "Turma$Aluno@30". */
+function labelObjectCells(arrays: ArrayVar[], heap: HeapObject[]): void {
+  const byId = new Map(heap.map((o) => [o.id, o]));
+  for (const a of arrays) {
+    a.refs?.forEach((id, i) => {
+      const obj = id ? byId.get(id) : undefined;
+      if (obj) a.values[i] = nodeValue(obj);
+    });
+  }
 }
