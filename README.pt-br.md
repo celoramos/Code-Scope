@@ -70,7 +70,9 @@ O Code Scope conversa com o debugger pelo **Debug Adapter Protocol**, o protocol
 | Java | Debugger for Java (`vscjava.vscode-java-debug`) | arrays, matrizes, `ArrayList`, `Stack`, `Queue`, `ArrayDeque`, `HashMap`, objetos, listas ligadas, árvores | validada com o debugger real |
 | JavaScript e TypeScript | o que já vem no VS Code (Node, Chrome, Edge) | arrays, matrizes, pilha (`push`/`pop`), fila (`push`/`shift`), objetos como dicionário, `Map`, instâncias de classe, listas ligadas, árvores | validada com o debugger real no Node; no navegador usa o mesmo adaptador, ainda sem teste |
 | Python | Python Debugger (`ms-python.debugpy`) | `list`, `tuple`, `deque`, `dict`, matrizes, pilha (`append`/`pop()`), fila (`pop(0)`/`popleft()`), objetos, listas ligadas, árvores | validada com o debugger real |
-| Outras (C#, C/C++, Go, Rust, PHP...) | qualquer debugger do VS Code | coleções que o debugger marca como indexadas, inteiros e valores simples | modo genérico: mostra o que o protocolo garante e deixa de fora o que não entende |
+| C# | extensão C# (`ms-dotnettools.csharp`) | arrays, `List`, `Stack`, `Queue`, `Dictionary`, objetos, listas ligadas | validada com o debugger real |
+| C | extensão C/C++ (`ms-vscode.cpptools`) com gdb | arrays, ponteiros para `struct`, listas ligadas | validada com o debugger real (gdb); as coleções do C++ como `std::vector` ainda não são desenhadas |
+| Outras (Go, Rust, PHP...) | qualquer debugger do VS Code | coleções que o debugger marca como indexadas, inteiros e valores simples | modo genérico: mostra o que o protocolo garante e deixa de fora o que não entende |
 
 As explicações de fluxo (if, laços, break) entendem a família de C (Java, JavaScript, C#, C, Go) e Python. Se o painel não reconhecer alguma coisa na sua linguagem, abra uma [issue](https://github.com/celoramos/Code-Scope/issues/new/choose) com o log (veja abaixo): é assim que um adaptador novo começa.
 
@@ -100,6 +102,8 @@ As explicações de fluxo (if, laços, break) entendem a família de C (Java, Ja
   - Java: **Extension Pack for Java** (`code --install-extension vscjava.vscode-java-pack`) e um JDK
   - JavaScript e TypeScript: Node.js 22 ou mais novo; o debugger vem no VS Code. Com o Node.js 20, o debugger do VS Code (js-debug 1.140) roda o programa sem parar nos breakpoints
   - Python: extensão **Python** (`code --install-extension ms-python.python`), que traz o debugpy, e o Python instalado
+  - C#: extensão **C#** (`code --install-extension ms-dotnettools.csharp`) e o .NET SDK
+  - C: extensão **C/C++** (`code --install-extension ms-vscode.cpptools`), um compilador e o gdb (no Windows, por exemplo o MinGW-w64 ou o w64devkit)
 
 ## Instalar
 
@@ -163,6 +167,8 @@ Na janela do Extension Development Host:
 | `TrataErro` / `trataErro` / `trata_erro` | `try/catch`: a linha que deu erro e o pulo para o `catch` |
 | `Texto` / `texto` | Uma palavra lida letra por letra, e o `+` criando um texto novo |
 | `Numeros` / `numeros` | Divisão de inteiros, `0.1 + 0.2` e overflow do int |
+| `csharp/` (BubbleSort, Pilha, Fila, Dicionario, ListaLigada) | As mesmas aulas em C#: um projeto só, cada exemplo é uma configuração no `launch.json` |
+| `c/bubble_sort.c`, `c/lista_ligada.c` | Arrays em C e uma lista ligada de `struct`s ligados por ponteiros |
 
 Com o painel em foco: setas esquerda e direita andam um passo, Home e End vão para o primeiro e para o último.
 
@@ -218,6 +224,8 @@ O CI roda os dois a cada push e publica o `.vsix` como artefato.
 
 Os testes de Python precisam de um interpretador. Aponte um com a variável `CODE_SCOPE_PYTHON` ou, sem instalar nada, descompacte o *Windows embeddable package* do python.org em `.vscode-test/python` e renomeie o arquivo `python3XX._pth` que vem nele. Sem interpretador, eles são pulados com um aviso.
 
+Os testes de C# e de C precisam do .NET SDK, do gcc e do gdb no `PATH`. Sem instalar nada, eles também podem ficar em `.vscode-test/dotnet` (o script oficial `dotnet-install` com `-InstallDir`) e em `.vscode-test/w64devkit` (o pacote do w64devkit descompactado ali): o teste acrescenta os dois ao `PATH` do VS Code de teste. Sem eles, esses testes são pulados.
+
 ## Limites conhecidos
 
 - As chamadas de baixo na pilha mostram só as variáveis simples, sem arrays nem objetos. São lidas no máximo 12 chamadas.
@@ -234,7 +242,7 @@ Os testes de Python precisam de um interpretador. Aponte um com a variável `COD
 
 ## Roadmap
 
-1. Adaptadores próprios para C# e C/C++ (em andamento)
+1. Coleções do C++ (`std::vector`, `std::map`) e os conceitos novos em C#
 2. Variáveis das chamadas de baixo com arrays e objetos, não só valores simples
 3. `HashSet` e `set` do Python
 4. JavaScript no navegador, testado com o debugger real

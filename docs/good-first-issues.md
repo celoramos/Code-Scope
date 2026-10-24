@@ -60,17 +60,17 @@ Levels: **no code** (you do not need to program), **beginner** (a few lines, one
 - **Why:** the JavaScript adapter was only tested on Node. The browser debugger (`pwa-chrome`) may format values differently.
 - **How:** debug a page with a script in Chrome or Edge from VS Code, with the Code Scope panel open and the log at *Debug*, and report (or fix) what is different.
 
-### 10. Adapter for C#
+### 10. More C#: lists of objects, inheritance and try/catch
 
-- **Why:** C# is common in courses, and today it uses the generic mode.
-- **Where:** a new `src/debug/adapters/csharp.ts`, following `java.ts`. You need the .NET SDK and the C# extension. The discovery test shows the real format of arrays, lists, dictionaries and objects.
-- **Done when:** arrays, `List<T>`, `Dictionary<K,V>`, `Stack<T>`, `Queue<T>` and objects are drawn, with samples and integration tests.
+- **Why:** the C# adapter (`src/debug/adapters/csharp.ts`) already draws arrays, `List`, `Stack`, `Queue`, `Dictionary` and objects, but the newer concepts (list of objects, polymorphism, handled errors, recursion tree) have no C# sample or test yet.
+- **Where:** `samples/csharp` (one class per sample, registered in `Program.cs` and `launch.json`) and `test/integration/csharp.itest.ts`.
+- **Done when:** each concept has a C# sample and an integration test.
 
-### 11. Adapter for C and C++
+### 11. C++ containers: `std::vector`, `std::map`, `std::stack`
 
-- **Why:** in C, pointers and memory are where a drawing helps the most.
-- **Where:** a new adapter for the `cppdbg`/`cppvsdbg` debuggers (C/C++ extension). Needs a compiler (gcc, clang or MSVC) and a debugger (gdb, lldb or vsdbg).
-- **Done when:** arrays, `std::vector`, `std::map` and pointers to structs (linked lists) are drawn, with samples and integration tests.
+- **Why:** the C adapter (`src/debug/adapters/c.ts`) draws arrays and pointers to structs, but with gdb without pretty-printers the C++ containers only show their internals (`_M_impl`). `samples/c/vetor.cpp` is ready for this.
+- **Where:** either enable gdb pretty-printers (`-enable-pretty-printing` in `setupCommands`, needs a gdb with Python) or read the containers through `evaluate` (`v.size()`, `v[i]`); MSVC (`cppvsdbg`) shows them through natvis.
+- **Done when:** `std::vector`, `std::map` and `std::stack` are drawn, with an integration test.
 
 ### 12. Variables of earlier calls with arrays and objects
 

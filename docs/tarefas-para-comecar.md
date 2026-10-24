@@ -60,17 +60,17 @@ Níveis: **sem código** (não precisa programar), **iniciante** (poucas linhas,
 - **Por quê:** o adaptador de JavaScript só foi testado no Node. O debugger do navegador (`pwa-chrome`) pode formatar os valores de outro jeito.
 - **Como:** debugue uma página com script no Chrome ou no Edge pelo VS Code, com o painel aberto e o log em *Debug*, e conte (ou corrija) o que mudar.
 
-### 10. Adaptador para C#
+### 10. Mais C#: lista de objetos, herança e try/catch
 
-- **Por quê:** C# é comum em cursos, e hoje cai no modo genérico.
-- **Onde:** um `src/debug/adapters/csharp.ts` novo, seguindo o `java.ts`. Precisa do .NET SDK e da extensão C#. O teste de descoberta mostra o formato real de arrays, listas, dicionários e objetos.
-- **Pronto quando:** arrays, `List<T>`, `Dictionary<K,V>`, `Stack<T>`, `Queue<T>` e objetos aparecem desenhados, com exemplos e testes de integração.
+- **Por quê:** o adaptador de C# (`src/debug/adapters/csharp.ts`) já desenha arrays, `List`, `Stack`, `Queue`, `Dictionary` e objetos, mas os conceitos mais novos (lista de objetos, polimorfismo, erro tratado, árvore de recursão) ainda não têm exemplo nem teste em C#.
+- **Onde:** `samples/csharp` (uma classe por exemplo, registrada no `Program.cs` e no `launch.json`) e `test/integration/csharp.itest.ts`.
+- **Pronto quando:** cada conceito tem um exemplo e um teste de integração em C#.
 
-### 11. Adaptador para C e C++
+### 11. Coleções do C++: `std::vector`, `std::map`, `std::stack`
 
-- **Por quê:** em C, ponteiros e memória são onde o desenho mais ajuda.
-- **Onde:** um adaptador novo para os debuggers `cppdbg`/`cppvsdbg` (extensão C/C++). Precisa de um compilador (gcc, clang ou MSVC) e de um debugger (gdb, lldb ou vsdbg).
-- **Pronto quando:** arrays, `std::vector`, `std::map` e ponteiros para structs (listas ligadas) aparecem desenhados, com exemplos e testes de integração.
+- **Por quê:** o adaptador de C (`src/debug/adapters/c.ts`) desenha arrays e ponteiros para struct, mas com um gdb sem pretty-printers as coleções do C++ só mostram o que têm por dentro (`_M_impl`). O `samples/c/vetor.cpp` já está pronto para isso.
+- **Onde:** ligar os pretty-printers do gdb (`-enable-pretty-printing` em `setupCommands`, precisa de um gdb com Python) ou ler as coleções por `evaluate` (`v.size()`, `v[i]`); o MSVC (`cppvsdbg`) mostra pelo natvis.
+- **Pronto quando:** `std::vector`, `std::map` e `std::stack` aparecem desenhados, com teste de integração.
 
 ### 12. Variáveis das chamadas de baixo com arrays e objetos
 

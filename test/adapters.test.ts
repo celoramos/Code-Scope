@@ -25,9 +25,14 @@ describe('pickAdapter', () => {
     assert.equal(pickAdapter('algum-debugger', '/x/main.py'), pythonAdapter);
   });
 
+  it('C# e C/C++ têm adaptador próprio', () => {
+    assert.equal(pickAdapter('coreclr', '/x/Program.cs').id, 'csharp');
+    assert.equal(pickAdapter('cppdbg', '/x/main.cpp').id, 'c');
+  });
+
   it('cai no modo genérico para o resto', () => {
-    assert.equal(pickAdapter('coreclr', '/x/Program.cs'), genericAdapter);
-    assert.equal(pickAdapter('cppdbg', '/x/main.cpp'), genericAdapter);
+    assert.equal(pickAdapter('go', '/x/main.go'), genericAdapter);
+    assert.equal(pickAdapter('lua', '/x/main.lua'), genericAdapter);
   });
 });
 

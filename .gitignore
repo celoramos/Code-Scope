@@ -5,3 +5,6 @@ samples/java/**/*.class
 samples/java/bin/
 out-test/
 .vscode-test/
+samples/csharp/bin/
+samples/csharp/obj/
+samples/c/build/

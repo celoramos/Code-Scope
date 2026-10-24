@@ -1,3 +1,4 @@
+import * as cp from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
@@ -41,24 +42,61 @@ function py(name: string, line: number, steps: Scenario['steps']): Scenario {
 const over = (n: number) => Array<'over'>(n).fill('over');
 const into = (n: number) => Array<'into'>(n).fill('into');
 
+function cs(name: string, line: number, steps: Scenario['steps']): Scenario {
+  const dir = path.join(samplesRoot, 'csharp');
+  return {
+    name: `cs-${name}`,
+    file: path.join(dir, `${name}.cs`),
+    line,
+    steps,
+    config: { type: 'coreclr', request: 'launch', name, program: path.join(dir, 'bin', 'Debug', 'net8.0', 'Exemplos.dll'), args: [name], cwd: dir, console: 'internalConsole' },
+  };
+}
+function cc(file: string, line: number, steps: Scenario['steps']): Scenario {
+  const dir = path.join(samplesRoot, 'c');
+  const name = file.replace(/\.\w+$/, '');
+  return {
+    name: `c-${name}`,
+    file: path.join(dir, file),
+    line,
+    steps,
+    config: { type: 'cppdbg', request: 'launch', name, program: path.join(dir, 'build', `${name}.exe`), cwd: dir, MIMode: 'gdb', miDebuggerPath: findOnPath('gdb') ?? 'gdb', externalConsole: false },
+  };
+}
+
+/** Caminho completo de um programa no PATH (o cppdbg pede o gdb com caminho). */
+function findOnPath(cmd: string): string | undefined {
+  for (const dir of (process.env.PATH ?? '').split(path.delimiter)) {
+    for (const ext of ['', '.exe']) {
+      const p = path.join(dir, cmd + ext);
+      if (fs.existsSync(p)) return p;
+    }
+  }
+  return undefined;
+}
+
 // Os exemplos da rodada atual; os anteriores já viraram adaptador e teste.
 const SCENARIOS: Scenario[] = [
-  java('Turma', 16, over(8)),
-  java('Grafo', 16, over(8)),
-  java('Heranca', 39, into(6)),
-  java('TrataErro', 6, over(8)),
-  java('Numeros', 4, over(8)),
-  js('turma', 10, over(8)),
-  js('grafo', 10, over(8)),
-  js('heranca', 26, into(6)),
-  js('trataErro', 5, over(8)),
-  js('numeros', 3, over(6)),
-  py('turma', 9, over(8)),
-  py('grafo', 13, over(8)),
-  py('heranca', 22, into(6)),
-  py('trata_erro', 5, over(8)),
-  py('numeros', 3, over(6)),
+  cs('BubbleSort', 9, over(8)),
+  cs('Pilha', 8, over(5)),
+  cs('Dicionario', 9, over(8)),
+  cs('ListaLigada', 19, over(5)),
+  cc('bubble_sort.c', 7, over(8)),
+  cc('lista_ligada.c', 18, over(5)),
+  cc('vetor.cpp', 9, over(12)),
 ];
+
+/** Compila os exemplos de C# e C/C++ antes de debugar; sem compilador, os cenários são pulados. */
+function buildNatives(): void {
+  const run = (cmd: string, args: string[], cwd: string) => cp.spawnSync(cmd, args, { cwd, shell: process.platform === 'win32', encoding: 'utf-8' });
+  if (findOnPath('dotnet')) run('dotnet', ['build', '-nologo', '-v', 'q'], path.join(samplesRoot, 'csharp'));
+  if (findOnPath('gcc')) {
+    const dir = path.join(samplesRoot, 'c');
+    fs.mkdirSync(path.join(dir, 'build'), { recursive: true });
+    for (const f of ['bubble_sort.c', 'lista_ligada.c']) run('gcc', ['-g', '-O0', f, '-o', `build/${f.replace('.c', '.exe')}`], dir);
+    run('g++', ['-g', '-O0', 'vetor.cpp', '-o', 'build/vetor.exe'], dir);
+  }
+}
 
 async function waitFor<T>(check: () => T | undefined, ms: number): Promise<T | undefined> {
   const start = Date.now();
@@ -114,11 +152,14 @@ async function expand(s: vscode.DebugSession, ref: number, depth: number): Promi
 describe('Descoberta de formatos (CODE_SCOPE_DISCOVER)', function () {
   before(function () {
     if (!process.env.CODE_SCOPE_DISCOVER) this.skip();
+    buildNatives();
   });
 
   for (const sc of SCENARIOS) {
     it(sc.name, async function () {
       if (sc.name.startsWith('py-') && !fs.existsSync(python)) this.skip();
+      if (sc.name.startsWith('cs-') && !findOnPath('dotnet')) this.skip();
+      if (sc.name.startsWith('c-') && !findOnPath('gdb')) this.skip();
       const stops: { session: vscode.DebugSession; threadId: number; reason: string }[] = [];
       const tracker = vscode.debug.registerDebugAdapterTrackerFactory('*', {
         createDebugAdapterTracker: (session) => ({

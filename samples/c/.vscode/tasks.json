@@ -1,0 +1,53 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "compilar bubble_sort",
+      "type": "process",
+      "command": "gcc",
+      "args": [
+        "-g",
+        "-O0",
+        "bubble_sort.c",
+        "-o",
+        "build/bubble_sort.exe"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "compilar lista_ligada",
+      "type": "process",
+      "command": "gcc",
+      "args": [
+        "-g",
+        "-O0",
+        "lista_ligada.c",
+        "-o",
+        "build/lista_ligada.exe"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "compilar vetor",
+      "type": "process",
+      "command": "g++",
+      "args": [
+        "-g",
+        "-O0",
+        "vetor.cpp",
+        "-o",
+        "build/vetor.exe"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$gcc"
+    }
+  ]
+}

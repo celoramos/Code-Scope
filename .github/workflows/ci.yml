@@ -25,10 +25,10 @@ jobs:
           path: code-scope.vsix
 
   integration:
-    name: Integração com os debuggers de Java, JavaScript e Python
+    name: Integração com os debuggers reais
     # Windows é onde o teste foi validado e não precisa de servidor X para abrir o VS Code.
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -43,6 +43,10 @@ jobs:
         id: python
         with:
           python-version: '3.12'
+      # C#: a extensão C# debuga com o .NET do PATH. C: os testes usam o gcc e o gdb do runner, se houver.
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '8.0.x'
       - run: npm ci
       - run: npm run test:integration
         env:

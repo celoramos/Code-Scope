@@ -56,6 +56,8 @@ export async function collectSnapshot(
   if (!frame) return undefined;
   const file = frame.source?.path ?? frame.source?.name ?? '';
   const adapter = typeof pick === 'function' ? pick(file) : pick;
+  // Daqui em diante toda resposta de "variables" já vem arrumada pelo adaptador.
+  session = normalizing(session, adapter);
 
   const { scopes, locals: frameLocals, hidden } = await readLocals(session, adapter, frame);
   const locals: DapVariable[] = [];
@@ -93,6 +95,11 @@ export async function collectSnapshot(
         if (arrays.length >= limits.maxArrays) break;
         const { array, children } = await readSequence(session, adapter, v, v.name, shape, limits.maxElements, true, objectsOf);
         if (shape.id) array.id = shape.id;
+        // O tipo já diz que é pilha ou fila (C#: Stack<T>, Queue<T>), sem precisar olhar o código.
+        if (shape.role) {
+          array.kind = shape.role.role;
+          if (shape.role.topFirst) array.values.reverse();
+        }
         arrays.push(array);
         arrayVars.push({ array, v });
         elements[v.name] = children.slice(0, 3);
@@ -140,6 +147,19 @@ export async function collectSnapshot(
     snapshot,
     adapter,
     raw: { frame, scopes, locals, elements },
+  };
+}
+
+/** Sessão que passa cada resposta de "variables" pelo normalize do adaptador. */
+function normalizing(session: Session, adapter: LanguageAdapter): Session {
+  const normalize = adapter.normalize;
+  if (!normalize) return session;
+  return {
+    async customRequest(command: string, args?: unknown) {
+      const res = await session.customRequest(command, args);
+      if (command !== 'variables' || !res?.variables) return res;
+      return { ...res, variables: normalize(res.variables as DapVariable[]) };
+    },
   };
 }
 

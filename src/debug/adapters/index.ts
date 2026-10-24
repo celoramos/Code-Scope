@@ -1,12 +1,14 @@
 import type { Snapshot } from '../../model/snapshot';
 import type { LanguageAdapter } from './adapter';
+import { cAdapter } from './c';
+import { csharpAdapter } from './csharp';
 import { genericAdapter } from './generic';
 import { javaAdapter } from './java';
 import { javascriptAdapter } from './javascript';
 import { pythonAdapter } from './python';
 
 /** Adaptadores com regras próprias. Para adicionar uma linguagem, crie o arquivo e registre aqui. */
-export const ADAPTERS: readonly LanguageAdapter[] = [javaAdapter, javascriptAdapter, pythonAdapter];
+export const ADAPTERS: readonly LanguageAdapter[] = [javaAdapter, javascriptAdapter, pythonAdapter, csharpAdapter, cAdapter];
 
 /**
  * Escolhe pelo tipo da sessão de debug; se for desconhecido, pela extensão do
@@ -33,4 +35,4 @@ export function applyCollectionRoles(snapshot: Snapshot, source: string, adapter
   }
 }
 
-export { genericAdapter, javaAdapter, javascriptAdapter, pythonAdapter };
+export { cAdapter, csharpAdapter, genericAdapter, javaAdapter, javascriptAdapter, pythonAdapter };

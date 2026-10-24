@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "cppdbg",
+      "request": "launch",
+      "name": "bubble_sort",
+      "program": "${workspaceFolder}/build/bubble_sort.exe",
+      "cwd": "${workspaceFolder}",
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "stopAtEntry": false,
+      "externalConsole": false,
+      "preLaunchTask": "compilar bubble_sort"
+    },
+    {
+      "type": "cppdbg",
+      "request": "launch",
+      "name": "lista_ligada",
+      "program": "${workspaceFolder}/build/lista_ligada.exe",
+      "cwd": "${workspaceFolder}",
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "stopAtEntry": false,
+      "externalConsole": false,
+      "preLaunchTask": "compilar lista_ligada"
+    },
+    {
+      "type": "cppdbg",
+      "request": "launch",
+      "name": "vetor",
+      "program": "${workspaceFolder}/build/vetor.exe",
+      "cwd": "${workspaceFolder}",
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "stopAtEntry": false,
+      "externalConsole": false,
+      "preLaunchTask": "compilar vetor"
+    }
+  ]
+}

@@ -14,7 +14,7 @@ export type VariableShape =
    * Coleção indexada a ser expandida. "list" cresce e encolhe; "array" tem tamanho
    * fixo. Sem length, o tamanho é contado pelas posições que o debugger devolver.
    */
-  | { kind: 'sequence'; length?: number; collection: 'array' | 'list'; id?: string }
+  | { kind: 'sequence'; length?: number; collection: 'array' | 'list'; id?: string; role?: CollectionRole }
   /**
    * Instância de uma classe. id é a identidade na memória quando o debugger
    * mostra uma ("@12" no Java, "0x..." no Python); sem ela, o coletor compara
@@ -90,6 +90,12 @@ export interface LanguageAdapter {
    * campo do objeto que tem a mensagem, quando ela não vem no próprio valor.
    */
   caughtError?(v: DapVariable): { type: string; message?: string; messageField?: string } | undefined;
+  /**
+   * Arruma a resposta de "variables" antes de qualquer leitura: o debugger do
+   * C# põe o tipo no nome ("i [int]") e acrescenta filhos que não são do
+   * programa ("Raw View").
+   */
+  normalize?(vars: DapVariable[]): DapVariable[];
 }
 
 export interface MapEntry {
@@ -127,7 +133,8 @@ function unquoteSimple(value: string): string {
 
 /** Classes declaradas no arquivo: só objetos delas são desenhados. */
 export function declaredClasses(source: string): Set<string> {
-  return new Set([...source.matchAll(/\bclass\s+([A-Za-z_$][\w$]*)/g)].map((m) => m[1]));
+  // class (Java, JavaScript, Python, C#, C++), struct (C, C++, C#) e record (C#, Java).
+  return new Set([...source.matchAll(/\b(?:class|struct|record)\s+([A-Za-z_$][\w$]*)/g)].map((m) => m[1]));
 }
 
 export interface ReturnedValue {

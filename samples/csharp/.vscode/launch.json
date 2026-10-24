@@ -1,0 +1,65 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "coreclr",
+      "request": "launch",
+      "name": "BubbleSort",
+      "program": "${workspaceFolder}/bin/Debug/net8.0/Exemplos.dll",
+      "args": [
+        "BubbleSort"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "preLaunchTask": "compilar"
+    },
+    {
+      "type": "coreclr",
+      "request": "launch",
+      "name": "Pilha",
+      "program": "${workspaceFolder}/bin/Debug/net8.0/Exemplos.dll",
+      "args": [
+        "Pilha"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "preLaunchTask": "compilar"
+    },
+    {
+      "type": "coreclr",
+      "request": "launch",
+      "name": "Fila",
+      "program": "${workspaceFolder}/bin/Debug/net8.0/Exemplos.dll",
+      "args": [
+        "Fila"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "preLaunchTask": "compilar"
+    },
+    {
+      "type": "coreclr",
+      "request": "launch",
+      "name": "Dicionario",
+      "program": "${workspaceFolder}/bin/Debug/net8.0/Exemplos.dll",
+      "args": [
+        "Dicionario"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "preLaunchTask": "compilar"
+    },
+    {
+      "type": "coreclr",
+      "request": "launch",
+      "name": "ListaLigada",
+      "program": "${workspaceFolder}/bin/Debug/net8.0/Exemplos.dll",
+      "args": [
+        "ListaLigada"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "preLaunchTask": "compilar"
+    }
+  ]
+}
