@@ -1,6 +1,7 @@
 import { buildCallTree } from '../../src/model/callTree';
 import { explainHeap } from '../../src/model/heap';
 import { numberNotes } from '../../src/model/numbers';
+import { samenessNotes } from '../../src/model/sameness';
 import { polymorphismNote } from '../../src/model/calls';
 import { graphViews } from '../../src/model/graph';
 import { fieldShadows } from '../../src/model/scope';
@@ -201,6 +202,13 @@ describe('JavaScript (js-debug) real', () => {
     const snaps = await debugScript('numeros', 3, 6);
     const notes = snaps.flatMap((s, k) => (k > 0 ? numberNotes(snaps[k - 1], s, 'pt') : []));
     assert.ok(notes.some((n) => n.includes('0.30000000000000004')), `frases: ${notes.join(' | ')}`);
+  });
+
+  it('JavaScript conceito: identidade e igualdade', async () => {
+    const snaps = await debugScript('igualdade', 10, 14);
+    const notes = snaps.flatMap((s) => samenessNotes(s, 'pt'));
+    assert.ok(notes.some((n) => n.startsWith('p === q deu falso mesmo com p e q iguais por dentro')), `frases: ${notes.join(' | ')}; condições: ${JSON.stringify(snaps.map((s) => s.condition?.parts))}`);
+    assert.ok(notes.some((n) => n.startsWith('r === p: r e p apontam para o mesmo objeto')), `frases: ${notes.join(' | ')}; condições: ${JSON.stringify(snaps.map((s) => s.condition?.parts))}`);
   });
 
   it('JavaScript conceito: árvore de recursão do fibonacci', async () => {

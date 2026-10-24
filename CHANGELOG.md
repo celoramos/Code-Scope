@@ -14,6 +14,7 @@
 - Herança e polimorfismo: a explicação diz quando rodou a versão da subclasse ou a herdada.
 - Texto lido letra por letra vira uma fileira de letras com a seta do índice.
 - Pegadinhas de número: divisão de inteiros, `//` do Python, `0.1 + 0.2` e overflow.
+- Identidade e igualdade: quando a condição compara dois objetos, a explicação diz se a pergunta foi "é o mesmo objeto?" ou "tem o mesmo conteúdo?", com as pegadinhas do `==` entre textos no Java, do `equals` (ou `__eq__`) que a classe não escreveu e do `equals` de array.
 - C#: adaptador próprio para o debugger da extensão C# (arrays, `List`, `Stack`, `Queue`, `Dictionary`, objetos e listas ligadas), validado com o debugger real, e exemplos em `samples/csharp`.
 - C: adaptador próprio para a extensão C/C++ com gdb (arrays, ponteiros para struct e listas ligadas), validado com o debugger real, e exemplos em `samples/c`. Ponteiro ainda sem valor (lixo de memória) não é seguido.
 - Para quem quer contribuir: guia em inglês (`CONTRIBUTING.md`) e português, lista de tarefas para começar (`docs/good-first-issues.md`), formulários de issue e de pull request nos dois idiomas.

@@ -104,7 +104,7 @@ export class ScopeController implements vscode.Disposable {
       if (source) applyTextRoles(snap, source.text);
       // Só vale guardar as classes quando alguma herda de outra: é para explicar polimorfismo.
       const classes = source ? parseClasses(source.text) : {};
-      if (Object.values(classes).some((c) => c.parent)) snap.classes = classes;
+      if (Object.keys(classes).length > 0) snap.classes = classes;
       if (reason === 'exception') snap.exception = await readException(session, thread);
       // A linha parada testa uma condição? Cada parte vira verdadeiro ou falso antes de rodar.
       const parsed = snap.exception ? undefined : parseCondition(snap.code, collected.adapter.id === 'python' ? 'python' : 'c');

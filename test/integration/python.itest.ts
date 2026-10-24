@@ -1,6 +1,7 @@
 import { buildCallTree } from '../../src/model/callTree';
 import { explainHeap } from '../../src/model/heap';
 import { numberNotes } from '../../src/model/numbers';
+import { samenessNotes } from '../../src/model/sameness';
 import { polymorphismNote } from '../../src/model/calls';
 import { graphViews } from '../../src/model/graph';
 import { fieldShadows } from '../../src/model/scope';
@@ -228,6 +229,14 @@ describe('Python (debugpy) real', function () {
     const snaps = await debugScript('numeros', 3, 6);
     const notes = snaps.flatMap((s, k) => (k > 0 ? numberNotes(snaps[k - 1], s, 'pt') : []));
     assert.ok(notes.some((n) => n.includes('7 // 2 dá 3')), `frases: ${notes.join(' | ')}`);
+  });
+
+  it('Python conceito: identidade e igualdade', async () => {
+    const snaps = await debugScript('igualdade', 9, 12);
+    const notes = snaps.flatMap((s) => samenessNotes(s, 'pt'));
+    assert.ok(notes.some((n) => n.startsWith('a == b deu verdadeiro: o conteúdo é igual')), `frases: ${notes.join(' | ')}; condições: ${JSON.stringify(snaps.map((s) => s.condition?.parts))}`);
+    assert.ok(notes.some((n) => n.startsWith('a is b deu falso mesmo com a e b iguais por dentro')), `frases: ${notes.join(' | ')}; condições: ${JSON.stringify(snaps.map((s) => s.condition?.parts))}`);
+    assert.ok(notes.some((n) => n.includes('a classe Ponto não escreveu __eq__')), `frases: ${notes.join(' | ')}; condições: ${JSON.stringify(snaps.map((s) => s.condition?.parts))}`);
   });
 
   it('Python conceito: árvore de recursão do fibonacci', async () => {

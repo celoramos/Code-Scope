@@ -1,6 +1,7 @@
 import { buildCallTree } from '../../src/model/callTree';
 import { explainHeap } from '../../src/model/heap';
 import { numberNotes } from '../../src/model/numbers';
+import { samenessNotes } from '../../src/model/sameness';
 import { polymorphismNote } from '../../src/model/calls';
 import { graphViews } from '../../src/model/graph';
 import { fieldShadows } from '../../src/model/scope';
@@ -266,6 +267,15 @@ describe('Java Debugger real', () => {
     const snaps = await debugSample('Numeros', 4, 8);
     const notes = snaps.flatMap((s, k) => (k > 0 ? numberNotes(snaps[k - 1], s, 'pt') : []));
     assert.ok(notes.some((n) => n.includes('7 / 2 deu 3')), `frases: ${notes.join(' | ')}`);
+  });
+
+  it('Java conceito: identidade e igualdade', async () => {
+    const snaps = await debugSample('Igualdade', 14, 22);
+    const notes = snaps.flatMap((s) => samenessNotes(s, 'pt'));
+    assert.ok(notes.some((n) => n.startsWith('a == b deu verdadeiro, mas só porque')), `frases: ${notes.join(' | ')}; condições: ${JSON.stringify(snaps.map((s) => s.condition?.parts))}`);
+    assert.ok(notes.some((n) => n.startsWith('a == c deu falso mesmo com a e c iguais por dentro')), `frases: ${notes.join(' | ')}; condições: ${JSON.stringify(snaps.map((s) => s.condition?.parts))}`);
+    assert.ok(notes.some((n) => n.includes('a classe Ponto não escreveu equals')), `frases: ${notes.join(' | ')}; condições: ${JSON.stringify(snaps.map((s) => s.condition?.parts))}`);
+    assert.ok(notes.some((n) => n.startsWith('r == p: r e p apontam para o mesmo objeto')), `frases: ${notes.join(' | ')}; condições: ${JSON.stringify(snaps.map((s) => s.condition?.parts))}`);
   });
 
   it('Java conceito: árvore de recursão do fibonacci', async () => {

@@ -13,6 +13,7 @@ import { arrowsFor, matrixAxesFor, VALUE_NAMES, type Arrow, type MatrixAxes } fr
 import type { Snapshot } from './snapshot';
 import { graphNotes, graphViews, type GraphView } from './graph';
 import { numberNotes } from './numbers';
+import { samenessNotes } from './sameness';
 import { answers, predictionFor, type Prediction } from './predict';
 import { scopeNotes, shadowChanges, shadows } from './scope';
 import { traceTable, type TraceTable } from './trace';
@@ -126,6 +127,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
           explainFlow(executed, snapshot, options.language),
           rangeNote(prev, snapshot, options.language),
           ...explainCondition(snapshot.condition, options.language),
+          ...samenessNotes(snapshot, options.language),
         ].filter(isText),
         options.language,
       );

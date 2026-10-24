@@ -117,7 +117,20 @@ export interface Messages {
   mapPutNew(name: string, key: string, value: string): string;
   mapUpdated(name: string, key: string, from: string, to: string): string;
   mapRemoved(name: string, key: string): string;
+  /** == (ou is) deu "não é o mesmo" com dois lados iguais por dentro. fix: como perguntar pelo conteúdo. */
+  identityTrap(expr: string, result: boolean, a: string, b: string, fix?: string): string;
+  /** == entre textos iguais no Java deu verdadeiro por causa dos literais reaproveitados. */
+  stringPool(expr: string, a: string, b: string): string;
+  identitySame(expr: string, a: string, b: string): string;
+  /** equals (ou ==) pelo conteúdo deu verdadeiro com dois objetos diferentes. */
+  contentEqual(expr: string, a: string, b: string, identityExpr: string): string;
+  /** A classe não escreveu equals (ou __eq__): o herdado só compara identidade. lang: java, csharp ou python. */
+  equalsNotWritten(expr: string, cls: string, lang: string): string;
+  arrayEqualsIsIdentity(expr: string, a: string, b: string, lang: string): string;
 }
+
+/** O método que compara conteúdo em cada linguagem. */
+const eqName = (lang: string) => (lang === 'csharp' ? 'Equals' : lang === 'python' ? '__eq__' : 'equals');
 
 function count(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
@@ -269,6 +282,17 @@ const pt: Messages = {
   mapPutNew: (name, key, value) => `A chave ${key} entrou em ${name}, com o valor ${value}.`,
   mapUpdated: (name, key, from, to) => `${name}[${key}] mudou de ${from} para ${to}: a chave já existia, só o valor foi trocado.`,
   mapRemoved: (name, key) => `A chave ${key} saiu de ${name}.`,
+  identityTrap: (expr, result, a, b, fix) =>
+    `${expr} deu ${result ? 'verdadeiro' : 'falso'} mesmo com ${a} e ${b} iguais por dentro: esse operador pergunta se é o mesmo objeto, e são dois objetos diferentes. ${fix ? `Para comparar o conteúdo, use ${fix}.` : 'Para comparar o conteúdo, compare campo por campo.'}`,
+  stringPool: (expr, a, b) =>
+    `${expr} deu verdadeiro, mas só porque ${a} e ${b} são o mesmo texto escrito direto no código, que o Java guarda uma vez só. Com texto lido do teclado ou montado com +, daria falso: compare textos com ${a}.equals(${b}).`,
+  identitySame: (expr, a, b) => `${expr}: ${a} e ${b} apontam para o mesmo objeto, então é claro que são iguais.`,
+  contentEqual: (expr, a, b, identityExpr) =>
+    `${expr} deu verdadeiro: o conteúdo é igual, mesmo sendo dois objetos diferentes na memória (${identityExpr} daria falso).`,
+  equalsNotWritten: (expr, cls, lang) =>
+    `${expr} deu falso mesmo com o mesmo conteúdo: a classe ${cls} não escreveu ${eqName(lang)}, então vale o que ela herda, que só pergunta se é o mesmo objeto, como o ${lang === 'python' ? 'is' : '=='}.`,
+  arrayEqualsIsIdentity: (expr, a, b, lang) =>
+    `${expr} deu falso mesmo com as mesmas posições: o ${lang === 'csharp' ? 'Equals' : 'equals'} de array só pergunta se é o mesmo array. Para comparar posição por posição, use ${lang === 'csharp' ? `${a}.SequenceEqual(${b})` : `Arrays.equals(${a}, ${b})`}.`,
 };
 
 const enPositions = (n: number) => count(n, 'position', 'positions');
@@ -413,6 +437,17 @@ const en: Messages = {
   mapPutNew: (name, key, value) => `The key ${key} was added to ${name}, with the value ${value}.`,
   mapUpdated: (name, key, from, to) => `${name}[${key}] changed from ${from} to ${to}: the key already existed, only the value was replaced.`,
   mapRemoved: (name, key) => `The key ${key} was removed from ${name}.`,
+  identityTrap: (expr, result, a, b, fix) =>
+    `${expr} was ${result ? 'true' : 'false'} even though ${a} and ${b} are equal inside: this operator asks whether it is the same object, and they are two different objects. ${fix ? `To compare the contents, use ${fix}.` : 'To compare the contents, compare field by field.'}`,
+  stringPool: (expr, a, b) =>
+    `${expr} was true, but only because ${a} and ${b} are the same text written in the code, which Java keeps only once. With text read from input or built with +, it would be false: compare texts with ${a}.equals(${b}).`,
+  identitySame: (expr, a, b) => `${expr}: ${a} and ${b} point to the same object, so of course they are equal.`,
+  contentEqual: (expr, a, b, identityExpr) =>
+    `${expr} was true: the contents are equal, even though they are two different objects in memory (${identityExpr} would be false).`,
+  equalsNotWritten: (expr, cls, lang) =>
+    `${expr} was false even with the same contents: class ${cls} did not write ${eqName(lang)}, so it uses the inherited one, which only asks whether it is the same object, like ${lang === 'python' ? 'is' : '=='}.`,
+  arrayEqualsIsIdentity: (expr, a, b, lang) =>
+    `${expr} was false even with the same positions: ${lang === 'csharp' ? 'Equals' : 'equals'} on an array only asks whether it is the same array. To compare position by position, use ${lang === 'csharp' ? `${a}.SequenceEqual(${b})` : `Arrays.equals(${a}, ${b})`}.`,
 };
 
 export const MESSAGES: Record<Language, Messages> = { pt, en };

@@ -90,7 +90,7 @@ export function parseCondition(code: string | undefined, syntax: Syntax): Parsed
 
 /** Funções e métodos que só leem: avaliar não muda nada no programa. */
 const PURE_CALL =
-  /^(len|abs|min|max|str|int|float|bool|ord|chr|Math\.(abs|max|min|floor|ceil|round|sqrt))$|\.(size|length|isEmpty|equals|equalsIgnoreCase|charAt|get|getOrDefault|containsKey|containsValue|contains|includes|has|startsWith|endsWith|indexOf|toLowerCase|toUpperCase|trim|compareTo|peek|isdigit|isalpha|isupper|islower|lower|upper|strip|keys|values)$/;
+  /^(len|abs|min|max|str|int|float|bool|ord|chr|Math\.(abs|max|min|floor|ceil|round|sqrt))$|\.(size|length|isEmpty|equals|Equals|SequenceEqual|equalsIgnoreCase|charAt|get|getOrDefault|containsKey|containsValue|contains|includes|has|startsWith|endsWith|indexOf|toLowerCase|toUpperCase|trim|compareTo|peek|isdigit|isalpha|isupper|islower|lower|upper|strip|keys|values)$/;
 
 /**
  * A parte pode ser avaliada pelo debugger sem efeito colateral: sem

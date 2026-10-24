@@ -28,6 +28,7 @@ While you debug, a side panel draws your program: arrays, matrices, lists, stack
 - a list of objects shows each object inside its position (`turma[1]` with its name and grade); a dictionary of lists becomes a graph, with the visited nodes, the current one and the queue of a breadth-first search;
 - inside a `catch`, the panel explains which line raised the error and that the rest of the `try` did not run; when a subclass method runs, it says why it was that version (polymorphism);
 - text read letter by letter becomes a row of letters with the index arrow, and the classic number traps are explained when they happen: integer division, `0.1 + 0.2`, overflow.
+- `==` versus `equals` (and `is` versus `==` in Python): when a condition compares two objects, the text says whether it asked "same object?" or "same contents?", and explains the classic traps, like `==` between two equal Java strings, or `equals` in a class that never wrote one.
 
 Three tools for class:
 
@@ -167,6 +168,7 @@ In the Extension Development Host window:
 | `TrataErro` / `trataErro` / `trata_erro` | `try/catch`: the line that raised the error and the jump to the `catch` |
 | `Texto` / `texto` | A word read letter by letter, and `+` creating a new text |
 | `Numeros` / `numeros` | Integer division, `0.1 + 0.2` and int overflow |
+| `Igualdade` / `igualdade` | Same object or same contents: `==`, `equals`, `===` and `is` |
 | `csharp/` (BubbleSort, Pilha, Fila, Dicionario, ListaLigada) | The same lessons in C#: one project, each sample is a configuration in `launch.json` |
 | `c/bubble_sort.c`, `c/lista_ligada.c` | Arrays in C, and a linked list of `struct`s connected by pointers |
 

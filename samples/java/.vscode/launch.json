@@ -144,6 +144,12 @@
       "name": "Fibonacci",
       "request": "launch",
       "mainClass": "Fibonacci"
+    },
+    {
+      "type": "java",
+      "name": "Igualdade",
+      "request": "launch",
+      "mainClass": "Igualdade"
     }
   ]
 }

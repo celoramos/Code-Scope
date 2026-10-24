@@ -28,6 +28,7 @@ Enquanto você debuga, um painel lateral desenha o seu programa: arrays, matrize
 - uma lista de objetos mostra cada objeto dentro da sua posição (`turma[1]` com nome e nota); um dicionário de listas vira grafo, com os visitados, o nó atual e a fila de uma busca em largura;
 - dentro de um `catch`, o painel explica qual linha deu erro e que o resto do `try` não rodou; quando roda o método de uma subclasse, diz por que foi aquela versão (polimorfismo);
 - texto lido letra por letra vira uma fileira de letras com a seta do índice, e as pegadinhas de número são explicadas quando acontecem: divisão de inteiros, `0.1 + 0.2`, overflow.
+- `==` ou `equals` (e `is` ou `==` no Python): quando a condição compara dois objetos, o texto diz se ela perguntou "é o mesmo objeto?" ou "tem o mesmo conteúdo?" e explica as pegadinhas clássicas, como `==` entre dois textos iguais no Java ou `equals` numa classe que não escreveu o seu.
 
 Três ferramentas para a aula:
 
@@ -167,6 +168,7 @@ Na janela do Extension Development Host:
 | `TrataErro` / `trataErro` / `trata_erro` | `try/catch`: a linha que deu erro e o pulo para o `catch` |
 | `Texto` / `texto` | Uma palavra lida letra por letra, e o `+` criando um texto novo |
 | `Numeros` / `numeros` | Divisão de inteiros, `0.1 + 0.2` e overflow do int |
+| `Igualdade` / `igualdade` | Mesmo objeto ou mesmo conteúdo: `==`, `equals`, `===` e `is` |
 | `csharp/` (BubbleSort, Pilha, Fila, Dicionario, ListaLigada) | As mesmas aulas em C#: um projeto só, cada exemplo é uma configuração no `launch.json` |
 | `c/bubble_sort.c`, `c/lista_ligada.c` | Arrays em C e uma lista ligada de `struct`s ligados por ponteiros |
 
