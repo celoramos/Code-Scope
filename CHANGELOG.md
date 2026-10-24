@@ -1,14 +1,27 @@
 # Changelog
 
-## Não lançado
+## 0.5.0
 
 ### Novo
 
+- Teste de mesa: uma linha por passo e uma coluna por variável, com a célula que mudou marcada e uma coluna de chamada quando há recursão. Clicar no passo leva até ele.
+- Erros explicados: o programa para nas exceções que ninguém trata (configuração `codeScope.pauseOnErrors`) e o painel diz o que aconteceu em palavras simples. Índice fora do limite desenha a posição que não existe; também há explicação para null/undefined/None, divisão por zero, chave inexistente, recursão sem fim e outros.
+- Pilha de chamadas e recursão: um cartão por chamada, cada um com as próprias variáveis, e o valor devolvido quando a chamada termina.
+- Objetos e referências: um cartão por objeto, com as variáveis que apontam para ele. Duas variáveis no mesmo objeto (ou no mesmo array) aparecem como uma coisa só, com a explicação de que não é cópia.
+- Listas ligadas desenhadas como nós e setas e árvores binárias como árvores, reconhecidas pela classe que aponta para ela mesma.
+- Dicionários: `HashMap` e outros `Map` do Java, `dict` do Python, objeto literal e `Map` do JavaScript, numa tabela de chave e valor.
+- Condições quebradas em partes antes de rodar, cada uma verdadeira ou falsa com os valores no lugar dos nomes, respeitando o curto-circuito.
+- Buscas e ordenações: posições comparadas contornadas, intervalo da busca (inicio e fim, lo e hi...) com o resto apagado, e contadores de comparações e trocas.
+- Escopo: a variável que sai de escopo fica um passo, riscada; a variável de um bloco que esconde outra de mesmo nome e o parâmetro com o nome de um campo do objeto são explicados.
 - O painel fala inglês e português e segue o idioma do VS Code: português quando o VS Code está em português, inglês nos outros casos. Valem as explicações, os rótulos do painel, os textos para leitores de tela, os comandos e as configurações.
 - README em inglês (`README.md`) e em português (`README.pt-br.md`).
+- Exemplos novos nas três linguagens: fatorial, erro de índice, referências, lista ligada, árvore binária, dicionário, busca binária e escopo.
 
 ### Corrigido
 
+- `HashMap` aparecia como lista, com valores como `HashMap$Node@44 "sol":"1"`.
+- As variáveis "Return value" (JavaScript) e "(return) f" (Python) apareciam no painel como se fossem do aluno.
+- `double` no Java aparecia com a vírgula e as casas do sistema ("150,000000"); agora sai como no código ("150.0").
 - A tela inicial do painel pedia um breakpoint "num programa Java"; agora vale para qualquer linguagem.
 - CI: os testes de JavaScript falhavam com o Node 20, que o js-debug do VS Code 1.143 não consegue debugar; o CI passa a usar o Node 24, e a documentação pede o Node 22 ou mais novo.
 

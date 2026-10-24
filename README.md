@@ -6,7 +6,7 @@ A VS Code extension that shows your code running, visually, for people learning 
 
 Everything happens inside VS Code: the panel sits in the sidebar, next to your code, and uses your theme's colors. It opens no browser, needs no account and sends nothing to the internet.
 
-While you debug, a side panel draws your local variables: arrays, matrices, lists, stacks and queues. Think of it as someone drawing your program on a whiteboard. It works with Java, JavaScript, TypeScript and Python, and with any other language that has a debugger in VS Code (see [Languages](#languages)). On every F10 the panel animates what changed and explains what happened:
+While you debug, a side panel draws your program: arrays, matrices, lists, stacks, queues, dictionaries, objects, linked lists, trees and the call stack. Think of it as someone drawing your program on a whiteboard. It works with Java, JavaScript, TypeScript and Python, and with any other language that has a debugger in VS Code (see [Languages](#languages)). On every F10 the panel animates what changed and explains what happened:
 
 - the changed box flashes and stays highlighted;
 - a swap shows the two boxes crossing over, even when the code uses a `temp` variable and takes two steps;
@@ -15,7 +15,15 @@ While you debug, a side panel draws your local variables: arrays, matrices, list
 - in a stack, a pushed item drops onto the top of the tower and a popped one rises and fades, with the "top" label following along;
 - in a queue, items enter from the right of the conveyor belt and the one in front leaves on the left;
 - in a matrix, the row and column the code reads are highlighted and the cell where they cross gets an outline;
-- the text says what changed and which path the program took: "numeros[0] and numeros[1] swapped places", "the condition on line 8 was false: the program skipped the if block", "end of one loop iteration".
+- the text says what changed and which path the program took: "numeros[0] and numeros[1] swapped places", "the condition on line 8 was false: the program skipped the if block", "end of one loop iteration";
+- before an `if` or a loop runs, its condition is split into parts, each one marked true or false with the values in place of the names (`ordenado[meio] == alvo (17 == 25)`), respecting short-circuit;
+- when a function calls another one, or itself, the call stack shows one card per call, each with its own variables; the call that finishes leaves saying what it returned;
+- objects become cards labeled with the variables that point to them: two names on one card are two variables on the same object, not a copy. Linked lists are drawn as nodes and arrows, binary trees as trees;
+- dictionaries (`HashMap`, `dict`, JavaScript objects and `Map`) become a key and value table;
+- in searches and sorts, the positions being compared get an outline, the part of the array a search has already discarded fades out, and the panel counts comparisons and swaps;
+- when the program crashes, the panel stops at the error and explains it in plain words; an index out of range shows the position that does not exist, dashed, next to the array;
+- a trace table fills in step by step, one row per step and one column per variable, like the one teachers ask for on paper;
+- a variable that leaves scope stays one step, crossed out, and a block variable that hides another one with the same name is marked.
 
 The panel speaks English and Portuguese and follows the language of your VS Code: Portuguese when VS Code is in Portuguese, English otherwise.
 
@@ -37,9 +45,9 @@ Code Scope talks to the debugger through the **Debug Adapter Protocol**, the pro
 
 | Language | Debugger | Structures | Status |
 |---|---|---|---|
-| Java | Debugger for Java (`vscjava.vscode-java-debug`) | arrays, matrices, `ArrayList`, `Stack`, `Queue`, `ArrayDeque` | validated with the real debugger |
-| JavaScript and TypeScript | the one built into VS Code (Node, Chrome, Edge) | arrays, matrices, stack (`push`/`pop`), queue (`push`/`shift`) | validated with the real debugger on Node; the browser uses the same adapter, not tested yet |
-| Python | Python Debugger (`ms-python.debugpy`) | `list`, `tuple`, `deque`, matrices, stack (`append`/`pop()`), queue (`pop(0)`/`popleft()`) | validated with the real debugger |
+| Java | Debugger for Java (`vscjava.vscode-java-debug`) | arrays, matrices, `ArrayList`, `Stack`, `Queue`, `ArrayDeque`, `HashMap`, objects, linked lists, trees | validated with the real debugger |
+| JavaScript and TypeScript | the one built into VS Code (Node, Chrome, Edge) | arrays, matrices, stack (`push`/`pop`), queue (`push`/`shift`), objects as dictionaries, `Map`, class instances, linked lists, trees | validated with the real debugger on Node; the browser uses the same adapter, not tested yet |
+| Python | Python Debugger (`ms-python.debugpy`) | `list`, `tuple`, `deque`, `dict`, matrices, stack (`append`/`pop()`), queue (`pop(0)`/`popleft()`), objects, linked lists, trees | validated with the real debugger |
 | Others (C#, C/C++, Go, Rust, PHP...) | any VS Code debugger | collections the debugger marks as indexed, integers and simple values | generic mode: shows what the protocol guarantees and leaves out what it does not understand |
 
 The flow explanations (if, loops, break) understand the C family (Java, JavaScript, C#, C, Go) and Python. If the panel does not recognize something in your language, open an [issue](https://github.com/celoramos/Code-Scope/issues/new/choose) with the log (see below): that is how a new adapter starts.
@@ -51,8 +59,14 @@ The flow explanations (if, loops, break) understand the C family (Java, JavaScri
 | Timeline | "Step 7 of 13", previous and next buttons, and a slider to jump to any step. Reviewing the history does not rewind the program. |
 | Code | The line that just ran and the next one, in the same color the editor uses for the stopped line. |
 | Explanation | One sentence per change, plus the path the program took (if, loop, break). Can be turned off. |
-| Variables | Integers, strings, booleans, characters and decimal numbers. Integers that become arrows take the arrow's color. |
-| Structures | Arrays, matrices, lists, stacks and queues. Stacks and queues are recognized by how the code uses the collection. |
+| Condition | Before an `if`, `while` or `for` runs: each part of the condition with its values and whether it is true or false. Parts that short-circuit skips are greyed out. |
+| Error | When the program stops at an error nobody handled: what happened in plain words, a hint of where to look, and the original message below. |
+| Call stack | With two functions or more running: one card per call, the current one on top, each with its own variables. |
+| Variables | Integers, strings, booleans, characters and decimal numbers. Integers that become arrows take the arrow's color. A variable that just left scope stays one step, crossed out. |
+| Structures | Arrays, matrices, lists, stacks and queues. Stacks and queues are recognized by how the code uses the collection. Two names for the same array are drawn once. In searches, compared positions get an outline and discarded ones fade. |
+| Dictionaries | Key and value table; a new key slides in, a replaced value flashes. |
+| Objects | One card per object of a class you wrote, with the variables that point to it. Linked lists as nodes and arrows, trees as trees. |
+| Trace table | One row per step and one column per variable, with the changed cell highlighted. Click a step number to go back to it. |
 
 ## Requirements
 
@@ -109,6 +123,14 @@ In the Extension Development Host window:
 | `python/bubble_sort.py` | BubbleSort in Python; the swap `a, b = b, a` happens in a single step |
 | `python/pilha.py` | Browser back button: `append` and `pop()` on a list |
 | `python/fila.py` | Snack bar orders: `deque` with `append` and `popleft()` |
+| `Fatorial` (all three languages) | Recursion: use **F11** to enter each call and watch the call stack grow and shrink, each call with its own `n` |
+| `ForaDoLimite` / `foraDoLimite` / `fora_do_limite` | A hidden bug: the loop goes one position too far, and the panel stops at the error and shows the position that does not exist |
+| `Referencias` / `referencias` | Two variables on the same object (`outra = minha`) and on the same array (`b = a`): changing one changes the other |
+| `ListaLigada` / `listaLigada` / `lista_ligada` | A linked list built node by node, and `atual` walking it to the end |
+| `ArvoreBinaria` / `arvoreBinaria` / `arvore_binaria` | Values going into a binary search tree, one recursive insertion at a time |
+| `Dicionario` / `dicionario` | Counting words in a dictionary: new keys and values being replaced |
+| `BuscaBinaria` / `buscaBinaria` / `busca_binaria` | Binary search: the compared position outlined and the discarded half fading out |
+| `Escopo` / `escopo` | Variables born and gone with each block; a block `total` hiding the outer one (JavaScript); a parameter with the same name as a field |
 
 With the panel focused: left and right arrows move one step, Home and End jump to the first and last.
 
@@ -123,6 +145,7 @@ If the panel does not show what you expected, open **Output**, pick **Code Scope
 | `codeScope.maxElements` | `50` | How many positions of each array, list or matrix row are read |
 | `codeScope.valueNames` | `temp`, `aux`, `alvo`, `soma`... | Integers with these names hold a value, not a position, and do not become arrows |
 | `codeScope.revealOnDebug` | `true` | Opens the panel on the first stop of each debug session |
+| `codeScope.pauseOnErrors` | `true` | Pauses the program on errors nobody handles, so the panel can show where and why it broke. What you checked in the Breakpoints view stays as it is |
 
 Commands in the palette: **Code Scope: Show panel** and **Code Scope: Clear history**.
 
@@ -165,7 +188,11 @@ The Python tests need an interpreter. Point to one with the `CODE_SCOPE_PYTHON` 
 
 ## Known limits
 
-- Reads only the local variables of the current function; object fields and earlier calls on the stack do not show up yet.
+- Earlier calls on the call stack show only their simple variables, not their arrays or objects. At most 12 calls are read.
+- Only objects of classes declared in the file being debugged are drawn, at most 40 per step. Objects inside arrays show only as text.
+- JavaScript does not show object identity, so the program itself is asked (`a === b`); across steps, an object keeps its identity by the paths that lead to it. A list rebuilt from scratch in a single step can look like new objects.
+- A condition part that calls a method is only evaluated when the method just reads (`len`, `.length`, `.size()`, `.equals`, `.get`...); otherwise it shows "cannot tell beforehand".
+- Hidden variables (one name hiding another) are detected in JavaScript blocks and in parameters with the same name as a field. Java and Python have no block scope for local variables.
 - In generic mode, only collections the debugger marks as indexed, or whose size is written in the value, show up.
 - Matrices with three or more dimensions show the third level as text.
 - A list that gains or loses more than one item in a single step shows as resized, without the slide animation.
@@ -175,12 +202,11 @@ The Python tests need an interpreter. Point to one with the `CODE_SCOPE_PYTHON` 
 
 ## Roadmap
 
-1. Python `dict`
-2. `HashMap`, `HashSet` and JavaScript objects
-3. Recursion, with the call stack
-4. Stack vs heap, with reference arrows between objects
-5. Linked list drawn as nodes and arrows
-6. Dedicated adapters for C#, C/C++ and Go
+1. Arrays of objects (a list of students, each one a card)
+2. Variables of earlier calls with their arrays and objects, not only simple values
+3. `HashSet` and Python `set`
+4. JavaScript in the browser, tested with the real debugger
+5. Dedicated adapters for C#, C/C++ and Go
 
 ## Contributing
 

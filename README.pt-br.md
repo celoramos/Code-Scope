@@ -6,7 +6,7 @@ Extensão do VS Code que mostra o código rodando de forma visual, para quem est
 
 Tudo acontece dentro do VS Code: o painel fica na barra lateral, ao lado do seu código, e usa as cores do seu tema. Não abre navegador, não precisa de conta e não envia nada para a internet.
 
-Enquanto você debuga, um painel lateral desenha as variáveis locais: arrays, matrizes, listas, pilhas e filas. É o "quer que eu desenhe?" da programação. Funciona com Java, JavaScript, TypeScript e Python, e com qualquer outra linguagem que tenha debugger no VS Code (veja [Linguagens](#linguagens)). A cada F10 o painel anima o que mudou e explica em português o que aconteceu:
+Enquanto você debuga, um painel lateral desenha o seu programa: arrays, matrizes, listas, pilhas, filas, dicionários, objetos, listas ligadas, árvores e a pilha de chamadas. É o "quer que eu desenhe?" da programação. Funciona com Java, JavaScript, TypeScript e Python, e com qualquer outra linguagem que tenha debugger no VS Code (veja [Linguagens](#linguagens)). A cada F10 o painel anima o que mudou e explica o que aconteceu:
 
 - a caixa alterada pisca e fica marcada;
 - uma troca aparece como as duas caixas se cruzando, mesmo quando o código usa uma variável `temp` e leva dois passos;
@@ -15,7 +15,15 @@ Enquanto você debuga, um painel lateral desenha as variáveis locais: arrays, m
 - numa pilha, o item empilhado cai no topo da torre e o desempilhado sobe e some, com a etiqueta "topo" acompanhando;
 - numa fila, o item entra pela direita da esteira e quem está na frente sai pela esquerda;
 - numa matriz, a linha e a coluna lidas pelo código ficam marcadas e a célula onde elas se cruzam ganha contorno;
-- o texto diz o que mudou e por qual caminho o programa foi: "numeros[0] e numeros[1] trocaram de lugar", "a condição da linha 8 foi falsa: o programa pulou o bloco do if", "fim de uma volta do laço".
+- o texto diz o que mudou e por qual caminho o programa foi: "numeros[0] e numeros[1] trocaram de lugar", "a condição da linha 8 foi falsa: o programa pulou o bloco do if", "fim de uma volta do laço";
+- antes de um `if` ou de um laço rodar, a condição é quebrada nas partes, cada uma marcada como verdadeira ou falsa, com os valores no lugar dos nomes (`ordenado[meio] == alvo (17 == 25)`), respeitando o curto-circuito;
+- quando uma função chama outra, ou a si mesma, a pilha de chamadas mostra um cartão por chamada, cada um com as próprias variáveis; a chamada que termina sai dizendo o que devolveu;
+- objetos viram cartões com as variáveis que apontam para eles: dois nomes no mesmo cartão são duas variáveis no mesmo objeto, não uma cópia. Lista ligada aparece como nós e setas, árvore binária como árvore;
+- dicionários (`HashMap`, `dict`, objetos e `Map` do JavaScript) viram uma tabela de chave e valor;
+- em buscas e ordenações, as posições comparadas ganham contorno, o pedaço do array que a busca já descartou fica apagado, e o painel conta comparações e trocas;
+- quando o programa quebra, o painel para no erro e explica em palavras simples; um índice fora do limite aparece como a posição que não existe, tracejada, depois do array;
+- um teste de mesa vai sendo preenchido passo a passo, uma linha por passo e uma coluna por variável, como o professor pede no papel;
+- a variável que sai de escopo fica um passo, riscada, e a variável de um bloco que esconde outra de mesmo nome é marcada.
 
 O painel fala português e inglês e segue o idioma do seu VS Code: português quando o VS Code está em português, inglês nos outros casos.
 
@@ -37,9 +45,9 @@ O Code Scope conversa com o debugger pelo **Debug Adapter Protocol**, o protocol
 
 | Linguagem | Debugger | Estruturas | Situação |
 |---|---|---|---|
-| Java | Debugger for Java (`vscjava.vscode-java-debug`) | arrays, matrizes, `ArrayList`, `Stack`, `Queue`, `ArrayDeque` | validada com o debugger real |
-| JavaScript e TypeScript | o que já vem no VS Code (Node, Chrome, Edge) | arrays, matrizes, pilha (`push`/`pop`), fila (`push`/`shift`) | validada com o debugger real no Node; no navegador usa o mesmo adaptador, ainda sem teste |
-| Python | Python Debugger (`ms-python.debugpy`) | `list`, `tuple`, `deque`, matrizes, pilha (`append`/`pop()`), fila (`pop(0)`/`popleft()`) | validada com o debugger real |
+| Java | Debugger for Java (`vscjava.vscode-java-debug`) | arrays, matrizes, `ArrayList`, `Stack`, `Queue`, `ArrayDeque`, `HashMap`, objetos, listas ligadas, árvores | validada com o debugger real |
+| JavaScript e TypeScript | o que já vem no VS Code (Node, Chrome, Edge) | arrays, matrizes, pilha (`push`/`pop`), fila (`push`/`shift`), objetos como dicionário, `Map`, instâncias de classe, listas ligadas, árvores | validada com o debugger real no Node; no navegador usa o mesmo adaptador, ainda sem teste |
+| Python | Python Debugger (`ms-python.debugpy`) | `list`, `tuple`, `deque`, `dict`, matrizes, pilha (`append`/`pop()`), fila (`pop(0)`/`popleft()`), objetos, listas ligadas, árvores | validada com o debugger real |
 | Outras (C#, C/C++, Go, Rust, PHP...) | qualquer debugger do VS Code | coleções que o debugger marca como indexadas, inteiros e valores simples | modo genérico: mostra o que o protocolo garante e deixa de fora o que não entende |
 
 As explicações de fluxo (if, laços, break) entendem a família de C (Java, JavaScript, C#, C, Go) e Python. Se o painel não reconhecer alguma coisa na sua linguagem, abra uma [issue](https://github.com/celoramos/Code-Scope/issues/new/choose) com o log (veja abaixo): é assim que um adaptador novo começa.
@@ -51,8 +59,14 @@ As explicações de fluxo (if, laços, break) entendem a família de C (Java, Ja
 | Linha do tempo | "Passo 7 de 13", botões de passo anterior e próximo, e um controle deslizante para pular para qualquer passo. Rever o histórico não volta a execução do programa. |
 | Código | A linha que acabou de executar e a próxima, com a mesma cor que o editor usa para a linha parada. |
 | Explicação | Uma frase por mudança, mais o caminho do programa (if, laço, break). Pode ser desligada. |
-| Variáveis | Inteiros, textos, booleanos, caracteres e números com vírgula. Os inteiros que viram seta levam a cor da seta. |
-| Estruturas | Arrays, matrizes, listas, pilhas e filas. Pilha e fila são reconhecidas pelo jeito como o código usa a coleção. |
+| Condição | Antes de um `if`, `while` ou `for` rodar: cada parte da condição com os valores e se ela é verdadeira ou falsa. As partes que o curto-circuito pula ficam apagadas. |
+| Erro | Quando o programa para num erro que ninguém tratou: o que aconteceu em palavras simples, uma dica de onde olhar e a mensagem original embaixo. |
+| Pilha de chamadas | Com duas funções ou mais rodando: um cartão por chamada, a atual em cima, cada uma com as próprias variáveis. |
+| Variáveis | Inteiros, textos, booleanos, caracteres e números com vírgula. Os inteiros que viram seta levam a cor da seta. A variável que acabou de sair de escopo fica um passo, riscada. |
+| Estruturas | Arrays, matrizes, listas, pilhas e filas. Pilha e fila são reconhecidas pelo jeito como o código usa a coleção. Dois nomes para o mesmo array aparecem num desenho só. Nas buscas, as posições comparadas ganham contorno e as descartadas ficam apagadas. |
+| Dicionários | Tabela de chave e valor; a chave nova entra deslizando e o valor trocado pisca. |
+| Objetos | Um cartão por objeto de uma classe sua, com as variáveis que apontam para ele. Lista ligada como nós e setas, árvore como árvore. |
+| Teste de mesa | Uma linha por passo e uma coluna por variável, com a célula que mudou marcada. Clique no número do passo para voltar a ele. |
 
 ## Requisitos
 
@@ -109,6 +123,14 @@ Na janela do Extension Development Host:
 | `python/bubble_sort.py` | BubbleSort em Python; a troca `a, b = b, a` acontece num passo só |
 | `python/pilha.py` | Botão "voltar" do navegador: `append` e `pop()` numa lista |
 | `python/fila.py` | Pedidos da lanchonete: `deque` com `append` e `popleft()` |
+| `Fatorial` (nas três linguagens) | Recursão: use **F11** para entrar em cada chamada e ver a pilha de chamadas crescer e diminuir, cada chamada com o próprio `n` |
+| `ForaDoLimite` / `foraDoLimite` / `fora_do_limite` | Um erro escondido: o laço vai uma posição longe demais, e o painel para no erro e mostra a posição que não existe |
+| `Referencias` / `referencias` | Duas variáveis no mesmo objeto (`outra = minha`) e no mesmo array (`b = a`): mudar um muda o outro |
+| `ListaLigada` / `listaLigada` / `lista_ligada` | Uma lista ligada montada nó por nó, e `atual` andando por ela até o fim |
+| `ArvoreBinaria` / `arvoreBinaria` / `arvore_binaria` | Valores entrando numa árvore binária de busca, uma inserção recursiva por vez |
+| `Dicionario` / `dicionario` | Contando palavras num dicionário: chaves novas e valores sendo trocados |
+| `BuscaBinaria` / `buscaBinaria` / `busca_binaria` | Busca binária: a posição comparada contornada e a metade descartada apagando |
+| `Escopo` / `escopo` | Variáveis nascendo e sumindo com cada bloco; um `total` de bloco escondendo o de fora (JavaScript); um parâmetro com o mesmo nome de um campo |
 
 Com o painel em foco: setas esquerda e direita andam um passo, Home e End vão para o primeiro e para o último.
 
@@ -123,6 +145,7 @@ Se o painel não mostrar o que você esperava, abra **Output**, escolha **Code S
 | `codeScope.maxElements` | `50` | Quantas posições de cada array, lista ou linha de matriz são lidas |
 | `codeScope.valueNames` | `temp`, `aux`, `alvo`, `soma`... | Inteiros com esses nomes guardam valor, não posição, e não viram seta |
 | `codeScope.revealOnDebug` | `true` | Abre o painel na primeira parada de cada sessão de debug |
+| `codeScope.pauseOnErrors` | `true` | Pausa o programa nos erros que ninguém trata, para o painel mostrar onde e por que ele quebrou. O que você marcou no painel de breakpoints continua como está |
 
 Comandos na paleta: **Code Scope: Mostrar painel** e **Code Scope: Limpar histórico**.
 
@@ -165,7 +188,11 @@ Os testes de Python precisam de um interpretador. Aponte um com a variável `COD
 
 ## Limites conhecidos
 
-- Lê só as variáveis locais da função atual; campos de objetos e chamadas anteriores na pilha ainda não aparecem.
+- As chamadas de baixo na pilha mostram só as variáveis simples, sem arrays nem objetos. São lidas no máximo 12 chamadas.
+- Só objetos de classes declaradas no arquivo que está sendo debugado são desenhados, no máximo 40 por passo. Objetos dentro de arrays aparecem só como texto.
+- O JavaScript não mostra a identidade dos objetos, então a pergunta vai para o próprio programa (`a === b`); entre passos, o objeto mantém a identidade pelos caminhos que levam a ele. Uma lista refeita do zero num passo só pode parecer feita de objetos novos.
+- Uma parte de condição que chama um método só é avaliada quando o método apenas lê (`len`, `.length`, `.size()`, `.equals`, `.get`...); senão, aparece "não dá para saber antes".
+- Variáveis escondidas (um nome escondendo outro) são reconhecidas em blocos do JavaScript e em parâmetros com o nome de um campo. Java e Python não têm escopo de bloco para variáveis locais.
 - No modo genérico, só aparecem coleções que o debugger marca como indexadas ou cujo tamanho está escrito no valor.
 - Matrizes de três ou mais dimensões mostram o terceiro nível como texto.
 - Uma lista que ganha ou perde mais de um item num só passo aparece como redimensionada, sem animação de deslize.
@@ -175,12 +202,11 @@ Os testes de Python precisam de um interpretador. Aponte um com a variável `COD
 
 ## Roadmap
 
-1. `dict` do Python
-2. `HashMap`, `HashSet` e objetos de JavaScript
-3. Recursão, com a pilha de chamadas
-4. Stack vs heap, com setas de referência entre objetos
-5. Lista ligada desenhada como nós e setas
-6. Adaptadores próprios para C#, C/C++ e Go
+1. Arrays de objetos (uma lista de alunos, cada um num cartão)
+2. Variáveis das chamadas de baixo com arrays e objetos, não só valores simples
+3. `HashSet` e `set` do Python
+4. JavaScript no navegador, testado com o debugger real
+5. Adaptadores próprios para C#, C/C++ e Go
 
 ## Contribuindo
 

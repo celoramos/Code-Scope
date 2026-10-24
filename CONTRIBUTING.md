@@ -32,6 +32,8 @@ npm test                   # testes unitários, rápidos
 npm run test:integration   # debuga os exemplos de Java, JavaScript e Python com os debuggers reais
 ```
 
+Para rodar só parte dos testes de integração, use `CODE_SCOPE_GREP` com um pedaço do nome (`CODE_SCOPE_GREP=JavaScript npm run test:integration`).
+
 O teste de integração baixa um VS Code isolado em `.vscode-test/` na primeira vez e leva alguns minutos. Os testes de Python precisam de um interpretador; o README (seção Testes) explica como usar um Python portátil, sem instalar nada. Ele não mexe no seu VS Code. O CI roda os três a cada pull request.
 
 Se mudou algo visual, teste no VS Code com um tema claro e um escuro, e com animações desligadas (`codeScope.animationSpeed: desligada`).
@@ -40,8 +42,8 @@ Se mudou algo visual, teste no VS Code com um tema claro e um escuro, e com anim
 
 | Pasta | O que tem |
 |---|---|
-| `src/debug` | Conversa com o debugger pelo Debug Adapter Protocol. Em `adapters/` fica um arquivo por linguagem (`java.ts`, `javascript.ts`, `python.ts`), o modo genérico (`generic.ts`), a interface comum (`adapter.ts`) e o registro que escolhe o adaptador (`index.ts`). |
-| `src/model` | O modelo neutro de linguagem: `Snapshot`, diff entre passos, histórico, setas, textos explicativos. Não importa nada do VS Code. |
+| `src/debug` | Conversa com o debugger pelo Debug Adapter Protocol. Em `adapters/` fica um arquivo por linguagem (`java.ts`, `javascript.ts`, `python.ts`), o modo genérico (`generic.ts`), a interface comum (`adapter.ts`) e o registro que escolhe o adaptador (`index.ts`). `dapCollector.ts` monta o passo; `heapCollector.ts` lê os objetos; `conditionEval.ts` pergunta ao programa o valor de cada parte de uma condição; `pauseOnErrors.ts` liga a pausa nas exceções não tratadas. |
+| `src/model` | O modelo neutro de linguagem: `Snapshot`, diff entre passos, histórico, setas, textos explicativos, e um módulo por conceito: `calls.ts` (pilha de chamadas), `heap.ts` e `heapIdentity.ts` (objetos, listas ligadas, árvores), `errors.ts`, `condition.ts`, `focus.ts` (comparações e intervalo de busca), `scope.ts`, `trace.ts` (teste de mesa). Não importa nada do VS Code. |
 | `src/webview` | O provider do painel e o protocolo de mensagens entre extensão e painel. |
 | `media` | HTML, CSS e JS do painel, sem framework. |
 | `samples` | Exemplos por linguagem, cada pasta com o seu `launch.json`, e `exemplos.code-workspace` que abre todas juntas. |
@@ -63,7 +65,7 @@ As frases ficam em `src/model/messages.ts`, em português e em inglês lado a la
 
 ### Suportar uma estrutura de dados nova
 
-1. Rode o teste de integração com um exemplo que use a estrutura e veja em `out-test/<Exemplo>.json` o que o debugger devolve (a parte `probe`).
+1. Rode o teste de integração com um exemplo que use a estrutura e veja em `out-test/<Exemplo>.json` o que o debugger devolve (a parte `probe`). Para ver tudo, inclusive a pilha de chamadas inteira e objetos abertos em três níveis, acrescente o exemplo em `test/integration/discover.itest.ts` e rode com `CODE_SCOPE_DISCOVER=1 CODE_SCOPE_GREP=Descoberta`: o resultado fica em `out-test/discover-*.json`.
 2. Ensine o adaptador da linguagem (`src/debug/adapters/`) a reconhecer o formato no `shape()`; o `dapCollector.ts` converte para o `Snapshot`.
 3. Se o `Snapshot` não comportar a estrutura, estenda o modelo em `src/model/snapshot.ts` sem colocar nada específico de uma linguagem nele.
 4. Cubra o diff e o texto em `test/`, e adicione um caso no teste de integração.
