@@ -59,7 +59,7 @@ The flow explanations (if, loops, break) understand the C family (Java, JavaScri
 - VS Code 1.90 or newer
 - The debugger for your language:
   - Java: **Extension Pack for Java** (`code --install-extension vscjava.vscode-java-pack`) and a JDK
-  - JavaScript and TypeScript: nothing to install besides Node.js; the debugger ships with VS Code
+  - JavaScript and TypeScript: Node.js 22 or newer; the debugger ships with VS Code. With Node.js 20 the VS Code debugger (js-debug 1.140) runs the program without stopping at breakpoints
   - Python: the **Python** extension (`code --install-extension ms-python.python`), which brings debugpy, and Python installed
 
 ## Install

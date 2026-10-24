@@ -12,7 +12,7 @@ Você não precisa ser experiente para ajudar. Se está aprendendo e alguma cois
 
 ## Preparando o ambiente
 
-Você precisa de Node.js 20 ou mais novo e VS Code. Para os testes de integração do Java, também de um JDK (os testes usam o 21).
+Você precisa de Node.js 22 ou mais novo e VS Code. Para os testes de integração do Java, também de um JDK (os testes usam o 21).
 
 ```bash
 git clone https://github.com/celoramos/Code-Scope.git
