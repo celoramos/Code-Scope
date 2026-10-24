@@ -100,7 +100,11 @@ export interface PanelStrings {
     | 'condSkipped'
     | 'condAnd'
     | 'condOr'
-    | 'condResult',
+    | 'condResult'
+    | 'statsComparisons'
+    | 'statsSwaps'
+    | 'comparing'
+    | 'outside',
     string
   >;
 }
@@ -205,6 +209,10 @@ const pt: PanelStrings = {
     condAnd: 'e',
     condOr: 'ou',
     condResult: 'resultado',
+    statsComparisons: '{0} comparações entre posições',
+    statsSwaps: '{0} trocas',
+    comparing: 'comparando',
+    outside: 'fora da busca',
   },
 };
 
@@ -308,6 +316,10 @@ const en: PanelStrings = {
     condAnd: 'and',
     condOr: 'or',
     condResult: 'result',
+    statsComparisons: '{0} comparisons between positions',
+    statsSwaps: '{0} swaps',
+    comparing: 'being compared',
+    outside: 'outside the search',
   },
 };
 

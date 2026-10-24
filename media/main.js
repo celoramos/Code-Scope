@@ -20,6 +20,7 @@
   const varsEl = byId('vars');
   const arraysEl = byId('arrays');
   const heapEl = byId('heap');
+  const statsEl = byId('stats');
   const mapsEl = byId('maps');
   const callsEl = byId('calls');
   const callsTitleEl = byId('calls-title');
@@ -53,6 +54,7 @@
    * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[], calls?: CallFrame[], maps?: MapVar[], condition?: Condition },
    *             executed?: LineRef, changes: Change[], arrows: Record<string, Arrow[]>, axes: Record<string, Axes>,
    *             explanation: string[], trace: Trace, error?: ErrorView, calls?: CallChange[], heap?: HeapView, heapDelta?: HeapDelta,
+   *             focus?: Record<string, ArrayFocus>, stats?: { comparisons: number, swaps: number },
    *             step: number, total: number }} Frame
    * @typedef {{ name: string, line: number, program?: boolean, vars: Scalar[] }} CallFrame
    * @typedef {{ kind: 'call' | 'return', name: string, depth: number, value?: string }} CallChange
@@ -64,6 +66,7 @@
    * @typedef {{ lists: ListViewT[], trees: TreeViewT[], objects: ObjectViewT[], nulls: string[] }} HeapView
    * @typedef {{ added: string[], fields: Record<string, string[]> }} HeapDelta
    * @typedef {{ name: string, entries: { key: string, value: string }[], length: number }} MapVar
+   * @typedef {{ compare?: number[], range?: { from: number, to: number, names: string[] } }} ArrayFocus
    * @typedef {{ text: string, values?: string, value?: boolean, skipped?: boolean }} ConditionPart
    * @typedef {{ keyword: string, line: number, text: string, parts: ConditionPart[], ops: string[], result?: boolean }} Condition
    * @typedef {{ type: string, message: string, kind: string, title: string, sentences: string[], missing?: { array: string, index: number } }} ErrorView
@@ -223,6 +226,7 @@
         animateBlock(block, arr.name, frame.changes, isNew);
         if (kind === 'array') updateMissing(block, arr.name, frame.error?.missing);
         if (kind === 'array') updateArrows(block, frame.arrows[arr.name] ?? []);
+        if (kind === 'array') updateFocus(block, frame.focus?.[arr.name]);
         else updateMarkers(block, kind);
       }
     }
@@ -232,8 +236,42 @@
         blocks.delete(name);
       }
     }
+    renderStats(frame.stats);
     renderMaps(s.maps ?? [], frame.changes);
     renderHeap(frame.heap, frame.heapDelta);
+  }
+
+  /**
+   * Posições que a próxima condição compara ficam contornadas; as que a busca
+   * já descartou ficam apagadas.
+   * @param {HTMLElement} block
+   * @param {ArrayFocus | undefined} focus
+   */
+  function updateFocus(block, focus) {
+    const compare = new Set(focus?.compare ?? []);
+    const range = focus?.range;
+    cellsOf(block).forEach((cell, i) => {
+      const compared = compare.has(i);
+      const outside = !!range && (i < range.from || i > range.to);
+      cell.classList.toggle('is-compared', compared);
+      cell.classList.toggle('is-outside', outside);
+      const extra = [compared ? t('comparing') : '', outside ? t('outside') : ''].filter(Boolean).join(', ');
+      const base = cell.getAttribute('aria-label') ?? '';
+      cell.setAttribute('aria-label', extra ? `${base}, ${extra}` : base);
+    });
+  }
+
+  /**
+   * Contas que se usam para comparar algoritmos: quantas vezes o programa
+   * comparou posições e quantas trocas fez até aqui.
+   * @param {{ comparisons: number, swaps: number } | undefined} stats
+   */
+  function renderStats(stats) {
+    const parts = [];
+    if (stats?.comparisons) parts.push(t('statsComparisons', stats.comparisons));
+    if (stats?.swaps) parts.push(t('statsSwaps', stats.swaps));
+    statsEl.textContent = parts.join(' · ');
+    statsEl.hidden = parts.length === 0;
   }
 
   /**

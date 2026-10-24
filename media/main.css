@@ -1387,6 +1387,27 @@ kbd {
   font-weight: 600;
 }
 
+/* ---------- Comparação e intervalo de busca ---------- */
+
+/* As duas posições que a próxima condição compara: contorno na cor da linha ativa. */
+.cell.is-compared .cell-value {
+  outline: 2px solid var(--cs-active);
+  outline-offset: 1px;
+}
+
+/* Fora do intervalo que a busca ainda olha: continua lá, mas apagada. */
+.cell.is-outside {
+  opacity: 0.35;
+  transition: opacity var(--cs-move) var(--cs-ease);
+}
+
+.stats {
+  margin: 0 0 var(--cs-space-2);
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---------- Dicionários ---------- */
 
 .map-table {

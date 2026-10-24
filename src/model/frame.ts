@@ -4,6 +4,7 @@ import { explain } from './explain';
 import { explainCondition } from './condition';
 import { explainError, type ErrorView } from './errors';
 import { explainFlow } from './flow';
+import { algorithmStats, arrayFocus, rangeNote, type AlgorithmStats, type ArrayFocus } from './focus';
 import { arrayAliases, explainHeap, heapDelta, heapView, referenceNames, type HeapDelta, type HeapView } from './heap';
 import { MESSAGES, type Language } from './messages';
 import type { Step } from './history';
@@ -23,6 +24,10 @@ export interface Frame {
   changes: Change[];
   /** Chamadas que começaram ou terminaram neste passo. */
   calls: CallChange[];
+  /** Posições comparadas e intervalo da busca, por array. */
+  focus: Record<string, ArrayFocus>;
+  /** Comparações entre posições e trocas desde o começo. */
+  stats: AlgorithmStats;
   /** Objetos prontos para desenhar: listas ligadas, árvores e cartões. */
   heap: HeapView;
   /** Objetos novos e campos alterados neste passo, para destacar. */
@@ -94,6 +99,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
           peekNote(executed?.code, snapshot, changes, options.language),
           returnNote(snapshot, prev, options.language),
           explainFlow(executed, snapshot, options.language),
+          rangeNote(prev, snapshot, options.language),
           ...explainCondition(snapshot.condition, options.language),
         ].filter(isText),
         options.language,
@@ -106,6 +112,8 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
     changes,
     calls,
     heap: heapView(snapshot),
+    focus: arrayFocus(snapshot),
+    stats: algorithmStats(step.past),
     heapDelta: switched ? { added: [], fields: {} } : heapDelta(prev, snapshot),
     arrows,
     axes,

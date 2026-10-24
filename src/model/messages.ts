@@ -90,6 +90,8 @@ export interface Messages {
   fieldNull(path: string): string;
   arrayAlias(first: string, other: string): string;
 
+  rangeNarrowed(array: string, from: number, to: number, dropped: number): string;
+  rangeEmpty(array: string): string;
   /** keyword: if, elif, while, for. */
   conditionResult(keyword: string, line: number, result: boolean): string;
   /** A parte que decidiu sozinha: as seguintes nem rodam. */
@@ -205,6 +207,9 @@ const pt: Messages = {
   fieldNull: (path) => `${path} agora não aponta para nada: a ligação acabou ali.`,
   arrayAlias: (first, other) => `${other} não é uma cópia: ${first} e ${other} são o mesmo array. Mudar um muda o outro.`,
 
+  rangeNarrowed: (arr, from, to, dropped) =>
+    `A busca descartou ${ptPositions(dropped)} de ${arr}: agora só olha de ${from} a ${to}.`,
+  rangeEmpty: (arr) => `Não sobrou nenhuma posição de ${arr} para olhar: a busca terminou sem achar.`,
   conditionResult: (kw, line, result) => {
     const loop = kw === 'while' || kw === 'for';
     const then = loop
@@ -321,6 +326,9 @@ const en: Messages = {
   fieldNull: (path) => `${path} now points to nothing: the chain ends there.`,
   arrayAlias: (first, other) => `${other} is not a copy: ${first} and ${other} are the same array. Changing one changes the other.`,
 
+  rangeNarrowed: (arr, from, to, dropped) =>
+    `The search discarded ${enPositions(dropped)} of ${arr}: now it only looks from ${from} to ${to}.`,
+  rangeEmpty: (arr) => `No position of ${arr} is left to look at: the search ended without finding it.`,
   conditionResult: (kw, line, result) => {
     const loop = kw === 'while' || kw === 'for';
     const then = loop
