@@ -6,7 +6,7 @@
 
 - Árvore de recursão: quando a recursão se divide (`fib(n - 1) + fib(n - 2)`), todas as chamadas aparecem com o que devolveram, e o painel diz quantas vezes a mesma conta foi refeita.
 - Modo de adivinhar ("Adivinhar antes"): antes de uma linha rodar, o painel pergunta quanto a variável vai valer e, depois do F10, diz se o palpite acertou, com placar.
-- Modo aula (comando "Code Scope: Modo aula"): o painel grande ao lado do código, com letra maior e animações mais lentas.
+- Modo apresentação (comando "Code Scope: Modo apresentação"): o painel grande ao lado do código, com letra maior e animações mais lentas, para projetar ou gravar a tela.
 - Salvar imagem: o passo atual vira PNG, para slides e listas de exercício.
 - Lista de objetos: cada objeto aparece dentro da sua posição, com a classe quando o array mistura classes.
 - Grafo: dicionário de listas que apontam para as próprias chaves vira grafo, com visitados, nó atual e fila.

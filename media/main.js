@@ -328,7 +328,7 @@
     renderCost(stats);
   }
 
-  /** Nomes das curvas como se escreve na aula. */
+  /** Nomes das curvas como se escrevem em computação. */
   const CURVES = /** @type {const} */ ([
     ['log', 'log n'],
     ['n', 'n'],

@@ -22,7 +22,7 @@ Enquanto você debuga, um painel lateral desenha o seu programa: arrays, matrize
 - dicionários (`HashMap`, `dict`, objetos e `Map` do JavaScript) viram uma tabela de chave e valor;
 - em buscas e ordenações, as posições comparadas ganham contorno, o pedaço do array que a busca já descartou fica apagado, e o painel conta comparações e trocas;
 - quando o programa quebra, o painel para no erro e explica em palavras simples; um índice fora do limite aparece como a posição que não existe, tracejada, depois do array;
-- um teste de mesa vai sendo preenchido passo a passo, uma linha por passo e uma coluna por variável, como o professor pede no papel;
+- um teste de mesa vai sendo preenchido passo a passo, uma linha por passo e uma coluna por variável, como o teste de mesa feito no papel;
 - a variável que sai de escopo fica um passo, riscada, e a variável de um bloco que esconde outra de mesmo nome é marcada;
 - quando a recursão se divide em duas, como `fib(n - 1) + fib(n - 2)`, uma árvore de recursão mostra todas as chamadas, o valor que cada uma devolveu e quantas vezes a mesma conta foi refeita;
 - uma lista de objetos mostra cada objeto dentro da sua posição (`turma[1]` com nome e nota); um dicionário de listas vira grafo, com os visitados, o nó atual e a fila de uma busca em largura;
@@ -32,11 +32,11 @@ Enquanto você debuga, um painel lateral desenha o seu programa: arrays, matrize
 - mudar no lugar ou criar outro: `x.sort()` muda a própria lista (e todos os nomes dela), `sorted(x)`, `slice()` ou `Arrays.copyOf` criam outra, e `s.trim();` sozinho na linha cria um texto que ninguém guarda, então `s` continua igual.
 - quanto custa: embaixo do contador de comparações, uma tabela põe a contagem do programa ao lado de log n, n, n log n e n², para o tamanho dele e para 1000 posições, onde um laço dentro de outro já faz um milhão de comparações.
 
-Três ferramentas para a aula:
+Três ferramentas a mais:
 
 - **Adivinhar antes**: antes de uma linha rodar, o painel pergunta quanto a variável vai valer. Depois do F10 diz se o palpite acertou e guarda o placar.
-- **Modo aula**: o painel abre grande ao lado do código, com letra maior e animações mais lentas, pronto para projetar.
-- **Salvar imagem**: o passo atual vira um PNG, para slides e listas de exercício.
+- **Modo apresentação**: o painel abre grande ao lado do código, com letra maior e animações mais lentas, pronto para projetar ou gravar.
+- **Salvar imagem**: o passo atual vira um PNG, para slides, anotações ou para compartilhar.
 
 O painel fala português e inglês e segue o idioma do seu VS Code: português quando o VS Code está em português, inglês nos outros casos.
 
@@ -190,7 +190,7 @@ Se o painel não mostrar o que você esperava, abra **Output**, escolha **Code S
 | `codeScope.revealOnDebug` | `true` | Abre o painel na primeira parada de cada sessão de debug |
 | `codeScope.pauseOnErrors` | `true` | Pausa o programa nos erros que ninguém trata, para o painel mostrar onde e por que ele quebrou. O que você marcou no painel de breakpoints continua como está |
 
-Comandos na paleta: **Code Scope: Mostrar painel**, **Code Scope: Limpar histórico** e **Code Scope: Modo aula**.
+Comandos na paleta: **Code Scope: Mostrar painel**, **Code Scope: Limpar histórico** e **Code Scope: Modo apresentação**.
 
 ## Como funciona
 

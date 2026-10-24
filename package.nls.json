@@ -5,7 +5,7 @@
   "command.clearHistory": "Clear history",
   "config.beginnerMode": "Shows a sentence explaining what changed in each step.",
   "config.animationSpeed": "Speed of the panel animations.",
-  "config.animationSpeed.slow": "Movements take twice as long, good for presenting in class.",
+  "config.animationSpeed.slow": "Movements take twice as long, good for presenting or recording the screen.",
   "config.animationSpeed.normal": "Default duration.",
   "config.animationSpeed.fast": "Half the duration, for those who step quickly with F10.",
   "config.animationSpeed.off": "No movement; changes are still highlighted.",
@@ -17,5 +17,5 @@
   "config.valueNames": "Names of integer variables that hold a value, not a position. They do not become arrows under the arrays.",
   "config.revealOnDebug": "Opens the Code Scope panel on the first stop of each debug session.",
   "config.pauseOnErrors": "Pauses the program on errors that nobody handles (uncaught exceptions), so the panel can show where and why it broke.",
-  "command.present": "Classroom mode (large panel next to the code)"
+  "command.present": "Presentation mode (large panel next to the code)"
 }

@@ -5,7 +5,7 @@
   "command.clearHistory": "Limpar histórico",
   "config.beginnerMode": "Mostra uma frase explicando o que mudou em cada passo.",
   "config.animationSpeed": "Velocidade das animações do painel.",
-  "config.animationSpeed.slow": "Movimentos com o dobro da duração, bom para apresentar em aula.",
+  "config.animationSpeed.slow": "Movimentos com o dobro da duração, bom para apresentar ou gravar a tela.",
   "config.animationSpeed.normal": "Duração padrão.",
   "config.animationSpeed.fast": "Metade da duração, para quem avança rápido com F10.",
   "config.animationSpeed.off": "Sem movimento; as mudanças continuam destacadas.",
@@ -17,5 +17,5 @@
   "config.valueNames": "Nomes de variáveis inteiras que guardam um valor, não uma posição. Elas não viram seta embaixo dos arrays.",
   "config.revealOnDebug": "Abre o painel do Code Scope na primeira parada de cada sessão de debug.",
   "config.pauseOnErrors": "Pausa o programa nos erros que ninguém trata (exceções não tratadas), para o painel mostrar onde e por que ele quebrou.",
-  "command.present": "Modo aula (painel grande ao lado do código)"
+  "command.present": "Modo apresentação (painel grande ao lado do código)"
 }

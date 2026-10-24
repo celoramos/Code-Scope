@@ -22,7 +22,7 @@ While you debug, a side panel draws your program: arrays, matrices, lists, stack
 - dictionaries (`HashMap`, `dict`, JavaScript objects and `Map`) become a key and value table;
 - in searches and sorts, the positions being compared get an outline, the part of the array a search has already discarded fades out, and the panel counts comparisons and swaps;
 - when the program crashes, the panel stops at the error and explains it in plain words; an index out of range shows the position that does not exist, dashed, next to the array;
-- a trace table fills in step by step, one row per step and one column per variable, like the one teachers ask for on paper;
+- a trace table fills in step by step, one row per step and one column per variable, like the desk check done on paper;
 - a variable that leaves scope stays one step, crossed out, and a block variable that hides another one with the same name is marked;
 - when recursion splits in two, like `fib(n - 1) + fib(n - 2)`, a recursion tree shows every call, the value each one returned and how many times the same work was redone;
 - a list of objects shows each object inside its position (`turma[1]` with its name and grade); a dictionary of lists becomes a graph, with the visited nodes, the current one and the queue of a breadth-first search;
@@ -32,11 +32,11 @@ While you debug, a side panel draws your program: arrays, matrices, lists, stack
 - changing in place or creating a new one: `x.sort()` changes the list itself (and every name for it), `sorted(x)`, `slice()` or `Arrays.copyOf` make a new one, and `s.trim();` alone on a line creates a text nobody keeps, so `s` stays the same.
 - how much it costs: under the comparison counter, a table puts the program's count next to log n, n, n log n and n², for its own size and for 1000 positions, where a loop inside a loop already makes a million comparisons.
 
-Three tools for class:
+Three extra tools:
 
 - **Guess first**: before a line runs, the panel asks what the variable will be. After F10 it says if the guess was right and keeps the score.
-- **Classroom mode**: the panel opens large next to the code, with bigger text and slower animations, ready to project.
-- **Save image**: the current step becomes a PNG, for slides and assignments.
+- **Presentation mode**: the panel opens large next to the code, with bigger text and slower animations, ready to project or record.
+- **Save image**: the current step becomes a PNG, for slides, notes or to share.
 
 The panel speaks English and Portuguese and follows the language of your VS Code: Portuguese when VS Code is in Portuguese, English otherwise.
 
@@ -190,7 +190,7 @@ If the panel does not show what you expected, open **Output**, pick **Code Scope
 | `codeScope.revealOnDebug` | `true` | Opens the panel on the first stop of each debug session |
 | `codeScope.pauseOnErrors` | `true` | Pauses the program on errors nobody handles, so the panel can show where and why it broke. What you checked in the Breakpoints view stays as it is |
 
-Commands in the palette: **Code Scope: Show panel**, **Code Scope: Clear history** and **Code Scope: Classroom mode**.
+Commands in the palette: **Code Scope: Show panel**, **Code Scope: Clear history** and **Code Scope: Presentation mode**.
 
 ## How it works
 

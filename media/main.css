@@ -58,7 +58,7 @@
    * --cs-speed vem da configuração codeScope.animationSpeed (0 desliga).
    */
   --cs-speed: 1;
-  /* Modo aula: tudo mais devagar, para a turma acompanhar. */
+  /* Modo apresentação: tudo mais devagar, para quem assiste acompanhar. */
   --cs-slow: 1;
   --cs-move: calc(420ms * var(--cs-speed) * var(--cs-slow));
   --cs-flash: calc(900ms * var(--cs-speed) * var(--cs-slow));
@@ -75,7 +75,7 @@ body {
   line-height: 1.45;
 }
 
-/* Modo aula: o painel na área do editor, com letra grande para projetar. */
+/* Modo apresentação: o painel na área do editor, com letra grande para projetar. */
 :root.is-present {
   --cs-slow: 1.6;
   font-size: 125%;

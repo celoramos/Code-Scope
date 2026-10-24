@@ -32,7 +32,7 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
   readonly viewId = ScopeViewProvider.viewId;
 
   private view?: vscode.WebviewView;
-  /** Modo aula: o mesmo painel, grande, na área do editor. */
+  /** Modo apresentação: o mesmo painel, grande, na área do editor. */
   private presentation?: vscode.WebviewPanel;
 
   get visible(): boolean {
@@ -53,7 +53,7 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
     view.onDidDispose(() => (this.view = undefined));
   }
 
-  /** Abre (ou traz para a frente) o modo aula ao lado do código. */
+  /** Abre (ou traz para a frente) o modo apresentação ao lado do código. */
   openPresentation() {
     if (this.presentation) {
       this.presentation.reveal(vscode.ViewColumn.Beside);
