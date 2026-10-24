@@ -90,6 +90,11 @@ export interface Snapshot {
   arrays: ArrayVar[];
   pointers: Pointer[];
   scalars?: Scalar[];
+  /**
+   * Variáveis de um bloco de fora escondidas por uma de dentro com o mesmo
+   * nome (let total dentro de um bloco esconde o total de fora).
+   */
+  shadowed?: Scalar[];
   /** Dicionários: HashMap, dict, objeto literal, Map. */
   maps?: MapVar[];
   /** Objetos das classes do aluno que as variáveis alcançam. */

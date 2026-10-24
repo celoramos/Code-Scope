@@ -1,3 +1,4 @@
+import { fieldShadows } from '../../src/model/scope';
 import { heapView } from '../../src/model/heap';
 import * as assert from 'node:assert/strict';
 import * as path from 'node:path';
@@ -206,5 +207,13 @@ describe('Java Debugger real', () => {
     assert.ok(tested.length > 0, `nenhuma condição avaliada: ${JSON.stringify(snaps.map((s) => s.condition ?? s.code))}`);
     assert.ok(tested.some((s) => s.condition!.result === true) && tested.some((s) => s.condition!.result === false), 'deveria haver condição verdadeira e falsa');
     assert.ok(tested.some((s) => s.condition!.text === 'ordenado[meio] == alvo'), `condições: ${[...new Set(tested.map((s) => s.condition!.text))].join(' | ')}`);
+  });
+
+  it('Java escopo: parâmetro com o nome de um campo do objeto', async () => {
+    const snaps = await debugSample('Escopo', 13, 16, 'stepInto');
+    assert.ok(
+      snaps.some((s) => fieldShadows(s).some((f) => f.name === 'pontos')),
+      `campo não reconhecido: ${JSON.stringify(snaps.map((s) => [s.line, s.refs, s.pointers.map((p) => p.name)]))}`,
+    );
   });
 });

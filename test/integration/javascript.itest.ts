@@ -1,3 +1,4 @@
+import { fieldShadows } from '../../src/model/scope';
 import { heapView } from '../../src/model/heap';
 import * as assert from 'node:assert/strict';
 import * as path from 'node:path';
@@ -142,5 +143,12 @@ describe('JavaScript (js-debug) real', () => {
     assert.ok(tested.length > 0, `nenhuma condição avaliada: ${JSON.stringify(snaps.map((s) => s.condition ?? s.code))}`);
     assert.ok(tested.some((s) => s.condition!.result === true) && tested.some((s) => s.condition!.result === false), 'deveria haver condição verdadeira e falsa');
     assert.ok(tested.some((s) => s.condition!.text === 'ordenado[meio] === alvo'), `condições: ${[...new Set(tested.map((s) => s.condition!.text))].join(' | ')}`);
+  });
+
+  it('escopo.js: o total do bloco esconde o de fora', async () => {
+    const snaps = await debugScript('escopo', 3, 12);
+    const inner = snaps.find((s) => s.shadowed?.some((v) => v.name === 'total'));
+    assert.ok(inner, `nenhuma variável escondida: ${JSON.stringify(snaps.map((s) => [s.line, s.pointers, s.shadowed]))}`);
+    assert.equal(inner.shadowed?.find((v) => v.name === 'total')?.value, '3');
   });
 });

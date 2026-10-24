@@ -90,6 +90,9 @@ export interface Messages {
   fieldNull(path: string): string;
   arrayAlias(first: string, other: string): string;
 
+  shadowStarted(name: string, inner: string, outer: string): string;
+  shadowEnded(name: string, value: string): string;
+  shadowField(name: string, owner: string): string;
   rangeNarrowed(array: string, from: number, to: number, dropped: number): string;
   rangeEmpty(array: string): string;
   /** keyword: if, elif, while, for. */
@@ -207,6 +210,11 @@ const pt: Messages = {
   fieldNull: (path) => `${path} agora não aponta para nada: a ligação acabou ali.`,
   arrayAlias: (first, other) => `${other} não é uma cópia: ${first} e ${other} são o mesmo array. Mudar um muda o outro.`,
 
+  shadowStarted: (name, inner, outer) =>
+    `Agora existem duas variáveis ${name}: a deste bloco (${inner}) esconde a de fora (${outer}). Até o bloco terminar, ${name} é a de dentro.`,
+  shadowEnded: (name, value) => `O bloco terminou e a ${name} de dentro deixou de existir: ${name} volta a ser a de fora (${value}).`,
+  shadowField: (name, owner) =>
+    `${name} é o parâmetro, não o campo do objeto: o campo é ${owner}.${name}. Os dois têm o mesmo nome, mas são variáveis diferentes.`,
   rangeNarrowed: (arr, from, to, dropped) =>
     `A busca descartou ${ptPositions(dropped)} de ${arr}: agora só olha de ${from} a ${to}.`,
   rangeEmpty: (arr) => `Não sobrou nenhuma posição de ${arr} para olhar: a busca terminou sem achar.`,
@@ -326,6 +334,11 @@ const en: Messages = {
   fieldNull: (path) => `${path} now points to nothing: the chain ends there.`,
   arrayAlias: (first, other) => `${other} is not a copy: ${first} and ${other} are the same array. Changing one changes the other.`,
 
+  shadowStarted: (name, inner, outer) =>
+    `Now there are two variables called ${name}: the one in this block (${inner}) hides the outer one (${outer}). Until the block ends, ${name} means the inner one.`,
+  shadowEnded: (name, value) => `The block ended and the inner ${name} no longer exists: ${name} is the outer one again (${value}).`,
+  shadowField: (name, owner) =>
+    `${name} is the parameter, not the object's field: the field is ${owner}.${name}. They share a name, but they are different variables.`,
   rangeNarrowed: (arr, from, to, dropped) =>
     `The search discarded ${enPositions(dropped)} of ${arr}: now it only looks from ${from} to ${to}.`,
   rangeEmpty: (arr) => `No position of ${arr} is left to look at: the search ended without finding it.`,

@@ -521,6 +521,28 @@ kbd {
   border-color: var(--cs-change);
 }
 
+/* Variável que acabou de nascer entra crescendo; a que saiu de escopo fica um passo, riscada. */
+.var.is-born {
+  animation: cs-node-in var(--cs-move) var(--cs-ease);
+}
+
+.var.is-gone {
+  border-style: dashed;
+  background: none;
+  opacity: 0.6;
+}
+
+.var.is-gone .var-name,
+.var.is-gone .var-value {
+  text-decoration: line-through;
+}
+
+.var-note {
+  color: var(--cs-muted);
+  font-family: var(--vscode-font-family);
+  font-size: var(--cs-small);
+}
+
 /* ---------- Arrays ---------- */
 
 .arrays {
@@ -1727,6 +1749,7 @@ kbd {
   .node-box.is-new,
   .node-link.is-changed::after,
   .heap-card.is-new,
+  .var.is-born,
   .map-table tr > *,
   .array.is-new {
     animation: none;

@@ -10,6 +10,7 @@ import { MESSAGES, type Language } from './messages';
 import type { Step } from './history';
 import { arrowsFor, matrixAxesFor, VALUE_NAMES, type Arrow, type MatrixAxes } from './pointers';
 import type { Snapshot } from './snapshot';
+import { scopeNotes, shadowChanges, shadows } from './scope';
 import { traceTable, type TraceTable } from './trace';
 
 /** Tudo que o painel precisa para desenhar um passo. */
@@ -24,6 +25,8 @@ export interface Frame {
   changes: Change[];
   /** Chamadas que começaram ou terminaram neste passo. */
   calls: CallChange[];
+  /** Variáveis que escondem outra de mesmo nome, com o valor da escondida. */
+  shadows: Record<string, string>;
   /** Posições comparadas e intervalo da busca, por array. */
   focus: Record<string, ArrayFocus>;
   /** Comparações entre posições e trocas desde o começo. */
@@ -83,12 +86,19 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
   if (options.beginnerMode && switched) {
     explanation = calls.map((c) => describeCall(c, options.language));
   } else if (options.beginnerMode) {
-    const heapNotes = prev ? explainHeap(prev, snapshot, options.language) : [];
+    const heapNotes = prev ? [...explainHeap(prev, snapshot, options.language), ...scopeNotes(prev, snapshot, options.language)] : [];
     // Dois nomes para o mesmo array: as mudanças aparecem nos dois, mas basta contar uma vez.
     const extraNames = new Set([...arrayAliases(snapshot).values()].flatMap((names) => names.slice(1)));
     // raiz = None virando objeto (ou o contrário) é referência: quem explica é explainHeap.
     const refNames = referenceNames(prev, snapshot);
-    const told = changes.filter((c) => !('array' in c && extraNames.has(c.array)) && !(c.kind === 'scalar' && refNames.has(c.name)));
+    // A total de dentro começando (ou deixando) de existir não é a total mudando de valor.
+    const shadowFlip = shadowChanges(prev, snapshot);
+    const told = changes.filter(
+      (c) =>
+        !('array' in c && extraNames.has(c.array)) &&
+        !(c.kind === 'scalar' && refNames.has(c.name)) &&
+        !((c.kind === 'scalar' || c.kind === 'pointer') && shadowFlip.has(c.name)),
+    );
     // No erro, "nada mudou" só atrapalha: o cartão do erro é o que importa.
     if (!(snapshot.exception && told.length === 0 && heapNotes.length === 0)) {
       explanation = explain(
@@ -113,6 +123,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
     calls,
     heap: heapView(snapshot),
     focus: arrayFocus(snapshot),
+    shadows: shadows(snapshot),
     stats: algorithmStats(step.past),
     heapDelta: switched ? { added: [], fields: {} } : heapDelta(prev, snapshot),
     arrows,

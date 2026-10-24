@@ -49,12 +49,12 @@
    * @typedef {{ name: string, value: string }} Scalar
    * @typedef {{ name: string, index: number }} Arrow
    * @typedef {{ row?: Arrow, col?: Arrow }} Axes
-   * @typedef {{ kind: string, array?: string, map?: string, key?: string, from?: string, index?: number, a?: number, b?: number, name?: string, value?: string }} Change
+   * @typedef {{ kind: string, array?: string, map?: string, key?: string, from?: string | number, to?: string | number, index?: number, a?: number, b?: number, name?: string, value?: string }} Change
    * @typedef {{ line: number, code?: string }} LineRef
    * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[], calls?: CallFrame[], maps?: MapVar[], condition?: Condition },
    *             executed?: LineRef, changes: Change[], arrows: Record<string, Arrow[]>, axes: Record<string, Axes>,
    *             explanation: string[], trace: Trace, error?: ErrorView, calls?: CallChange[], heap?: HeapView, heapDelta?: HeapDelta,
-   *             focus?: Record<string, ArrayFocus>, stats?: { comparisons: number, swaps: number },
+   *             focus?: Record<string, ArrayFocus>, shadows?: Record<string, string>, stats?: { comparisons: number, swaps: number },
    *             step: number, total: number }} Frame
    * @typedef {{ name: string, line: number, program?: boolean, vars: Scalar[] }} CallFrame
    * @typedef {{ kind: 'call' | 'return', name: string, depth: number, value?: string }} CallChange
@@ -193,7 +193,7 @@
     );
     renderError(frame.error);
     renderCalls(s.calls ?? [], frame.calls ?? []);
-    renderVars(s.pointers, s.scalars ?? [], frame.changes, arrowNames);
+    renderVars(s.pointers, s.scalars ?? [], frame.changes, arrowNames, frame.shadows);
     renderTrace(frame.trace, frame.step);
 
     // Dois nomes para o mesmo array (b = a): um desenho só, com os dois nomes.
@@ -458,19 +458,39 @@
    * @param {Scalar[]} scalars
    * @param {Change[]} changes
    * @param {Set<string>} arrowNames
+   * @param {Record<string, string>} [shadows] nomes que escondem outra variável, com o valor da escondida
    */
-  function renderVars(pointers, scalars, changes, arrowNames) {
-    const changed = new Set(changes.filter((c) => c.kind === 'pointer' || c.kind === 'scalar').map((c) => c.name));
+  function renderVars(pointers, scalars, changes, arrowNames, shadows = {}) {
+    const vars = changes.filter((c) => c.kind === 'pointer' || c.kind === 'scalar');
+    const changed = new Set(vars.map((c) => c.name));
+    // Quem acabou de nascer entra com destaque; quem saiu de escopo fica um passo, apagado.
+    const born = new Set(vars.filter((c) => c.from === undefined).map((c) => c.name));
     /** @param {string} n @param {string} v */
     const chip = (n, v) => {
       const li = el('li', changed.has(n) ? 'var is-changed' : 'var');
+      if (born.has(n)) li.classList.add('is-born');
       const name = el('span', 'var-name');
       name.textContent = `${n} =`;
       const value = el('span', 'var-value');
       value.textContent = v;
       li.append(name, value);
+      if (shadows[n] !== undefined) {
+        const hides = el('span', 'var-note');
+        hides.textContent = t('hides', n, shadows[n]);
+        li.append(hides);
+      }
       return li;
     };
+    const gone = vars
+      .filter((c) => c.to === undefined && c.from !== undefined)
+      .map((c) => {
+        const li = chip(c.name ?? '', String(c.from));
+        li.className = 'var is-gone';
+        const note = el('span', 'var-note');
+        note.textContent = t('outOfScope');
+        li.append(note);
+        return li;
+      });
     varsEl.replaceChildren(
       ...pointers.map((p) => {
         const li = chip(p.name, String(p.value));
@@ -481,6 +501,7 @@
         return li;
       }),
       ...scalars.map((sc) => chip(sc.name, sc.value)),
+      ...gone,
     );
   }
 

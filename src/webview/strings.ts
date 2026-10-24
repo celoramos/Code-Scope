@@ -104,7 +104,9 @@ export interface PanelStrings {
     | 'statsComparisons'
     | 'statsSwaps'
     | 'comparing'
-    | 'outside',
+    | 'outside'
+    | 'hides'
+    | 'outOfScope',
     string
   >;
 }
@@ -213,6 +215,8 @@ const pt: PanelStrings = {
     statsSwaps: '{0} trocas',
     comparing: 'comparando',
     outside: 'fora da busca',
+    hides: 'esconde a {0} de fora ({1})',
+    outOfScope: 'saiu de escopo',
   },
 };
 
@@ -320,6 +324,8 @@ const en: PanelStrings = {
     statsSwaps: '{0} swaps',
     comparing: 'being compared',
     outside: 'outside the search',
+    hides: 'hides the outer {0} ({1})',
+    outOfScope: 'out of scope',
   },
 };
 

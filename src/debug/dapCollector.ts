@@ -56,7 +56,7 @@ export async function collectSnapshot(
   const file = frame.source?.path ?? frame.source?.name ?? '';
   const adapter = typeof pick === 'function' ? pick(file) : pick;
 
-  const { scopes, locals: frameLocals } = await readLocals(session, adapter, frame);
+  const { scopes, locals: frameLocals, hidden } = await readLocals(session, adapter, frame);
   const locals: DapVariable[] = [];
   let returned: Snapshot['returned'];
   for (const v of frameLocals) {
@@ -110,6 +110,8 @@ export async function collectSnapshot(
   };
   if (returned) snapshot.returned = returned;
   if (maps.length > 0) snapshot.maps = maps;
+  const shadowed = hidden.flatMap((v) => summarize(adapter, v));
+  if (shadowed.length > 0) snapshot.shadowed = shadowed;
 
   await linkSameArrays(session, adapter, arrayVars, frame.id);
   const { heap, refs } = await collectHeap(session, adapter, locals, { frameId: frame.id, userTypes: await opts.userTypes?.(file) });
@@ -137,20 +139,25 @@ async function readLocals(
   session: Session,
   adapter: LanguageAdapter,
   frame: DapStackFrame,
-): Promise<{ scopes: DapScope[]; locals: DapVariable[] }> {
+): Promise<{ scopes: DapScope[]; locals: DapVariable[]; hidden: DapVariable[] }> {
   const { scopes } = (await session.customRequest('scopes', { frameId: frame.id })) as { scopes: DapScope[] };
   // Alguns debuggers dividem as locais em vários escopos (JavaScript tem "Local" e "Block").
   const locals: DapVariable[] = [];
+  // Variáveis de fora com o mesmo nome de uma de dentro: existem, mas o código não alcança.
+  const hidden: DapVariable[] = [];
   const seenNames = new Set<string>();
   for (const scope of adapter.localScopes(scopes)) {
     for (const v of await variables(session, scope.variablesReference)) {
       // O escopo mais interno vem primeiro e esconde o de fora, como no próprio código.
-      if (seenNames.has(v.name)) continue;
+      if (seenNames.has(v.name)) {
+        hidden.push(v);
+        continue;
+      }
       seenNames.add(v.name);
       locals.push(v);
     }
   }
-  return { scopes, locals };
+  return { scopes, locals, hidden };
 }
 
 /**
