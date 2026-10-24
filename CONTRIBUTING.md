@@ -55,11 +55,11 @@ A regra mais importante da arquitetura: **nada do formato do debugger sai de `sr
 
 1. Crie o arquivo na pasta da linguagem em `samples/`, com um comentário indicando onde pôr o breakpoint.
 2. No Java, adicione uma configuração com o mesmo nome em `samples/java/.vscode/launch.json`. Em JavaScript e Python a configuração "Arquivo aberto" já serve.
-3. Inclua o exemplo na tabela do README.
+3. Inclua o exemplo na tabela dos dois READMEs (`README.md` e `README.pt-br.md`).
 
 ### Melhorar um texto explicativo
 
-As frases ficam em `src/model/explain.ts` (o que mudou) e `src/model/flow.ts` (o caminho do programa). Cada frase tem teste em `test/explain.test.ts` ou `test/flow.test.ts`; atualize o teste junto. Escreva para quem está vendo código pela primeira vez: frases curtas, sem jargão que o aluno ainda não conhece.
+As frases ficam em `src/model/messages.ts`, em português e em inglês lado a lado; `src/model/explain.ts` (o que mudou) e `src/model/flow.ts` (o caminho do programa) escolhem qual usar. Os textos do painel ficam em `src/webview/strings.ts`, e os de comandos e configurações em `package.nls.json` (inglês) e `package.nls.pt-br.json`. Mudou uma frase? Mude nos dois idiomas. Cada frase tem teste em `test/explain.test.ts`, `test/flow.test.ts` ou `test/i18n.test.ts`; atualize o teste junto. Escreva para quem está vendo código pela primeira vez: frases curtas, sem jargão que o aluno ainda não conhece.
 
 ### Suportar uma estrutura de dados nova
 

@@ -17,7 +17,7 @@ While you debug, a side panel draws your local variables: arrays, matrices, list
 - in a matrix, the row and column the code reads are highlighted and the cell where they cross gets an outline;
 - the text says what changed and which path the program took: "numeros[0] and numeros[1] swapped places", "the condition on line 8 was false: the program skipped the if block", "end of one loop iteration".
 
-> **Language of the panel:** the explanations and the panel text are in Portuguese for now. English is on the way, and the panel will follow the language of your VS Code.
+The panel speaks English and Portuguese and follows the language of your VS Code: Portuguese when VS Code is in Portuguese, English otherwise.
 
 ![Code Scope stepping through BubbleSort](docs/demo.gif)
 
@@ -119,12 +119,12 @@ If the panel does not show what you expected, open **Output**, pick **Code Scope
 | Setting | Default | What it does |
 |---|---|---|
 | `codeScope.beginnerMode` | `true` | Shows the sentence explaining each step |
-| `codeScope.animationSpeed` | `normal` | `lenta` (slow), `normal`, `rapida` (fast) or `desligada` (off). If the system asks for reduced motion, animations are off regardless |
+| `codeScope.animationSpeed` | `normal` | Slow, Normal, Fast or Off (in `settings.json`: `lenta`, `normal`, `rapida`, `desligada`). If the system asks for reduced motion, animations are off regardless |
 | `codeScope.maxElements` | `50` | How many positions of each array, list or matrix row are read |
 | `codeScope.valueNames` | `temp`, `aux`, `alvo`, `soma`... | Integers with these names hold a value, not a position, and do not become arrows |
 | `codeScope.revealOnDebug` | `true` | Opens the panel on the first stop of each debug session |
 
-Commands in the palette: **Code Scope: Mostrar painel** (show panel) and **Code Scope: Limpar histórico** (clear history).
+Commands in the palette: **Code Scope: Show panel** and **Code Scope: Clear history**.
 
 ## How it works
 
@@ -175,13 +175,12 @@ The Python tests need an interpreter. Point to one with the `CODE_SCOPE_PYTHON` 
 
 ## Roadmap
 
-1. English panel and explanations, following the VS Code language
-2. Python `dict`
-3. `HashMap`, `HashSet` and JavaScript objects
-4. Recursion, with the call stack
-5. Stack vs heap, with reference arrows between objects
-6. Linked list drawn as nodes and arrows
-7. Dedicated adapters for C#, C/C++ and Go
+1. Python `dict`
+2. `HashMap`, `HashSet` and JavaScript objects
+3. Recursion, with the call stack
+4. Stack vs heap, with reference arrows between objects
+5. Linked list drawn as nodes and arrows
+6. Dedicated adapters for C#, C/C++ and Go
 
 ## Contributing
 

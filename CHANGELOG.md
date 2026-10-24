@@ -1,5 +1,17 @@
 # Changelog
 
+## Não lançado
+
+### Novo
+
+- O painel fala inglês e português e segue o idioma do VS Code: português quando o VS Code está em português, inglês nos outros casos. Valem as explicações, os rótulos do painel, os textos para leitores de tela, os comandos e as configurações.
+- README em inglês (`README.md`) e em português (`README.pt-br.md`).
+
+### Corrigido
+
+- A tela inicial do painel pedia um breakpoint "num programa Java"; agora vale para qualquer linguagem.
+- CI: os testes de JavaScript falhavam com o Node 20, que o js-debug do VS Code 1.143 não consegue debugar; o CI passa a usar o Node 24, e a documentação pede o Node 22 ou mais novo.
+
 ## 0.4.0
 
 ### Novo

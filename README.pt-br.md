@@ -17,6 +17,8 @@ Enquanto você debuga, um painel lateral desenha as variáveis locais: arrays, m
 - numa matriz, a linha e a coluna lidas pelo código ficam marcadas e a célula onde elas se cruzam ganha contorno;
 - o texto diz o que mudou e por qual caminho o programa foi: "numeros[0] e numeros[1] trocaram de lugar", "a condição da linha 8 foi falsa: o programa pulou o bloco do if", "fim de uma volta do laço".
 
+O painel fala português e inglês e segue o idioma do seu VS Code: português quando o VS Code está em português, inglês nos outros casos.
+
 ![Code Scope rodando o BubbleSort passo a passo](docs/demo.gif)
 
 | Pilha | Fila |
@@ -117,7 +119,7 @@ Se o painel não mostrar o que você esperava, abra **Output**, escolha **Code S
 | Configuração | Padrão | O que faz |
 |---|---|---|
 | `codeScope.beginnerMode` | `true` | Mostra a frase explicando cada passo |
-| `codeScope.animationSpeed` | `normal` | `lenta`, `normal`, `rapida` ou `desligada`. Se o sistema pedir menos movimento, as animações ficam desligadas de qualquer forma |
+| `codeScope.animationSpeed` | `normal` | Lenta, Normal, Rápida ou Desligada (no `settings.json`: `lenta`, `normal`, `rapida`, `desligada`). Se o sistema pedir menos movimento, as animações ficam desligadas de qualquer forma |
 | `codeScope.maxElements` | `50` | Quantas posições de cada array, lista ou linha de matriz são lidas |
 | `codeScope.valueNames` | `temp`, `aux`, `alvo`, `soma`... | Inteiros com esses nomes guardam valor, não posição, e não viram seta |
 | `codeScope.revealOnDebug` | `true` | Abre o painel na primeira parada de cada sessão de debug |
@@ -173,13 +175,12 @@ Os testes de Python precisam de um interpretador. Aponte um com a variável `COD
 
 ## Roadmap
 
-1. Painel e explicações em inglês, seguindo o idioma do VS Code
-2. `dict` do Python
-3. `HashMap`, `HashSet` e objetos de JavaScript
-4. Recursão, com a pilha de chamadas
-5. Stack vs heap, com setas de referência entre objetos
-6. Lista ligada desenhada como nós e setas
-7. Adaptadores próprios para C#, C/C++ e Go
+1. `dict` do Python
+2. `HashMap`, `HashSet` e objetos de JavaScript
+3. Recursão, com a pilha de chamadas
+4. Stack vs heap, com setas de referência entre objetos
+5. Lista ligada desenhada como nós e setas
+6. Adaptadores próprios para C#, C/C++ e Go
 
 ## Contribuindo
 
