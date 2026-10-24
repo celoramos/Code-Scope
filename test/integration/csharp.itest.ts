@@ -36,10 +36,18 @@ function debugCs(name: string, breakpointLine: number, steps: number): Promise<S
     config: { type: 'coreclr', request: 'launch', name: `C# ${name}`, program: dll, args: [name], cwd: dir, console: 'internalConsole' },
     dump: `cs-${name}`,
     async before() {
-      // A extensão C# baixa o debugger na primeira ativação; sem esperar, o "coreclr" ainda não existe.
-      const api: unknown = await vscode.extensions.getExtension('ms-dotnettools.csharp')?.activate();
+      const ext = vscode.extensions.getExtension('ms-dotnettools.csharp');
+      const api: unknown = await ext?.activate();
       // A extensão devolve null quando desiste de ativar (plataforma, por exemplo).
       if (api === null || api === undefined) console.warn(`C#: activate() devolveu ${api}`);
+      // O activate() termina antes de o debugger ser instalado, e o "coreclr" só existe depois
+      // disso. Num perfil novo (o CI), a instalação leva alguns segundos: espera o arquivo que ela cria.
+      const done = ext ? path.join(ext.extensionPath, '.debugger', 'install.complete') : undefined;
+      for (let waited = 0; done && !fs.existsSync(done) && waited < 180_000; waited += 1000) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+      // Depois do arquivo, a extensão ainda registra o adaptador no mesmo tique.
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     },
   });
 }
