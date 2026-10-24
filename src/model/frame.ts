@@ -5,6 +5,7 @@ import { MESSAGES, type Language } from './messages';
 import type { Step } from './history';
 import { arrowsFor, matrixAxesFor, VALUE_NAMES, type Arrow, type MatrixAxes } from './pointers';
 import type { Snapshot } from './snapshot';
+import { traceTable, type TraceTable } from './trace';
 
 /** Tudo que o painel precisa para desenhar um passo. */
 export interface Frame {
@@ -22,6 +23,8 @@ export interface Frame {
   axes: Record<string, MatrixAxes>;
   /** Frases do modo iniciante; vazio quando o modo está desligado. */
   explanation: string[];
+  /** Teste de mesa até este passo. */
+  trace: TraceTable;
   /** Posição no histórico, a partir de 1. */
   step: number;
   total: number;
@@ -68,6 +71,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
           options.language,
         )
       : [],
+    trace: traceTable(step.past, step.index - step.past.length + 1),
     step: step.index,
     total: step.total,
   };

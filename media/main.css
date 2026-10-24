@@ -988,6 +988,118 @@ kbd {
   white-space: nowrap;
 }
 
+/* ---------- Teste de mesa ---------- */
+
+.trace {
+  margin-top: var(--cs-space-4);
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius);
+  background: var(--cs-surface);
+}
+
+.trace-summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cs-space-2);
+  padding: var(--cs-space-2) var(--cs-space-3);
+  cursor: pointer;
+}
+
+.trace-title {
+  font-weight: 600;
+}
+
+.trace-count,
+.trace-note {
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+.trace-note {
+  margin: 0 var(--cs-space-3) var(--cs-space-2);
+}
+
+/* A tabela rola dentro do cartão; o cabeçalho e a coluna do passo ficam presos. */
+.trace-scroll {
+  max-height: 16em;
+  overflow: auto;
+  border-top: 1px solid var(--cs-line);
+}
+
+.trace-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 100%;
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.trace-table th,
+.trace-table td {
+  padding: 2px var(--cs-space-2);
+  border-bottom: 1px solid var(--cs-line);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.trace-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--cs-cell-bg);
+  color: var(--cs-muted);
+  font-weight: 600;
+}
+
+.trace-table th.trace-meta,
+.trace-table td.trace-meta {
+  color: var(--cs-muted);
+}
+
+.trace-table tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--cs-surface);
+}
+
+.trace-value {
+  max-width: 12em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trace-value.is-changed {
+  background: var(--cs-change-bg);
+  font-weight: 600;
+}
+
+.trace-table tr.is-current > * {
+  box-shadow: inset 0 -2px 0 var(--cs-change);
+}
+
+.trace-table tr.is-current th {
+  color: var(--cs-fg);
+}
+
+/* O número do passo é um botão: leva o painel para aquele passo. */
+.trace-goto {
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0 var(--cs-space-1);
+  border: 0;
+  border-radius: var(--cs-radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.trace-goto:hover {
+  background: var(--cs-cell-bg);
+}
+
 /* ---------- Movimento reduzido ---------- */
 
 /*

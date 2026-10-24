@@ -52,7 +52,7 @@ describe('Java Debugger real', () => {
       changes.some((c) => c.kind === 'set' && c.array === 'grade[0]' && c.index === 0 && c.to === '10'),
       `grade[0][0] não virou 10: ${JSON.stringify(changes)}`,
     );
-    const frames = snaps.map((s, k) => makeFrame({ snapshot: s, prev: snaps[k - 1], older: snaps[k - 2], index: k + 1, total: snaps.length }));
+    const frames = snaps.map((s, k) => makeFrame({ snapshot: s, prev: snaps[k - 1], older: snaps[k - 2], index: k + 1, total: snaps.length, past: snaps.slice(0, k + 1) }));
     assert.ok(
       frames.some((f) => f.axes.grade?.row?.name === 'i' && f.axes.grade?.col?.name === 'j'),
       'i e j nunca foram reconhecidos como linha e coluna',

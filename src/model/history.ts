@@ -7,6 +7,8 @@ export interface Step {
   snapshot: Snapshot;
   prev?: Snapshot;
   older?: Snapshot;
+  /** Todos os passos até este, do mais antigo ao atual: base do teste de mesa. */
+  past: readonly Snapshot[];
   /** Posição a partir de 1, como o contador mostra. */
   index: number;
   total: number;
@@ -65,6 +67,7 @@ export class History {
       snapshot,
       prev: this.items[this.cursor - 1],
       older: this.items[this.cursor - 2],
+      past: this.items.slice(0, this.cursor + 1),
       index: this.cursor + 1,
       total: this.items.length,
     };

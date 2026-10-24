@@ -58,7 +58,13 @@ export interface PanelStrings {
     | 'rows'
     | 'column'
     | 'columns'
-    | 'pointedBy',
+    | 'pointedBy'
+    | 'traceTitle'
+    | 'traceSteps'
+    | 'traceStep'
+    | 'traceLine'
+    | 'traceGoto'
+    | 'traceHidden',
     string
   >;
 }
@@ -121,6 +127,12 @@ const pt: PanelStrings = {
     column: 'coluna',
     columns: 'colunas',
     pointedBy: '{0}, apontada por {1}',
+    traceTitle: 'Teste de mesa',
+    traceSteps: '{0} passos',
+    traceStep: 'Passo',
+    traceLine: 'Linha',
+    traceGoto: 'Ir para o passo {0}',
+    traceHidden: 'Os {0} passos mais antigos não aparecem.',
   },
 };
 
@@ -182,6 +194,12 @@ const en: PanelStrings = {
     column: 'column',
     columns: 'columns',
     pointedBy: '{0}, pointed to by {1}',
+    traceTitle: 'Trace table',
+    traceSteps: '{0} steps',
+    traceStep: 'Step',
+    traceLine: 'Line',
+    traceGoto: 'Go to step {0}',
+    traceHidden: 'The {0} oldest steps are not shown.',
   },
 };
 
