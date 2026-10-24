@@ -54,6 +54,54 @@
       "name": "Parenteses",
       "request": "launch",
       "mainClass": "Parenteses"
+    },
+    {
+      "type": "java",
+      "name": "Fatorial",
+      "request": "launch",
+      "mainClass": "Fatorial"
+    },
+    {
+      "type": "java",
+      "name": "ForaDoLimite",
+      "request": "launch",
+      "mainClass": "ForaDoLimite"
+    },
+    {
+      "type": "java",
+      "name": "Referencias",
+      "request": "launch",
+      "mainClass": "Referencias"
+    },
+    {
+      "type": "java",
+      "name": "ListaLigada",
+      "request": "launch",
+      "mainClass": "ListaLigada"
+    },
+    {
+      "type": "java",
+      "name": "ArvoreBinaria",
+      "request": "launch",
+      "mainClass": "ArvoreBinaria"
+    },
+    {
+      "type": "java",
+      "name": "Dicionario",
+      "request": "launch",
+      "mainClass": "Dicionario"
+    },
+    {
+      "type": "java",
+      "name": "BuscaBinaria",
+      "request": "launch",
+      "mainClass": "BuscaBinaria"
+    },
+    {
+      "type": "java",
+      "name": "Escopo",
+      "request": "launch",
+      "mainClass": "Escopo"
     }
   ]
 }
