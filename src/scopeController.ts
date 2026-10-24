@@ -7,6 +7,7 @@ import { evaluateCondition } from './debug/conditionEval';
 import { readExceptionInfo, type ExceptionInfoBody } from './debug/exceptionFilters';
 import { parseClasses } from './model/classes';
 import { applyTextRoles } from './model/text';
+import { dropVariables, notYetDeclared } from './model/declared';
 import { parseCondition } from './model/condition';
 import { registerPauseOnErrors } from './debug/pauseOnErrors';
 import { registerStopTracker } from './debug/trackerFactory';
@@ -102,7 +103,12 @@ export class ScopeController implements vscode.Disposable {
       snap.code = source?.lines[snap.line - 1]?.trim();
       if (source) applyCollectionRoles(snap, source.text, collected.adapter);
       if (source) applyTextRoles(snap, source.text);
-      // Só vale guardar as classes quando alguma herda de outra: é para explicar polimorfismo.
+      // Em C, a variável declarada mais abaixo ainda guarda lixo: só entra quando a declaração rodar.
+      if (source && collected.adapter.id === 'c') {
+        const names = [...snap.arrays, ...snap.pointers, ...(snap.scalars ?? []), ...(snap.refs ?? []), ...(snap.maps ?? [])].map((v) => v.name);
+        dropVariables(snap, notYetDeclared(source.text, snap.line, names));
+      }
+      // Classes do arquivo: herança (polimorfismo) e se escrevem equals (identidade e igualdade).
       const classes = source ? parseClasses(source.text) : {};
       if (Object.keys(classes).length > 0) snap.classes = classes;
       if (reason === 'exception') snap.exception = await readException(session, thread);

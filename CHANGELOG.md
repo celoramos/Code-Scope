@@ -18,7 +18,7 @@
 - Mudar no lugar ou criar outro: `sort` e `reverse` mudam a própria lista (e o outro nome dela também), `sorted`, `slice`, `[:]` e `Arrays.copyOf` criam outra, e o texto novo de `s.trim();` que ninguém guardou é explicado com a linha que guardaria.
 - Quanto custa: embaixo do contador de comparações, a contagem do programa ao lado das curvas log n, n, n log n e n², para o n dele e para 1000. O painel não afirma qual curva o programa segue: passos pulados com F5 não são contados.
 - C#: adaptador próprio para o debugger da extensão C# (arrays, `List`, `Stack`, `Queue`, `Dictionary`, objetos e listas ligadas), validado com o debugger real, e exemplos em `samples/csharp`.
-- C: adaptador próprio para a extensão C/C++ com gdb (arrays, ponteiros para struct e listas ligadas), validado com o debugger real, e exemplos em `samples/c`. Ponteiro ainda sem valor (lixo de memória) não é seguido.
+- C: adaptador próprio para a extensão C/C++ com gdb (arrays, ponteiros para struct e listas ligadas), validado com o debugger real, e exemplos em `samples/c`. Variável declarada abaixo da linha parada ainda guarda lixo de memória, então só aparece depois que a declaração roda; um ponteiro com lixo não vira nó.
 - Para quem quer contribuir: guia em inglês (`CONTRIBUTING.md`) e português, lista de tarefas para começar (`docs/good-first-issues.md`), formulários de issue e de pull request nos dois idiomas.
 
 ## 0.5.0
