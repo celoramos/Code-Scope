@@ -13,6 +13,7 @@
   const liveBtn = byId('live');
   const fileEl = byId('file');
   const codeEl = byId('code');
+  const conditionEl = byId('condition');
   const endedBadge = byId('ended');
   const status = byId('status');
   const explanationEl = byId('explanation');
@@ -49,7 +50,7 @@
    * @typedef {{ row?: Arrow, col?: Arrow }} Axes
    * @typedef {{ kind: string, array?: string, map?: string, key?: string, from?: string, index?: number, a?: number, b?: number, name?: string, value?: string }} Change
    * @typedef {{ line: number, code?: string }} LineRef
-   * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[], calls?: CallFrame[], maps?: MapVar[] },
+   * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[], calls?: CallFrame[], maps?: MapVar[], condition?: Condition },
    *             executed?: LineRef, changes: Change[], arrows: Record<string, Arrow[]>, axes: Record<string, Axes>,
    *             explanation: string[], trace: Trace, error?: ErrorView, calls?: CallChange[], heap?: HeapView, heapDelta?: HeapDelta,
    *             step: number, total: number }} Frame
@@ -63,6 +64,8 @@
    * @typedef {{ lists: ListViewT[], trees: TreeViewT[], objects: ObjectViewT[], nulls: string[] }} HeapView
    * @typedef {{ added: string[], fields: Record<string, string[]> }} HeapDelta
    * @typedef {{ name: string, entries: { key: string, value: string }[], length: number }} MapVar
+   * @typedef {{ text: string, values?: string, value?: boolean, skipped?: boolean }} ConditionPart
+   * @typedef {{ keyword: string, line: number, text: string, parts: ConditionPart[], ops: string[], result?: boolean }} Condition
    * @typedef {{ type: string, message: string, kind: string, title: string, sentences: string[], missing?: { array: string, index: number } }} ErrorView
    * @typedef {{ columns: string[], showCalls?: boolean, rows: { step: number, line: number, call?: string, values: (string | null | undefined)[], changed: boolean[] }[], hidden: number }} Trace
    */
@@ -176,6 +179,7 @@
     liveBtn.hidden = frame.step >= frame.total;
     fileEl.textContent = basename(s.file);
     renderCode(frame.executed, { line: s.line, code: s.code });
+    renderCondition(s.condition);
 
     explanationEl.replaceChildren(
       ...frame.explanation.map((text) => {
@@ -311,6 +315,56 @@
     if (executed) rows.push(...codeRow(t('executed'), executed, 'is-executed'));
     rows.push(...codeRow(t('nextLine'), next, 'is-next'));
     codeEl.replaceChildren(...rows);
+  }
+
+  /**
+   * A condição da próxima linha quebrada nas partes, cada uma com o valor que
+   * vai dar. As partes que o curto-circuito pula ficam apagadas.
+   * @param {Condition | undefined} c
+   */
+  function renderCondition(c) {
+    conditionEl.hidden = !c;
+    if (!c) {
+      conditionEl.replaceChildren();
+      return;
+    }
+    const title = el('p', 'condition-title');
+    title.textContent = t('condTitle', c.line);
+    const list = el('ol', 'condition-parts');
+    c.parts.forEach((part, k) => {
+      if (k > 0) {
+        const op = el('li', 'condition-op');
+        op.textContent = c.ops[k - 1] === '||' ? t('condOr') : t('condAnd');
+        list.append(op);
+      }
+      const li = el('li', `condition-part${part.skipped ? ' is-skipped' : ''}`);
+      const code = el('code', 'code');
+      code.textContent = part.text;
+      li.append(code);
+      if (part.values) {
+        const values = el('span', 'condition-values');
+        values.textContent = part.values;
+        li.append(values);
+      }
+      li.append(verdict(part.skipped ? undefined : part.value, part.skipped));
+      list.append(li);
+    });
+    conditionEl.replaceChildren(title, list);
+    if (c.parts.length > 1 && c.result !== undefined) {
+      const result = el('p', 'condition-result');
+      result.append(document.createTextNode(`${t('condResult')}: `), verdict(c.result, false));
+      conditionEl.append(result);
+    }
+  }
+
+  /**
+   * @param {boolean | undefined} value
+   * @param {boolean | undefined} skipped
+   */
+  function verdict(value, skipped) {
+    const v = el('span', `verdict ${skipped ? 'is-skipped' : value === true ? 'is-true' : value === false ? 'is-false' : 'is-unknown'}`);
+    v.textContent = skipped ? t('condSkipped') : value === true ? t('condTrue') : value === false ? t('condFalse') : t('condUnknown');
+    return v;
   }
 
   /**

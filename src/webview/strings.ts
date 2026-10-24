@@ -92,7 +92,15 @@ export interface PanelStrings {
     | 'oneKey'
     | 'keys'
     | 'mapKey'
-    | 'mapValue',
+    | 'mapValue'
+    | 'condTitle'
+    | 'condTrue'
+    | 'condFalse'
+    | 'condUnknown'
+    | 'condSkipped'
+    | 'condAnd'
+    | 'condOr'
+    | 'condResult',
     string
   >;
 }
@@ -189,6 +197,14 @@ const pt: PanelStrings = {
     keys: '{0} chaves',
     mapKey: 'chave',
     mapValue: 'valor',
+    condTitle: 'A condição da linha {0}, antes de rodar',
+    condTrue: 'verdadeiro',
+    condFalse: 'falso',
+    condUnknown: 'não dá para saber antes',
+    condSkipped: 'nem é testada',
+    condAnd: 'e',
+    condOr: 'ou',
+    condResult: 'resultado',
   },
 };
 
@@ -284,6 +300,14 @@ const en: PanelStrings = {
     keys: '{0} keys',
     mapKey: 'key',
     mapValue: 'value',
+    condTitle: 'The condition on line {0}, before it runs',
+    condTrue: 'true',
+    condFalse: 'false',
+    condUnknown: 'cannot tell beforehand',
+    condSkipped: 'not even tested',
+    condAnd: 'and',
+    condOr: 'or',
+    condResult: 'result',
   },
 };
 

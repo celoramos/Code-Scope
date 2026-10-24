@@ -1,6 +1,7 @@
 import { callChanges, describeCall, returnNote, type CallChange } from './calls';
 import { diff, type Change } from './diff';
 import { explain } from './explain';
+import { explainCondition } from './condition';
 import { explainError, type ErrorView } from './errors';
 import { explainFlow } from './flow';
 import { arrayAliases, explainHeap, heapDelta, heapView, referenceNames, type HeapDelta, type HeapView } from './heap';
@@ -93,6 +94,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
           peekNote(executed?.code, snapshot, changes, options.language),
           returnNote(snapshot, prev, options.language),
           explainFlow(executed, snapshot, options.language),
+          ...explainCondition(snapshot.condition, options.language),
         ].filter(isText),
         options.language,
       );

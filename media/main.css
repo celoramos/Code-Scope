@@ -25,6 +25,9 @@
   --cs-error: var(--vscode-errorForeground);
   /* A chamada que está rodando agora. */
   --cs-active: var(--vscode-focusBorder);
+  /* Resultado de uma condição: verdadeiro e falso. */
+  --cs-true: var(--vscode-charts-green);
+  --cs-false: var(--vscode-charts-red);
   --cs-change-bg: color-mix(in srgb, var(--cs-change) 22%, var(--cs-cell-bg));
   --cs-ptr-0: var(--vscode-charts-blue);
   --cs-ptr-1: var(--vscode-charts-purple);
@@ -338,6 +341,92 @@ kbd {
   background: var(--cs-cell-bg);
   color: var(--cs-muted);
   font-size: var(--cs-small);
+}
+
+/* ---------- Condição da próxima linha ---------- */
+
+.condition {
+  margin: var(--cs-space-2) 0 0;
+  padding: var(--cs-space-2);
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius-sm);
+  background: var(--cs-surface);
+}
+
+.condition-title,
+.condition-result {
+  margin: 0;
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+.condition-result {
+  margin-top: var(--cs-space-1);
+}
+
+.condition-parts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cs-space-1);
+  margin: var(--cs-space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.condition-part {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--cs-space-1);
+}
+
+.condition-part.is-skipped {
+  opacity: 0.55;
+}
+
+.condition-values {
+  color: var(--cs-muted);
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+}
+
+.condition-values::before {
+  content: '(';
+}
+
+.condition-values::after {
+  content: ')';
+}
+
+.condition-op {
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+/* Verdadeiro e falso em selo com a cor do resultado; o texto continua na cor do tema. */
+.verdict {
+  padding: 0 var(--cs-space-1);
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius-sm);
+  font-size: var(--cs-small);
+  white-space: nowrap;
+}
+
+.verdict.is-true {
+  border-color: var(--cs-true);
+  background: color-mix(in srgb, var(--cs-true) 18%, var(--cs-bg));
+}
+
+.verdict.is-false {
+  border-color: var(--cs-false);
+  background: color-mix(in srgb, var(--cs-false) 18%, var(--cs-bg));
+}
+
+.verdict.is-unknown,
+.verdict.is-skipped {
+  color: var(--cs-muted);
+  border-style: dashed;
 }
 
 /* ---------- Status e explicação ---------- */

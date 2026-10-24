@@ -90,6 +90,10 @@ export interface Messages {
   fieldNull(path: string): string;
   arrayAlias(first: string, other: string): string;
 
+  /** keyword: if, elif, while, for. */
+  conditionResult(keyword: string, line: number, result: boolean): string;
+  /** A parte que decidiu sozinha: as seguintes nem rodam. */
+  shortCircuit(part: string, value: boolean): string;
   mapCreated(name: string, length: number): string;
   describeMap(name: string, length: number): string;
   mapPutNew(name: string, key: string, value: string): string;
@@ -201,6 +205,19 @@ const pt: Messages = {
   fieldNull: (path) => `${path} agora não aponta para nada: a ligação acabou ali.`,
   arrayAlias: (first, other) => `${other} não é uma cópia: ${first} e ${other} são o mesmo array. Mudar um muda o outro.`,
 
+  conditionResult: (kw, line, result) => {
+    const loop = kw === 'while' || kw === 'for';
+    const then = loop
+      ? result
+        ? 'o laço roda mais uma vez'
+        : 'o laço termina'
+      : result
+        ? `o programa vai entrar no ${kw}`
+        : `o programa vai pular o bloco do ${kw}`;
+    return `A condição da linha ${line} vai dar ${result ? 'verdadeiro' : 'falso'}: ${then}.`;
+  },
+  shortCircuit: (part, value) =>
+    `Como ${part} deu ${value ? 'verdadeiro' : 'falso'}, o resto da condição nem é testado: o resultado já está decidido.`,
   mapCreated: (name, n) => `O dicionário ${name} foi criado ${n === 0 ? 'vazio' : `com ${count(n, 'chave', 'chaves')}`}.`,
   describeMap: (name, n) => `${name} é um dicionário ${n === 0 ? 'vazio' : `com ${count(n, 'chave', 'chaves')}`}`,
   mapPutNew: (name, key, value) => `A chave ${key} entrou em ${name}, com o valor ${value}.`,
@@ -304,6 +321,19 @@ const en: Messages = {
   fieldNull: (path) => `${path} now points to nothing: the chain ends there.`,
   arrayAlias: (first, other) => `${other} is not a copy: ${first} and ${other} are the same array. Changing one changes the other.`,
 
+  conditionResult: (kw, line, result) => {
+    const loop = kw === 'while' || kw === 'for';
+    const then = loop
+      ? result
+        ? 'the loop runs once more'
+        : 'the loop ends'
+      : result
+        ? `the program will enter the ${kw}`
+        : `the program will skip the ${kw} block`;
+    return `The condition on line ${line} will be ${result ? 'true' : 'false'}: ${then}.`;
+  },
+  shortCircuit: (part, value) =>
+    `Since ${part} was ${value ? 'true' : 'false'}, the rest of the condition is not even tested: the result is already decided.`,
   mapCreated: (name, n) => `The dictionary ${name} was created ${n === 0 ? 'empty' : `with ${count(n, 'key', 'keys')}`}.`,
   describeMap: (name, n) => `${name} is a dictionary ${n === 0 ? 'that is empty' : `with ${count(n, 'key', 'keys')}`}`,
   mapPutNew: (name, key, value) => `The key ${key} was added to ${name}, with the value ${value}.`,

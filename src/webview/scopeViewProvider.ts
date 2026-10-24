@@ -97,6 +97,7 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
         <span id="ended" class="badge" hidden>${t.sessionEnded}</span>
       </p>
       <dl id="code" class="code-lines"></dl>
+      <div id="condition" class="condition" hidden></div>
     </header>
 
     <p id="status" class="status" role="status" aria-live="polite"></p>

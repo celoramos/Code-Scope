@@ -1,3 +1,5 @@
+import type { ConditionInfo } from './condition';
+
 /**
  * Modelo neutro de linguagem. Nada aqui conhece o Debug Adapter Protocol:
  * a camada src/debug traduz o que o adaptador manda para estes tipos, e o
@@ -101,6 +103,8 @@ export interface Snapshot {
   calls?: CallFrame[];
   /** Valor que uma função acabou de devolver, quando o debugger informa. */
   returned?: { function?: string; value: string; pending?: boolean };
+  /** A condição que a linha parada vai testar, já avaliada parte por parte. */
+  condition?: ConditionInfo;
   /** O programa parou por um erro que ninguém tratou. */
   exception?: ExceptionInfo;
 }

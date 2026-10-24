@@ -3,7 +3,9 @@ import { readSettings, uiLanguage } from './config';
 import { collectSnapshot } from './debug/dapCollector';
 import { applyCollectionRoles, pickAdapter } from './debug/adapters';
 import { declaredClasses } from './debug/adapters/adapter';
+import { evaluateCondition } from './debug/conditionEval';
 import { readExceptionInfo, type ExceptionInfoBody } from './debug/exceptionFilters';
+import { parseCondition } from './model/condition';
 import { registerPauseOnErrors } from './debug/pauseOnErrors';
 import { registerStopTracker } from './debug/trackerFactory';
 import { makeFrame } from './model/frame';
@@ -97,6 +99,9 @@ export class ScopeController implements vscode.Disposable {
       snap.code = source?.lines[snap.line - 1]?.trim();
       if (source) applyCollectionRoles(snap, source.text, collected.adapter);
       if (reason === 'exception') snap.exception = await readException(session, thread);
+      // A linha parada testa uma condição? Cada parte vira verdadeiro ou falso antes de rodar.
+      const parsed = snap.exception ? undefined : parseCondition(snap.code, collected.adapter.id === 'python' ? 'python' : 'c');
+      if (parsed) snap.condition = await evaluateCondition(session, collected.raw.frame.id, parsed, snap);
       if (gen !== this.generation) return;
       this.log.debug(`adaptador: ${collected.adapter.id} (sessão ${session.type})`);
       this.log.debug('scopes', JSON.stringify(collected.raw.scopes));

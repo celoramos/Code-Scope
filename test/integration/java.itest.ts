@@ -199,4 +199,12 @@ describe('Java Debugger real', () => {
     assert.ok(changes.some((c) => c.kind === 'map-put' && c.from === undefined), 'nenhuma chave nova reconhecida');
     assert.ok(changes.some((c) => c.kind === 'map-put' && c.from === '1' && c.value === '2'), `trocas: ${JSON.stringify(changes.filter((c) => c.kind === 'map-put'))}`);
   });
+
+  it('Java condição: o debugger responde cada parte antes da linha rodar', async () => {
+    const snaps = await debugSample('BuscaBinaria', 7, 14);
+    const tested = snaps.filter((s) => s.condition && s.condition.result !== undefined);
+    assert.ok(tested.length > 0, `nenhuma condição avaliada: ${JSON.stringify(snaps.map((s) => s.condition ?? s.code))}`);
+    assert.ok(tested.some((s) => s.condition!.result === true) && tested.some((s) => s.condition!.result === false), 'deveria haver condição verdadeira e falsa');
+    assert.ok(tested.some((s) => s.condition!.text === 'ordenado[meio] == alvo'), `condições: ${[...new Set(tested.map((s) => s.condition!.text))].join(' | ')}`);
+  });
 });
