@@ -1575,6 +1575,45 @@ kbd {
   font-variant-numeric: tabular-nums;
 }
 
+/* Quanto custa: as curvas lado a lado e a contagem do programa embaixo. */
+.cost {
+  margin: 0 0 var(--cs-space-2);
+  font-size: var(--cs-small);
+}
+
+.cost summary {
+  cursor: pointer;
+  color: var(--cs-muted);
+}
+
+.cost-table {
+  margin: var(--cs-space-1) 0;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.cost-table th,
+.cost-table td {
+  padding: 2px var(--cs-space-2);
+  text-align: right;
+  border-bottom: 1px solid var(--vscode-panel-border, transparent);
+}
+
+.cost-table th[scope='row'],
+.cost-table thead th:first-child {
+  text-align: left;
+  font-weight: normal;
+}
+
+.cost-table tr.is-program {
+  font-weight: 600;
+}
+
+.cost-note {
+  margin: var(--cs-space-1) 0 0;
+  color: var(--cs-muted);
+}
+
 /* ---------- Grafo ---------- */
 
 .graph {

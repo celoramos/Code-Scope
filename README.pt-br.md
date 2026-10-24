@@ -30,6 +30,7 @@ Enquanto você debuga, um painel lateral desenha o seu programa: arrays, matrize
 - texto lido letra por letra vira uma fileira de letras com a seta do índice, e as pegadinhas de número são explicadas quando acontecem: divisão de inteiros, `0.1 + 0.2`, overflow.
 - `==` ou `equals` (e `is` ou `==` no Python): quando a condição compara dois objetos, o texto diz se ela perguntou "é o mesmo objeto?" ou "tem o mesmo conteúdo?" e explica as pegadinhas clássicas, como `==` entre dois textos iguais no Java ou `equals` numa classe que não escreveu o seu.
 - mudar no lugar ou criar outro: `x.sort()` muda a própria lista (e todos os nomes dela), `sorted(x)`, `slice()` ou `Arrays.copyOf` criam outra, e `s.trim();` sozinho na linha cria um texto que ninguém guarda, então `s` continua igual.
+- quanto custa: embaixo do contador de comparações, uma tabela põe a contagem do programa ao lado de log n, n, n log n e n², para o tamanho dele e para 1000 posições, onde um laço dentro de outro já faz um milhão de comparações.
 
 Três ferramentas para a aula:
 

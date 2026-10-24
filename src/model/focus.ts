@@ -55,21 +55,48 @@ export function arrayFocus(s: Snapshot): Record<string, ArrayFocus> {
   return out;
 }
 
+/**
+ * Curvas de crescimento: quantas comparações faz um algoritmo log n, n, n log n
+ * e n². O painel não diz qual o programa segue: os passos pulados com F5 não
+ * são contados, então a contagem só vale como "até aqui".
+ */
+export type Growth = 'log' | 'n' | 'nlogn' | 'n2';
+
 export interface AlgorithmStats {
   /** Vezes que o programa comparou posições de um array numa condição. */
   comparisons: number;
   swaps: number;
+  /** O n: tamanho do maior array comparado. */
+  size?: number;
+  /** Valor de cada curva para o n do programa e para um n grande, onde a diferença aparece. */
+  curves?: { size: number; values: Record<Growth, number> }[];
 }
+
+/** O n grande da comparação: com 1000 posições, n² já é um milhão. */
+const BIG_N = 1000;
 
 /** Contas do começo até o passo atual. */
 export function algorithmStats(past: readonly Snapshot[]): AlgorithmStats {
   let comparisons = 0;
   let swaps = 0;
+  let size = 0;
   past.forEach((s, k) => {
-    if (s.condition && indexAccesses(s.condition.text, s).length > 0) comparisons++;
+    const accesses = s.condition ? indexAccesses(s.condition.text, s) : [];
+    if (accesses.length > 0) {
+      comparisons++;
+      for (const a of accesses) size = Math.max(size, s.arrays.find((x) => x.name === a.array)?.length ?? 0);
+    }
     if (k > 0) swaps += diff(past[k - 1], s, past[k - 2]).filter((c) => c.kind === 'swap').length;
   });
-  return { comparisons, swaps };
+  if (size === 0) return { comparisons, swaps };
+  const curves = [size, BIG_N].map((n) => ({ size: n, values: growthTable(n) }));
+  return { comparisons, swaps, size, curves };
+}
+
+/** O valor de cada curva para um n: o que o painel mostra lado a lado. */
+export function growthTable(n: number): Record<Growth, number> {
+  const log2 = Math.log2(n);
+  return { log: Math.max(1, Math.round(log2)), n, nlogn: Math.round(n * log2), n2: n * n };
 }
 
 /** O intervalo encolheu: a busca descartou um pedaço. */

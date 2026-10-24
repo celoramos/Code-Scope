@@ -109,6 +109,12 @@ export interface PanelStrings {
     | 'statsSwaps'
     | 'statsComparison1'
     | 'statsSwap1'
+    | 'locale'
+    | 'costTitle'
+    | 'costCurve'
+    | 'costAt'
+    | 'costProgram'
+    | 'costProgramRow'
     | 'comparing'
     | 'outside'
     | 'hides'
@@ -244,6 +250,12 @@ const pt: PanelStrings = {
     statsSwaps: '{0} trocas',
     statsComparison1: '1 comparação entre posições',
     statsSwap1: '1 troca',
+    locale: 'pt-BR',
+    costTitle: 'Quanto custa: n = {0} posições',
+    costCurve: 'curva',
+    costAt: 'n = {0}',
+    costProgram: 'Cada curva mostra quantas comparações faz um algoritmo que cresce daquele jeito. Com {0} posições elas ficam perto; com 1000, um laço dentro de outro (n²) faz um milhão, e uma busca que descarta metade (log n) faz 10.',
+    costProgramRow: 'este programa, até aqui',
     comparing: 'comparando',
     outside: 'fora da busca',
     hides: 'esconde a {0} de fora ({1})',
@@ -378,6 +390,12 @@ const en: PanelStrings = {
     statsSwaps: '{0} swaps',
     statsComparison1: '1 comparison between positions',
     statsSwap1: '1 swap',
+    locale: 'en',
+    costTitle: 'How much it costs: n = {0} positions',
+    costCurve: 'curve',
+    costAt: 'n = {0}',
+    costProgram: 'Each curve shows how many comparisons an algorithm that grows that way makes. With {0} positions they are close; with 1000, a loop inside a loop (n²) makes a million, and a search that discards half (log n) makes 10.',
+    costProgramRow: 'this program, so far',
     comparing: 'being compared',
     outside: 'outside the search',
     hides: 'hides the outer {0} ({1})',

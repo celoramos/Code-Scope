@@ -176,6 +176,11 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
     <section id="call-tree" class="arrays heap" aria-label="${t.callTree}" hidden></section>
     <ul id="vars" class="vars" aria-label="${t.variables}"></ul>
     <p id="stats" class="stats" hidden></p>
+    <details id="cost" class="cost" hidden>
+      <summary id="cost-title"></summary>
+      <table class="cost-table"><thead><tr id="cost-head"></tr></thead><tbody id="cost-rows"></tbody></table>
+      <p id="cost-program" class="cost-note"></p>
+    </details>
     <section id="arrays" class="arrays" aria-label="${t.arrays}"></section>
     <section id="maps" class="arrays heap" aria-label="${t.maps}" hidden></section>
     <section id="heap" class="arrays heap" aria-label="${t.objects}" hidden></section>

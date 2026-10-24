@@ -1,5 +1,5 @@
 import * as assert from 'node:assert/strict';
-import { algorithmStats, arrayFocus, rangeNote } from '../src/model/focus';
+import { algorithmStats, arrayFocus, growthTable, rangeNote } from '../src/model/focus';
 import type { Snapshot } from '../src/model/snapshot';
 
 const ordenado = { name: 'ordenado', values: ['3', '8', '12', '17', '21', '25', '30', '42'], length: 8 };
@@ -40,6 +40,15 @@ describe('comparação e intervalo', () => {
       ...(withCondition ? { condition: { keyword: 'if' as const, line: 8, text: 'numeros[j] > numeros[j + 1]', parts: [], ops: [] } } : {}),
     });
     const stats = algorithmStats([swap(['5', '1'], true), swap(['1', '5'], false), swap(['1', '5'], true)]);
-    assert.deepEqual(stats, { comparisons: 2, swaps: 1 });
+    assert.equal(stats.comparisons, 2);
+    assert.equal(stats.swaps, 1);
+    assert.equal(stats.size, 2);
+    assert.deepEqual(stats.curves?.map((c) => c.size), [2, 1000]);
   });
+
+  it('valores das curvas para um n', () => {
+    assert.deepEqual(growthTable(8), { log: 3, n: 8, nlogn: 24, n2: 64 });
+    assert.deepEqual(growthTable(1000), { log: 10, n: 1000, nlogn: 9966, n2: 1000000 });
+  });
+
 });
