@@ -13,6 +13,7 @@ import { arrowsFor, matrixAxesFor, VALUE_NAMES, type Arrow, type MatrixAxes } fr
 import type { Snapshot } from './snapshot';
 import { graphNotes, graphViews, type GraphView } from './graph';
 import { numberNotes } from './numbers';
+import { mutationNotes } from './mutation';
 import { samenessNotes } from './sameness';
 import { answers, predictionFor, type Prediction } from './predict';
 import { scopeNotes, shadowChanges, shadows } from './scope';
@@ -101,7 +102,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
     explanation = calls.flatMap((c) => [describeCall(c, options.language), polymorphismNote(c, snapshot.classes, options.language)].filter(isText));
   } else if (options.beginnerMode) {
     const heapNotes = prev
-      ? [...explainHeap(prev, snapshot, options.language), ...scopeNotes(prev, snapshot, options.language), ...numberNotes(prev, snapshot, options.language), ...graphNotes(prev, snapshot, options.language)]
+      ? [...explainHeap(prev, snapshot, options.language), ...scopeNotes(prev, snapshot, options.language), ...numberNotes(prev, snapshot, options.language), ...mutationNotes(prev, snapshot, options.language), ...graphNotes(prev, snapshot, options.language)]
       : [];
     // Dois nomes para o mesmo array: as mudanças aparecem nos dois, mas basta contar uma vez.
     const extraNames = new Set([...arrayAliases(snapshot).values()].flatMap((names) => names.slice(1)));

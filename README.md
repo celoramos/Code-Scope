@@ -29,6 +29,7 @@ While you debug, a side panel draws your program: arrays, matrices, lists, stack
 - inside a `catch`, the panel explains which line raised the error and that the rest of the `try` did not run; when a subclass method runs, it says why it was that version (polymorphism);
 - text read letter by letter becomes a row of letters with the index arrow, and the classic number traps are explained when they happen: integer division, `0.1 + 0.2`, overflow.
 - `==` versus `equals` (and `is` versus `==` in Python): when a condition compares two objects, the text says whether it asked "same object?" or "same contents?", and explains the classic traps, like `==` between two equal Java strings, or `equals` in a class that never wrote one.
+- changing in place or creating a new one: `x.sort()` changes the list itself (and every name for it), `sorted(x)`, `slice()` or `Arrays.copyOf` make a new one, and `s.trim();` alone on a line creates a text nobody keeps, so `s` stays the same.
 
 Three tools for class:
 
@@ -169,6 +170,7 @@ In the Extension Development Host window:
 | `Texto` / `texto` | A word read letter by letter, and `+` creating a new text |
 | `Numeros` / `numeros` | Integer division, `0.1 + 0.2` and int overflow |
 | `Igualdade` / `igualdade` | Same object or same contents: `==`, `equals`, `===` and `is` |
+| `Copias` / `copias` | Changing in place (`sort`) or creating a new one (`sorted`, `slice`, `trim`) |
 | `csharp/` (BubbleSort, Pilha, Fila, Dicionario, ListaLigada) | The same lessons in C#: one project, each sample is a configuration in `launch.json` |
 | `c/bubble_sort.c`, `c/lista_ligada.c` | Arrays in C, and a linked list of `struct`s connected by pointers |
 

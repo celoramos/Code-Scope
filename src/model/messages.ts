@@ -127,6 +127,13 @@ export interface Messages {
   /** A classe não escreveu equals (ou __eq__): o herdado só compara identidade. lang: java, csharp ou python. */
   equalsNotWritten(expr: string, cls: string, lang: string): string;
   arrayEqualsIsIdentity(expr: string, a: string, b: string, lang: string): string;
+  /** s.trim() sozinho na linha: o texto novo se perdeu. fix: a linha que guarda o novo. */
+  discardedText(name: string, call: string, value: string, fix: string): string;
+  discardedList(name: string, call: string, fix: string): string;
+  /** x.sort(): a própria lista mudou. other: outro nome para a mesma lista. */
+  inPlace(name: string, call: string, other?: string): string;
+  newCopy(target: string, source: string, expr: string): string;
+  newText(target: string, source: string, expr: string, value: string): string;
 }
 
 /** O método que compara conteúdo em cada linguagem. */
@@ -293,6 +300,16 @@ const pt: Messages = {
     `${expr} deu falso mesmo com o mesmo conteúdo: a classe ${cls} não escreveu ${eqName(lang)}, então vale o que ela herda, que só pergunta se é o mesmo objeto, como o ${lang === 'python' ? 'is' : '=='}.`,
   arrayEqualsIsIdentity: (expr, a, b, lang) =>
     `${expr} deu falso mesmo com as mesmas posições: o ${lang === 'csharp' ? 'Equals' : 'equals'} de array só pergunta se é o mesmo array. Para comparar posição por posição, use ${lang === 'csharp' ? `${a}.SequenceEqual(${b})` : `Arrays.equals(${a}, ${b})`}.`,
+  discardedText: (name, call, value, fix) =>
+    `${call} criou um texto novo, mas ninguém guardou: ${name} continua ${value}. Um texto não muda depois de criado; para ficar com o novo, escreva ${fix}`,
+  discardedList: (name, call, fix) =>
+    `${call} criou uma lista nova, mas ninguém guardou: ${name} continua igual. Para ficar com ela, escreva ${fix}`,
+  inPlace: (name, call, other) =>
+    `${call} mudou a própria ${name}, sem criar outra lista.${other ? ` Por isso ${other}, que é a mesma lista, também mudou.` : ' Quem aponta para ela também vê a mudança.'}`,
+  newCopy: (target, source, expr) =>
+    `${expr} criou uma lista nova para ${target}: ${source} continua como estava, e mudar uma não muda a outra.`,
+  newText: (target, source, expr, value) =>
+    `${expr} criou um texto novo e guardou em ${target}. ${source} continua ${value}: um texto não muda depois de criado.`,
 };
 
 const enPositions = (n: number) => count(n, 'position', 'positions');
@@ -448,6 +465,16 @@ const en: Messages = {
     `${expr} was false even with the same contents: class ${cls} did not write ${eqName(lang)}, so it uses the inherited one, which only asks whether it is the same object, like ${lang === 'python' ? 'is' : '=='}.`,
   arrayEqualsIsIdentity: (expr, a, b, lang) =>
     `${expr} was false even with the same positions: ${lang === 'csharp' ? 'Equals' : 'equals'} on an array only asks whether it is the same array. To compare position by position, use ${lang === 'csharp' ? `${a}.SequenceEqual(${b})` : `Arrays.equals(${a}, ${b})`}.`,
+  discardedText: (name, call, value, fix) =>
+    `${call} created a new text, but nobody kept it: ${name} is still ${value}. A text never changes after it is created; to keep the new one, write ${fix}`,
+  discardedList: (name, call, fix) =>
+    `${call} created a new list, but nobody kept it: ${name} is unchanged. To keep it, write ${fix}`,
+  inPlace: (name, call, other) =>
+    `${call} changed ${name} itself, without creating another list.${other ? ` That is why ${other}, which is the same list, changed too.` : ' Anything that points to it sees the change too.'}`,
+  newCopy: (target, source, expr) =>
+    `${expr} created a new list for ${target}: ${source} stays as it was, and changing one does not change the other.`,
+  newText: (target, source, expr, value) =>
+    `${expr} created a new text and stored it in ${target}. ${source} is still ${value}: a text never changes after it is created.`,
 };
 
 export const MESSAGES: Record<Language, Messages> = { pt, en };

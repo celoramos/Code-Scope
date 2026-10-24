@@ -2,6 +2,7 @@ import { buildCallTree } from '../../src/model/callTree';
 import { explainHeap } from '../../src/model/heap';
 import { numberNotes } from '../../src/model/numbers';
 import { samenessNotes } from '../../src/model/sameness';
+import { mutationNotes } from '../../src/model/mutation';
 import { polymorphismNote } from '../../src/model/calls';
 import { graphViews } from '../../src/model/graph';
 import { fieldShadows } from '../../src/model/scope';
@@ -237,6 +238,15 @@ describe('Python (debugpy) real', function () {
     assert.ok(notes.some((n) => n.startsWith('a == b deu verdadeiro: o conteúdo é igual')), `frases: ${notes.join(' | ')}; condições: ${JSON.stringify(snaps.map((s) => s.condition?.parts))}`);
     assert.ok(notes.some((n) => n.startsWith('a is b deu falso mesmo com a e b iguais por dentro')), `frases: ${notes.join(' | ')}; condições: ${JSON.stringify(snaps.map((s) => s.condition?.parts))}`);
     assert.ok(notes.some((n) => n.includes('a classe Ponto não escreveu __eq__')), `frases: ${notes.join(' | ')}; condições: ${JSON.stringify(snaps.map((s) => s.condition?.parts))}`);
+  });
+
+  it('Python conceito: mudar no lugar ou criar outro', async () => {
+    const snaps = await debugScript.bind(null, 'copias')(3, 9);
+    const notes = snaps.flatMap((s, k) => (k > 0 ? mutationNotes(snaps[k - 1], s, 'pt') : []));
+    assert.ok(notes.some((n) => n.startsWith("nome.strip() criou um texto novo, mas ninguém guardou")), `frases: ${notes.join(' | ')}; linhas: ${JSON.stringify(snaps.map((s) => [s.code, s.arrays.map((a) => [a.name, a.id, a.values.join(',')]), s.scalars?.map((v) => v.name + '=' + v.value)]))}`);
+    assert.ok(notes.some((n) => n.startsWith("nome.strip() criou um texto novo e guardou em limpo")), `frases: ${notes.join(' | ')}; linhas: ${JSON.stringify(snaps.map((s) => [s.code, s.arrays.map((a) => [a.name, a.id, a.values.join(',')]), s.scalars?.map((v) => v.name + '=' + v.value)]))}`);
+    assert.ok(notes.some((n) => n.startsWith("sorted(notas) criou uma lista nova para ordenada")), `frases: ${notes.join(' | ')}; linhas: ${JSON.stringify(snaps.map((s) => [s.code, s.arrays.map((a) => [a.name, a.id, a.values.join(',')]), s.scalars?.map((v) => v.name + '=' + v.value)]))}`);
+    assert.ok(notes.some((n) => n.startsWith("notas.sort() mudou a própria notas, sem criar outra lista. Por isso mesmas")), `frases: ${notes.join(' | ')}; linhas: ${JSON.stringify(snaps.map((s) => [s.code, s.arrays.map((a) => [a.name, a.id, a.values.join(',')]), s.scalars?.map((v) => v.name + '=' + v.value)]))}`);
   });
 
   it('Python conceito: árvore de recursão do fibonacci', async () => {

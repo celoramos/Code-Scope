@@ -150,6 +150,12 @@
       "name": "Igualdade",
       "request": "launch",
       "mainClass": "Igualdade"
+    },
+    {
+      "type": "java",
+      "name": "Copias",
+      "request": "launch",
+      "mainClass": "Copias"
     }
   ]
 }
