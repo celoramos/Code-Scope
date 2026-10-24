@@ -2,16 +2,18 @@ import * as assert from 'node:assert/strict';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { diff } from '../../src/model/diff';
+import { callChanges } from '../../src/model/calls';
 import { makeFrame } from '../../src/model/frame';
 import type { Snapshot } from '../../src/model/snapshot';
 import { allChanges, debugFile, samplesRoot, visibleAtFirstStop } from './helpers';
 
 /** Debuga samples/java/<nome>.java com a configuração de mesmo nome do launch.json. */
-function debugSample(name: string, breakpointLine: number, steps: number): Promise<Snapshot[]> {
+function debugSample(name: string, breakpointLine: number, steps: number, step?: 'stepOver' | 'stepInto'): Promise<Snapshot[]> {
   return debugFile({
     file: path.join(samplesRoot, 'java', `${name}.java`),
     breakpointLine,
     steps,
+    step,
     config: name,
     dump: name,
     async before() {
@@ -121,5 +123,20 @@ describe('Java Debugger real', () => {
     const last = snaps[snaps.length - 1];
     const names = last.pointers.map((p) => p.name);
     assert.ok(names.includes('inicio') && names.includes('fim'), `ponteiros: ${names.join(', ')}`);
+  });
+
+  it('Fatorial: recursão empilha uma chamada por nível, cada uma com o próprio n', async () => {
+    const snaps = await debugSample('Fatorial', 12, 12, 'stepInto');
+    const deepest = snaps.reduce((a, s) => ((s.calls?.length ?? 0) > (a.calls?.length ?? 0) ? s : a), snaps[0]);
+    const fat = (deepest.calls ?? []).filter((c) => c.name === 'fatorial');
+    assert.ok(fat.length >= 3, `pilha: ${JSON.stringify(deepest.calls)}`);
+    // Cada chamada de baixo guarda o próprio n: 4, 3, 2...
+    assert.deepEqual(
+      fat.slice(0, -1).map((c) => c.vars.find((v) => v.name === 'n')?.value),
+      ['4', '3', '2', '1'].slice(0, fat.length - 1),
+    );
+    const changes = snaps.flatMap((s, k) => callChanges(snaps[k - 1], s));
+    assert.ok(changes.some((c) => c.kind === 'call' && c.recursive), 'nenhuma chamada recursiva reconhecida');
+    assert.ok(changes.some((c) => c.kind === 'return' && c.name === 'fatorial'), 'nenhum retorno reconhecido');
   });
 });

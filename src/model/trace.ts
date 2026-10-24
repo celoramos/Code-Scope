@@ -7,6 +7,8 @@ import type { Snapshot } from './snapshot';
  */
 export interface TraceTable {
   columns: string[];
+  /** Há recursão ou chamadas aninhadas: cada linha diz em que chamada estava. */
+  showCalls: boolean;
   rows: TraceRow[];
   /** Passos mais antigos que ficaram de fora por causa do limite de linhas. */
   hidden: number;
@@ -16,6 +18,8 @@ export interface TraceRow {
   /** Número do passo no histórico, a partir de 1. */
   step: number;
   line: number;
+  /** Função em que o passo parou; "fatorial #3" na terceira chamada empilhada dela. */
+  call?: string;
   values: (string | undefined)[];
   /** A célula mudou em relação à linha anterior. */
   changed: boolean[];
@@ -52,15 +56,28 @@ export function traceTable(snapshots: readonly Snapshot[], first = 1, max = MAX_
     }
   }
 
+  // A coluna da chamada só aparece quando alguma vez houve duas funções do aluno em andamento.
+  const showCalls = snapshots.some((s) => (s.calls ?? []).filter((c) => !c.program).length > 1);
   const rows: TraceRow[] = perStep.map((values, k) => {
     const prev = perStep[k - 1];
+    const call = showCalls ? callLabel(snapshots[k]) : undefined;
     return {
       step: first + k,
       line: snapshots[k].line,
+      ...(call ? { call } : {}),
       values: columns.map((c) => values.get(c)),
       changed: columns.map((c) => prev !== undefined && values.get(c) !== undefined && values.get(c) !== prev.get(c)),
     };
   });
   const hidden = Math.max(0, rows.length - max);
-  return { columns, rows: rows.slice(hidden), hidden };
+  return { columns, showCalls, rows: rows.slice(hidden), hidden };
+}
+
+/** "fatorial", ou "fatorial #3" quando há três chamadas dela empilhadas. */
+function callLabel(s: Snapshot): string | undefined {
+  const calls = s.calls ?? [];
+  const top = calls.at(-1);
+  if (!top || top.program) return undefined;
+  const copies = calls.filter((c) => c.name === top.name).length;
+  return copies > 1 ? `${top.name} #${copies}` : top.name;
 }

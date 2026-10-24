@@ -39,6 +39,8 @@ export interface DebugRun {
   dump: string;
   /** Espera algo ficar pronto antes de começar (o language server do Java, por exemplo). */
   before?: () => Promise<void>;
+  /** F10 (stepOver, o padrão) ou F11 (stepInto, para entrar nas funções). */
+  step?: 'stepOver' | 'stepInto';
 }
 
 /**
@@ -98,7 +100,7 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
 
   for (let k = 0; k < run.steps && vscode.debug.activeDebugSession; k++) {
     const n = cs.snapshots().length;
-    await vscode.commands.executeCommand('workbench.action.debug.stepOver');
+    await vscode.commands.executeCommand(`workbench.action.debug.${run.step ?? 'stepOver'}`);
     await waitFor(`o passo ${k + 1}`, () => cs.snapshots().length > n || !vscode.debug.activeDebugSession || undefined, 30_000);
   }
 

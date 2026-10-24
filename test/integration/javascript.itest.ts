@@ -1,16 +1,18 @@
 import * as assert from 'node:assert/strict';
 import * as path from 'node:path';
+import { callChanges } from '../../src/model/calls';
 import { makeFrame } from '../../src/model/frame';
 import type { Snapshot } from '../../src/model/snapshot';
 import { allChanges, debugFile, samplesRoot } from './helpers';
 
 /** Debuga samples/javascript/<nome>.js com o debugger de Node que vem no VS Code. */
-function debugScript(name: string, breakpointLine: number, steps: number): Promise<Snapshot[]> {
+function debugScript(name: string, breakpointLine: number, steps: number, step?: 'stepOver' | 'stepInto'): Promise<Snapshot[]> {
   const file = path.join(samplesRoot, 'javascript', `${name}.js`);
   return debugFile({
     file,
     breakpointLine,
     steps,
+    step,
     config: { type: 'node', request: 'launch', name: `JS ${name}`, program: file, skipFiles: ['<node_internals>/**'] },
     dump: `js-${name}`,
   });
@@ -57,5 +59,20 @@ describe('JavaScript (js-debug) real', () => {
     assert.equal(stop.exception?.type, 'TypeError');
     const frame = makeFrame({ snapshot: stop, index: 1, total: 1, past: [stop] });
     assert.deepEqual(frame.error?.missing, { array: 'alunos', index: 2 });
+  });
+
+  it('fatorial.js: recursão empilha uma chamada por nível, cada uma com o próprio n', async () => {
+    const snaps = await debugScript('fatorial', 11, 12, 'stepInto');
+    const deepest = snaps.reduce((a, s) => ((s.calls?.length ?? 0) > (a.calls?.length ?? 0) ? s : a), snaps[0]);
+    const fat = (deepest.calls ?? []).filter((c) => c.name === 'fatorial');
+    assert.ok(fat.length >= 3, `pilha: ${JSON.stringify(deepest.calls)}`);
+    // Cada chamada de baixo guarda o próprio n: 4, 3, 2...
+    assert.deepEqual(
+      fat.slice(0, -1).map((c) => c.vars.find((v) => v.name === 'n')?.value),
+      ['4', '3', '2', '1'].slice(0, fat.length - 1),
+    );
+    const changes = snaps.flatMap((s, k) => callChanges(snaps[k - 1], s));
+    assert.ok(changes.some((c) => c.kind === 'call' && c.recursive), 'nenhuma chamada recursiva reconhecida');
+    assert.ok(changes.some((c) => c.kind === 'return' && c.value === '1'), `retornos: ${JSON.stringify(changes.filter((c) => c.kind === 'return'))}`);
   });
 });

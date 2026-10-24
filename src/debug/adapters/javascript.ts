@@ -52,4 +52,6 @@ export const javascriptAdapter: LanguageAdapter = {
   elementIndex: numericIndex,
   formatElement: (v) => v.value,
   collectionRole: javascriptRole,
+  // O js-debug mostra, ainda dentro da função, o valor que ela está para devolver.
+  returnValue: (v) => (v.name === 'Return value' ? { value: v.value, pending: true } : undefined),
 };

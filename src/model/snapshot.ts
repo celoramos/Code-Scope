@@ -44,8 +44,26 @@ export interface Snapshot {
   arrays: ArrayVar[];
   pointers: Pointer[];
   scalars?: Scalar[];
+  /**
+   * Chamadas em andamento só do código do aluno, da mais antiga (embaixo) até
+   * a atual (no topo). Vazio quando o debugger não informa.
+   */
+  calls?: CallFrame[];
+  /** Valor que uma função acabou de devolver, quando o debugger informa. */
+  returned?: { function?: string; value: string; pending?: boolean };
   /** O programa parou por um erro que ninguém tratou. */
   exception?: ExceptionInfo;
+}
+
+/** Uma chamada de função em andamento e as variáveis dela. */
+export interface CallFrame {
+  /** Nome da função, sem classe nem parâmetros: "fatorial". */
+  name: string;
+  line: number;
+  /** Código de fora de qualquer função (o "<module>" do Python). */
+  program?: boolean;
+  /** Variáveis simples da chamada, já como texto. */
+  vars: Scalar[];
 }
 
 export interface ExceptionInfo {

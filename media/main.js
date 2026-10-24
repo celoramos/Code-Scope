@@ -18,6 +18,11 @@
   const explanationEl = byId('explanation');
   const varsEl = byId('vars');
   const arraysEl = byId('arrays');
+  const callsEl = byId('calls');
+  const callsTitleEl = byId('calls-title');
+  const callsCountEl = byId('calls-count');
+  const callsRuleEl = byId('calls-rule');
+  const callStackEl = byId('call-stack');
   const errorEl = byId('error');
   const errorTitleEl = byId('error-title');
   const errorTextEl = byId('error-text');
@@ -42,11 +47,13 @@
    * @typedef {{ row?: Arrow, col?: Arrow }} Axes
    * @typedef {{ kind: string, array?: string, index?: number, a?: number, b?: number, name?: string, value?: string }} Change
    * @typedef {{ line: number, code?: string }} LineRef
-   * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[] },
+   * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[], calls?: CallFrame[] },
    *             executed?: LineRef, changes: Change[], arrows: Record<string, Arrow[]>, axes: Record<string, Axes>,
-   *             explanation: string[], trace: Trace, error?: ErrorView, step: number, total: number }} Frame
+   *             explanation: string[], trace: Trace, error?: ErrorView, calls?: CallChange[], step: number, total: number }} Frame
+   * @typedef {{ name: string, line: number, program?: boolean, vars: Scalar[] }} CallFrame
+   * @typedef {{ kind: 'call' | 'return', name: string, depth: number, value?: string }} CallChange
    * @typedef {{ type: string, message: string, kind: string, title: string, sentences: string[], missing?: { array: string, index: number } }} ErrorView
-   * @typedef {{ columns: string[], rows: { step: number, line: number, values: (string | null | undefined)[], changed: boolean[] }[], hidden: number }} Trace
+   * @typedef {{ columns: string[], showCalls?: boolean, rows: { step: number, line: number, call?: string, values: (string | null | undefined)[], changed: boolean[] }[], hidden: number }} Trace
    */
 
   /** Multiplicador das durações em CSS; 0 desliga o movimento. */
@@ -120,7 +127,9 @@
 
     const parts = [];
     if (error) parts.push(error);
-    if (current && current.snapshot.arrays.length === 0) parts.push(t('noArrays'));
+    // Só avisa quando não há nada para desenhar: sem arrays, sem variáveis e sem chamadas.
+    const s = current?.snapshot;
+    if (s && s.arrays.length === 0 && s.pointers.length === 0 && !(s.scalars ?? []).length && callsEl.hidden) parts.push(t('noArrays'));
     status.textContent = parts.join(' ');
     status.classList.toggle('is-error', Boolean(error));
   }
@@ -165,6 +174,7 @@
       }),
     );
     renderError(frame.error);
+    renderCalls(s.calls ?? [], frame.calls ?? []);
     renderVars(s.pointers, s.scalars ?? [], frame.changes, arrowNames);
     renderTrace(frame.trace, frame.step);
 
@@ -749,6 +759,65 @@
   }
 
   /**
+   * Pilha de chamadas: um cartão por chamada, a atual em cima. Só aparece com
+   * duas funções ou mais em andamento; o código de fora das funções não conta.
+   * Quem acabou de entrar desce no topo; quem terminou sobe e some, dizendo o
+   * que devolveu.
+   * @param {CallFrame[]} calls do mais antigo ao atual
+   * @param {CallChange[]} changes
+   */
+  function renderCalls(calls, changes) {
+    const visible = calls.filter((c) => !c.program).length;
+    callsEl.hidden = visible < 2 && !changes.some((c) => c.kind === 'return');
+    if (callsEl.hidden) {
+      callStackEl.replaceChildren();
+      return;
+    }
+    callsTitleEl.textContent = t('callsTitle');
+    callsCountEl.textContent = t('callsCount', visible);
+    callsRuleEl.textContent = t('callsRule');
+
+    const entered = new Set(changes.filter((c) => c.kind === 'call').map((c) => c.depth));
+    /** @type {HTMLElement[]} */
+    const items = [];
+    // O topo da pilha fica em cima: a lista é desenhada da chamada atual para a mais antiga.
+    for (const c of changes) {
+      if (c.kind !== 'return') continue;
+      const ghost = el('li', 'call-frame is-leaving');
+      ghost.setAttribute('aria-hidden', 'true');
+      const head = el('div', 'call-head');
+      const name = el('span', 'call-name');
+      name.textContent = c.name;
+      const note = el('span', 'call-note');
+      note.textContent = c.value !== undefined ? t('returned', c.value) : t('finished');
+      head.append(name, note);
+      ghost.append(head);
+      ghost.addEventListener('animationend', () => ghost.remove());
+      items.push(ghost);
+    }
+    for (let k = calls.length - 1; k >= 0; k--) {
+      const call = calls[k];
+      const isTop = k === calls.length - 1;
+      const li = el('li', `call-frame${isTop ? ' is-current' : ''}${entered.has(k) ? ' is-entering' : ''}${call.program ? ' is-program' : ''}`);
+      const head = el('div', 'call-head');
+      const name = el('span', 'call-name');
+      name.textContent = call.program ? t('programFrame') : call.name;
+      const line = el('span', 'call-line');
+      line.textContent = isTop ? t('callRunning') : t('callLine', call.line);
+      head.append(name, line);
+      li.append(head);
+      // As variáveis da chamada atual já estão logo abaixo; repetir só confundiria.
+      if (!isTop && call.vars.length > 0) {
+        const vars = el('p', 'call-vars');
+        vars.textContent = call.vars.map((v) => `${v.name} = ${v.value}`).join('   ');
+        li.append(vars);
+      }
+      items.push(li);
+    }
+    callStackEl.replaceChildren(...items);
+  }
+
+  /**
    * Caixa tracejada depois do array, na posição que o código tentou usar e
    * não existe. Ela some no passo seguinte.
    * @param {HTMLElement} block
@@ -788,7 +857,7 @@
 
     const head = el('thead', '');
     const headRow = el('tr', '');
-    for (const label of [t('traceStep'), t('traceLine')]) {
+    for (const label of [t('traceStep'), t('traceLine'), ...(trace.showCalls ? [t('traceCall')] : [])]) {
       const th = el('th', 'trace-meta');
       th.setAttribute('scope', 'col');
       th.textContent = label;
@@ -819,6 +888,11 @@
       const lineCell = el('td', 'trace-meta');
       lineCell.textContent = String(row.line);
       tr.append(stepCell, lineCell);
+      if (trace.showCalls) {
+        const callCell = el('td', 'trace-meta trace-call');
+        callCell.textContent = row.call ?? '';
+        tr.append(callCell);
+      }
       row.values.forEach((value, i) => {
         const td = el('td', row.changed[i] ? 'trace-value is-changed' : 'trace-value');
         td.textContent = value ?? '';

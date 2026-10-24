@@ -55,4 +55,9 @@ export const pythonAdapter: LanguageAdapter = {
   elementIndex: numericIndex,
   formatElement: (v) => v.value,
   collectionRole: pythonRole,
+  // O debugpy guarda o valor devolvido como "(return) fatorial" nas locais de quem chamou.
+  returnValue: (v) => {
+    const m = /^\(return\)\s*(.+)$/.exec(v.name);
+    return m ? { function: m[1].split('.').pop(), value: v.value } : undefined;
+  },
 };

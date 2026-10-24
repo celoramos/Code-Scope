@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode';
 import type { DapScope, DapStackFrame, DapVariable } from './dap';
-import type { ArrayVar, Pointer, Scalar, Snapshot } from '../model/snapshot';
+import type { ArrayVar, CallFrame, Pointer, Scalar, Snapshot } from '../model/snapshot';
 import { isRangeGroup, type LanguageAdapter, type VariableShape } from './adapters/adapter';
 
 type Sequence = Extract<VariableShape, { kind: 'sequence' }>;
@@ -39,24 +39,20 @@ export async function collectSnapshot(
   const { stackFrames } = (await session.customRequest('stackTrace', {
     threadId,
     startFrame: 0,
-    levels: 1,
+    levels: MAX_CALLS + 1,
   })) as { stackFrames: DapStackFrame[] };
   const frame = stackFrames[0];
   if (!frame) return undefined;
   const file = frame.source?.path ?? frame.source?.name ?? '';
   const adapter = typeof pick === 'function' ? pick(file) : pick;
 
-  const { scopes } = (await session.customRequest('scopes', { frameId: frame.id })) as { scopes: DapScope[] };
-  // Alguns debuggers dividem as locais em vários escopos (JavaScript tem "Local" e "Block").
+  const { scopes, locals: frameLocals } = await readLocals(session, adapter, frame);
   const locals: DapVariable[] = [];
-  const seenNames = new Set<string>();
-  for (const scope of adapter.localScopes(scopes)) {
-    for (const v of await variables(session, scope.variablesReference)) {
-      // O escopo mais interno vem primeiro e esconde o de fora, como no próprio código.
-      if (seenNames.has(v.name)) continue;
-      seenNames.add(v.name);
-      locals.push(v);
-    }
+  let returned: Snapshot['returned'];
+  for (const v of frameLocals) {
+    const r = adapter.returnValue?.(v);
+    if (r) returned = r;
+    else locals.push(v);
   }
 
   const arrays: ArrayVar[] = [];
@@ -86,17 +82,118 @@ export async function collectSnapshot(
     }
   }
 
+  const snapshot: Snapshot = {
+    line: frame.line,
+    file,
+    arrays,
+    pointers,
+    scalars,
+  };
+  if (returned) snapshot.returned = returned;
+  const calls = await readCalls(session, adapter, stackFrames, snapshot);
+  if (calls.length > 0) snapshot.calls = calls;
+
   return {
-    snapshot: {
-      line: frame.line,
-      file,
-      arrays,
-      pointers,
-      scalars,
-    },
+    snapshot,
     adapter,
     raw: { frame, scopes, locals, elements },
   };
+}
+
+/** Chamadas lidas da pilha; as de baixo só com variáveis simples, para não pesar. */
+export const MAX_CALLS = 12;
+/** Variáveis mostradas em cada chamada que não é a atual. */
+const MAX_CALL_VARS = 6;
+
+/** Variáveis locais de um quadro, juntando os escopos que a linguagem divide. */
+async function readLocals(
+  session: Session,
+  adapter: LanguageAdapter,
+  frame: DapStackFrame,
+): Promise<{ scopes: DapScope[]; locals: DapVariable[] }> {
+  const { scopes } = (await session.customRequest('scopes', { frameId: frame.id })) as { scopes: DapScope[] };
+  // Alguns debuggers dividem as locais em vários escopos (JavaScript tem "Local" e "Block").
+  const locals: DapVariable[] = [];
+  const seenNames = new Set<string>();
+  for (const scope of adapter.localScopes(scopes)) {
+    for (const v of await variables(session, scope.variablesReference)) {
+      // O escopo mais interno vem primeiro e esconde o de fora, como no próprio código.
+      if (seenNames.has(v.name)) continue;
+      seenNames.add(v.name);
+      locals.push(v);
+    }
+  }
+  return { scopes, locals };
+}
+
+/**
+ * Quadro do código do aluno. Os debuggers marcam o resto: o js-debug põe
+ * "deemphasize" no código do Node, e quadros sem arquivo são de biblioteca.
+ */
+export function isUserFrame(f: DapStackFrame): boolean {
+  if (!f.source?.path) return false;
+  if (f.presentationHint === 'subtle' || f.presentationHint === 'label') return false;
+  return f.source.presentationHint !== 'deemphasize' && f.source.presentationHint !== 'subtle';
+}
+
+/**
+ * Nome da função como o aluno escreveu: "Fatorial.fatorial(int)" (Java) e
+ * "global.fatorial" (js-debug) viram "fatorial"; o construtor do Java vira
+ * "new Conta". program diz que é o código de fora das funções.
+ */
+export function functionName(raw: string): { name: string; program: boolean } {
+  if (raw === '<module>' || raw === '<anonymous>' || raw === '') return { name: raw, program: true };
+  const noArgs = raw.replace(/\(.*\)$/, '');
+  const parts = noArgs.split('.');
+  const last = parts.pop() ?? noArgs;
+  if (last === '<init>') return { name: `new ${(parts.pop() ?? '').split('$').pop()}`, program: false };
+  return { name: last, program: false };
+}
+
+async function readCalls(
+  session: Session,
+  adapter: LanguageAdapter,
+  stackFrames: DapStackFrame[],
+  top: Snapshot,
+): Promise<CallFrame[]> {
+  const user: DapStackFrame[] = [];
+  for (const f of stackFrames.slice(0, MAX_CALLS)) {
+    if (!isUserFrame(f)) break;
+    user.push(f);
+  }
+  const calls: CallFrame[] = [];
+  for (const [k, f] of user.entries()) {
+    const { name, program } = functionName(f.name);
+    let vars: Scalar[];
+    if (k === 0) {
+      vars = [...top.pointers.map((p) => ({ name: p.name, value: String(p.value) })), ...(top.scalars ?? [])];
+    } else {
+      // Uma chamada que falha em responder não deve esconder as outras.
+      vars = await readLocals(session, adapter, f).then(
+        ({ locals }) => locals.filter((v) => !adapter.returnValue?.(v)).flatMap((v) => summarize(adapter, v)).slice(0, MAX_CALL_VARS),
+        () => [],
+      );
+    }
+    calls.push({ name, line: f.line, ...(program ? { program } : {}), vars });
+  }
+  return calls.reverse();
+}
+
+/** Variável de uma chamada de baixo como texto curto, sem abrir coleções. */
+function summarize(adapter: LanguageAdapter, v: DapVariable): Scalar[] {
+  const shape = adapter.shape(v);
+  switch (shape.kind) {
+    case 'integer':
+      return [{ name: v.name, value: String(shape.value) }];
+    case 'scalar':
+      return [{ name: v.name, value: shape.value }];
+    case 'sequence':
+      return [{ name: v.name, value: shape.length === undefined ? '[…]' : `[${shape.length}]` }];
+    case 'empty-list':
+      return [{ name: v.name, value: '[]' }];
+    default:
+      return [];
+  }
 }
 
 /**

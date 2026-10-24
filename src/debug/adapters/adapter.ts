@@ -55,6 +55,22 @@ export interface LanguageAdapter {
   unbox?(v: DapVariable): ((inner: DapVariable) => string) | undefined;
   /** Pilha ou fila, pelo uso no código-fonte. */
   collectionRole?(source: string, name: string): CollectionRole | undefined;
+  /**
+   * Variável que o debugger cria com o valor que uma função acabou de devolver
+   * ("Return value" no js-debug, "(return) f" no debugpy). Não é variável do aluno.
+   */
+  returnValue?(v: DapVariable): ReturnedValue | undefined;
+}
+
+export interface ReturnedValue {
+  /** Função que devolveu, quando o debugger diz. */
+  function?: string;
+  /**
+   * true: o valor é o que a função parada está para devolver (js-debug).
+   * false: uma função que já terminou devolveu este valor (debugpy).
+   */
+  pending?: boolean;
+  value: string;
 }
 
 /** "3" ou "[3]" vira 3. Serve para a maioria dos debuggers. */

@@ -1,3 +1,4 @@
+import { callChanges, describeCall, returnNote, type CallChange } from './calls';
 import { diff, type Change } from './diff';
 import { explain } from './explain';
 import { explainError, type ErrorView } from './errors';
@@ -18,6 +19,8 @@ export interface Frame {
   executed?: { line: number; code?: string };
   /** O que mudou em relação ao passo anterior; guia as animações. */
   changes: Change[];
+  /** Chamadas que começaram ou terminaram neste passo. */
+  calls: CallChange[];
   /** Setas por nome de array (vazio para matrizes). */
   arrows: Record<string, Arrow[]>;
   /** Linha e coluna apontadas em cada matriz, lidas do código. */
@@ -58,23 +61,37 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
       arrows[arr.name] = arrowsFor(arr, snapshot.pointers, options.valueNames);
     }
   }
-  const changes = diff(prev, snapshot, older);
+  const calls = callChanges(prev, snapshot);
+  // Entrar ou sair de uma função troca todas as variáveis de uma vez: comparar as
+  // de uma função com as de outra diria que tudo "saiu de escopo". O passo vira só
+  // a chamada, e as variáveis da função nova aparecem como estão.
+  const switched = calls.length > 0;
+  const changes = switched ? [] : diff(prev, snapshot, older);
   const executed = prev && prev.file === snapshot.file ? { line: prev.line, code: prev.code } : undefined;
+  let explanation: string[] = [];
+  if (options.beginnerMode && switched) {
+    explanation = calls.map((c) => describeCall(c, options.language));
+  } else if (options.beginnerMode && !(snapshot.exception && changes.length === 0)) {
+    // No erro, "nada mudou" só atrapalha: o cartão do erro é o que importa.
+    explanation = explain(
+      changes,
+      prev === undefined,
+      [
+        peekNote(executed?.code, snapshot, changes, options.language),
+        returnNote(snapshot, prev, options.language),
+        explainFlow(executed, snapshot, options.language),
+      ].filter(isText),
+      options.language,
+    );
+  }
   return {
     snapshot,
     executed,
     changes,
+    calls,
     arrows,
     axes,
-    // No erro, "nada mudou" só atrapalha: o cartão do erro é o que importa.
-    explanation: options.beginnerMode && !(snapshot.exception && changes.length === 0)
-      ? explain(
-          changes,
-          prev === undefined,
-          [peekNote(executed?.code, snapshot, changes, options.language), explainFlow(executed, snapshot, options.language)].filter(isText),
-          options.language,
-        )
-      : [],
+    explanation,
     error: explainError(snapshot, options.language),
     trace: traceTable(step.past, step.index - step.past.length + 1),
     step: step.index,

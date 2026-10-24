@@ -23,6 +23,8 @@
    */
   --cs-change: var(--vscode-charts-yellow);
   --cs-error: var(--vscode-errorForeground);
+  /* A chamada que está rodando agora. */
+  --cs-active: var(--vscode-focusBorder);
   --cs-change-bg: color-mix(in srgb, var(--cs-change) 22%, var(--cs-cell-bg));
   --cs-ptr-0: var(--vscode-charts-blue);
   --cs-ptr-1: var(--vscode-charts-purple);
@@ -1051,6 +1053,128 @@ kbd {
   }
 }
 
+/* ---------- Pilha de chamadas ---------- */
+
+.calls {
+  margin: 0 0 var(--cs-space-3);
+  padding: var(--cs-space-2) var(--cs-space-3) var(--cs-space-3);
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius);
+  background: var(--cs-surface);
+}
+
+.calls-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cs-space-2);
+  margin-bottom: var(--cs-space-2);
+}
+
+.calls-title {
+  margin: 0;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.calls-count {
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+/* Cartões empilhados: a chamada atual em cima, como um prato posto por último. */
+.call-stack {
+  display: grid;
+  gap: var(--cs-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.call-frame {
+  padding: var(--cs-space-1) var(--cs-space-2);
+  border: 1px solid var(--cs-line);
+  border-left-width: 3px;
+  border-radius: var(--cs-radius-sm);
+  background: var(--cs-cell-bg);
+}
+
+.call-frame.is-current {
+  border-color: var(--cs-active);
+  background: color-mix(in srgb, var(--cs-active) 12%, var(--cs-cell-bg));
+}
+
+.call-frame.is-program {
+  border-style: dashed;
+}
+
+.call-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cs-space-2);
+}
+
+.call-name {
+  font-family: var(--cs-mono);
+  font-weight: 600;
+}
+
+.call-frame.is-program .call-name {
+  font-family: inherit;
+  font-weight: 400;
+  color: var(--cs-muted);
+}
+
+.call-line,
+.call-note {
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+  white-space: nowrap;
+}
+
+.call-note {
+  color: var(--cs-fg);
+  font-family: var(--cs-mono);
+}
+
+.call-vars {
+  margin: 2px 0 0;
+  color: var(--cs-muted);
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+  white-space: pre-wrap;
+}
+
+.call-frame.is-entering {
+  animation: call-in var(--cs-move) var(--cs-ease);
+}
+
+/* Quem terminou sobe e some, levando o valor devolvido. */
+.call-frame.is-leaving {
+  border-style: dashed;
+  animation: call-out calc(var(--cs-flash) * 1.6) var(--cs-ease) forwards;
+}
+
+@keyframes call-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes call-out {
+  0%,
+  45% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
 /* ---------- Teste de mesa ---------- */
 
 .trace {
@@ -1092,7 +1216,6 @@ kbd {
 .trace-table {
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 100%;
   font-family: var(--cs-mono);
   font-size: var(--cs-small);
   font-variant-numeric: tabular-nums;
@@ -1125,6 +1248,10 @@ kbd {
   left: 0;
   z-index: 1;
   background: var(--cs-surface);
+}
+
+.trace-table td.trace-call {
+  text-align: left;
 }
 
 .trace-value {
@@ -1183,6 +1310,8 @@ kbd {
   .cell.enter-back .cell-value,
   .cell.ghost,
   .cell.is-missing .cell-value,
+  .call-frame.is-entering,
+  .call-frame.is-leaving,
   .array.is-new {
     animation: none;
   }

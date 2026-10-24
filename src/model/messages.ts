@@ -65,6 +65,15 @@ export interface Messages {
   /** JavaScript: a posição inexistente vira undefined, e o erro vem ao usar esse undefined. */
   errorUndefinedFromIndex(array: string, index: number): string;
   errorKind(kind: ErrorKindName, message: string): string;
+
+  /** vars já vem como "n = 3, i = 0". */
+  callEntered(name: string, vars: string): string;
+  callRecursive(name: string, vars: string, copies: number): string;
+  callReturned(name: string, value: string | undefined, to: string | undefined): string;
+  /** A função parada chegou ao return e já sabe o que vai devolver. */
+  callReturning(name: string, value: string): string;
+  /** Uma chamada inteira aconteceu dentro do passo (F10 por cima dela). */
+  callGaveBack(name: string, value: string): string;
 }
 
 function count(n: number, one: string, many: string): string {
@@ -146,6 +155,15 @@ const pt: Messages = {
       type: 'Um valor foi usado com o tipo errado, como somar texto com número ou chamar algo que não é função.',
       other: 'O programa parou por causa de um erro que ninguém tratou.',
     })[kind],
+
+  callEntered: (name, vars) =>
+    `O programa entrou na função ${name}${vars ? `, com ${vars}` : ''}. Quem chamou fica esperando ela terminar.`,
+  callRecursive: (name, vars, copies) =>
+    `${name} chamou ${name} de novo (recursão)${vars ? `, agora com ${vars}` : ''}. Há ${copies} chamadas de ${name} na pilha, cada uma com as próprias variáveis.`,
+  callReturned: (name, value, to) =>
+    `${name} terminou${value !== undefined ? ` e devolveu ${value}` : ''}. ${to ? `A chamada de ${to}` : 'Quem chamou'} continua de onde parou.`,
+  callReturning: (name, value) => `${name} chegou ao return: vai devolver ${value} para quem chamou.`,
+  callGaveBack: (name, value) => `A chamada de ${name} rodou inteira neste passo e devolveu ${value}.`,
 };
 
 const enPositions = (n: number) => count(n, 'position', 'positions');
@@ -219,6 +237,15 @@ const en: Messages = {
       type: 'A value was used with the wrong type, like adding text to a number or calling something that is not a function.',
       other: 'The program stopped because of an error that nobody handled.',
     })[kind],
+
+  callEntered: (name, vars) =>
+    `The program entered the function ${name}${vars ? `, with ${vars}` : ''}. The caller waits for it to finish.`,
+  callRecursive: (name, vars, copies) =>
+    `${name} called ${name} again (recursion)${vars ? `, now with ${vars}` : ''}. There are ${copies} calls of ${name} on the stack, each with its own variables.`,
+  callReturned: (name, value, to) =>
+    `${name} finished${value !== undefined ? ` and returned ${value}` : ''}. ${to ? `The call of ${to}` : 'The caller'} continues where it stopped.`,
+  callReturning: (name, value) => `${name} reached the return: it will give ${value} back to the caller.`,
+  callGaveBack: (name, value) => `The call of ${name} ran entirely in this step and returned ${value}.`,
 };
 
 export const MESSAGES: Record<Language, Messages> = { pt, en };

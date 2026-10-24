@@ -106,6 +106,14 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
       <p id="error-raw" class="error-raw"></p>
     </section>
     <ul id="explanation" class="explanation" aria-live="polite" aria-label="${t.explanation}"></ul>
+    <section id="calls" class="calls" aria-labelledby="calls-title" hidden>
+      <header class="calls-header">
+        <h3 id="calls-title" class="calls-title"></h3>
+        <span id="calls-count" class="calls-count"></span>
+      </header>
+      <ol id="call-stack" class="call-stack"></ol>
+      <p id="calls-rule" class="array-rule"></p>
+    </section>
     <ul id="vars" class="vars" aria-label="${t.variables}"></ul>
     <section id="arrays" class="arrays" aria-label="${t.arrays}"></section>
     <details id="trace" class="trace" open hidden>

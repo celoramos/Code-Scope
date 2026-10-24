@@ -64,9 +64,18 @@ export interface PanelStrings {
     | 'traceStep'
     | 'traceLine'
     | 'traceGoto'
+    | 'traceCall'
     | 'traceHidden'
     | 'missing'
-    | 'missingLabel',
+    | 'missingLabel'
+    | 'callsTitle'
+    | 'callsCount'
+    | 'callsRule'
+    | 'callLine'
+    | 'programFrame'
+    | 'returned'
+    | 'finished'
+    | 'callRunning',
     string
   >;
 }
@@ -97,7 +106,7 @@ const pt: PanelStrings = {
     running: 'Aguardando um breakpoint',
     ended: 'Sessão encerrada',
     step: 'Passo {0} de {1}',
-    noArrays: 'Nenhum array nas variáveis locais deste ponto.',
+    noArrays: 'Nenhuma variável para desenhar neste ponto.',
     executed: 'Executou',
     nextLine: 'Próxima',
     stackLabel: 'Pilha {0}, do fundo para o topo',
@@ -134,9 +143,18 @@ const pt: PanelStrings = {
     traceStep: 'Passo',
     traceLine: 'Linha',
     traceGoto: 'Ir para o passo {0}',
+    traceCall: 'Chamada',
     traceHidden: 'Os {0} passos mais antigos não aparecem.',
     missing: 'não existe',
     missingLabel: '{0}[{1}] não existe',
+    callsTitle: 'Pilha de chamadas',
+    callsCount: '{0} chamadas',
+    callsRule: 'A chamada de cima é a que está rodando; as de baixo esperam ela terminar.',
+    callLine: 'linha {0}',
+    programFrame: 'código principal',
+    returned: 'devolveu {0}',
+    finished: 'terminou',
+    callRunning: 'rodando',
   },
 };
 
@@ -166,7 +184,7 @@ const en: PanelStrings = {
     running: 'Waiting for a breakpoint',
     ended: 'Session ended',
     step: 'Step {0} of {1}',
-    noArrays: 'No arrays in the local variables at this point.',
+    noArrays: 'Nothing to draw at this point.',
     executed: 'Ran',
     nextLine: 'Next',
     stackLabel: 'Stack {0}, from bottom to top',
@@ -203,9 +221,18 @@ const en: PanelStrings = {
     traceStep: 'Step',
     traceLine: 'Line',
     traceGoto: 'Go to step {0}',
+    traceCall: 'Call',
     traceHidden: 'The {0} oldest steps are not shown.',
     missing: 'missing',
     missingLabel: '{0}[{1}] does not exist',
+    callsTitle: 'Call stack',
+    callsCount: '{0} calls',
+    callsRule: 'The top call is the one running; the ones below wait for it to finish.',
+    callLine: 'line {0}',
+    programFrame: 'main program',
+    returned: 'returned {0}',
+    finished: 'finished',
+    callRunning: 'running',
   },
 };
 

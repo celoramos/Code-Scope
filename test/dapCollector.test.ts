@@ -1,6 +1,7 @@
 import * as assert from 'node:assert/strict';
 import { javaAdapter } from '../src/debug/adapters/java';
-import { collectSnapshot, type Session } from '../src/debug/dapCollector';
+import { collectSnapshot, functionName, type Session } from '../src/debug/dapCollector';
+import { javascriptAdapter } from '../src/debug/adapters/javascript';
 
 /** Sessão falsa com as respostas que o Java Debugger real deu num BubbleSort parado. */
 function fakeJavaSession(opts: { paging?: boolean } = {}): Session & { requests: string[] } {
@@ -46,7 +47,88 @@ describe('collectSnapshot', () => {
         { name: 'j', value: 1 },
       ],
       scalars: [],
+      calls: [
+        {
+          name: 'main',
+          line: 8,
+          vars: [
+            { name: 'i', value: '0' },
+            { name: 'j', value: '1' },
+          ],
+        },
+      ],
     });
+  });
+
+  it('lê as chamadas do código do aluno, cada uma com as próprias variáveis', async () => {
+    // Recursão real do Java: fatorial(3) chamada por fatorial(4), chamada por main.
+    const frames = [
+      { id: 1, name: 'Fatorial.fatorial(int)', line: 3, source: { path: '/x/Fatorial.java' } },
+      { id: 2, name: 'Fatorial.fatorial(int)', line: 6, source: { path: '/x/Fatorial.java' } },
+      { id: 3, name: 'Fatorial.main(String[])', line: 12, source: { path: '/x/Fatorial.java' } },
+    ];
+    const locals: Record<number, unknown[]> = {
+      11: [{ name: 'n', value: '3', type: 'int', variablesReference: 0 }],
+      12: [{ name: 'n', value: '4', type: 'int', variablesReference: 0 }],
+      13: [{ name: 'args', value: 'String[0]@9', type: 'String[]', variablesReference: 0 }],
+    };
+    const session: Session = {
+      async customRequest(command: string, args?: any) {
+        if (command === 'stackTrace') return { stackFrames: frames };
+        if (command === 'scopes') return { scopes: [{ name: 'Local', variablesReference: 10 + args.frameId }] };
+        if (command === 'variables') return { variables: locals[args.variablesReference] ?? [] };
+        throw new Error(command);
+      },
+    };
+    const got = await collectSnapshot(session, 1, javaAdapter);
+    assert.deepEqual(got?.snapshot.calls, [
+      { name: 'main', line: 12, vars: [] },
+      { name: 'fatorial', line: 6, vars: [{ name: 'n', value: '4' }] },
+      { name: 'fatorial', line: 3, vars: [{ name: 'n', value: '3' }] },
+    ]);
+  });
+
+  it('para no primeiro quadro que não é do aluno e tira o valor devolvido das variáveis', async () => {
+    const frames = [
+      { id: 1, name: 'global.main', line: 5, source: { path: '/x/a.js' }, presentationHint: 'normal' },
+      { id: 2, name: '<anonymous>', line: 9, source: { path: '/x/a.js' } },
+      { id: 3, name: 'wrapModuleLoad', line: 255, source: { path: 'node:internal', presentationHint: 'deemphasize' } },
+    ];
+    const session: Session = {
+      async customRequest(command: string, args?: any) {
+        if (command === 'stackTrace') return { stackFrames: frames };
+        if (command === 'scopes') return { scopes: [{ name: 'Local', variablesReference: 10 + args.frameId }] };
+        if (command === 'variables') {
+          return {
+            variables:
+              args.variablesReference === 11
+                ? [
+                    { name: 'valor', value: '24', type: 'number', variablesReference: 0 },
+                    { name: 'Return value', value: '24', type: 'number', variablesReference: 0 },
+                  ]
+                : [],
+          };
+        }
+        throw new Error(command);
+      },
+    };
+    const got = await collectSnapshot(session, 1, javascriptAdapter);
+    assert.deepEqual(got?.snapshot.returned, { value: '24', pending: true });
+    assert.deepEqual(got?.snapshot.pointers, [{ name: 'valor', value: 24 }]);
+    assert.deepEqual(
+      got?.snapshot.calls?.map((c) => [c.name, c.program ?? false]),
+      [
+        ['<anonymous>', true],
+        ['main', false],
+      ],
+    );
+  });
+
+  it('nomes de função: classe, parâmetros, construtor e código de fora', () => {
+    assert.deepEqual(functionName('Fatorial.fatorial(int)'), { name: 'fatorial', program: false });
+    assert.deepEqual(functionName('Referencias$Conta.<init>(String,double)'), { name: 'new Conta', program: false });
+    assert.deepEqual(functionName('global.fatorial'), { name: 'fatorial', program: false });
+    assert.deepEqual(functionName('<module>'), { name: '<module>', program: true });
   });
 
   it('lê matriz, lista, char e boolean como o adaptador real devolve', async () => {

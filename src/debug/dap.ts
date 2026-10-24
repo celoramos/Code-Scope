@@ -4,7 +4,9 @@ export interface DapStackFrame {
   id: number;
   name: string;
   line: number;
-  source?: { name?: string; path?: string };
+  source?: { name?: string; path?: string; presentationHint?: string };
+  /** "subtle" e "label" marcam quadros que não são código do usuário. */
+  presentationHint?: string;
 }
 
 export interface DapScope {
@@ -20,4 +22,6 @@ export interface DapVariable {
   variablesReference: number;
   indexedVariables?: number;
   namedVariables?: number;
+  /** Expressão que o debugger aceita em evaluate para chegar a esta variável. */
+  evaluateName?: string;
 }
