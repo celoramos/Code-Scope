@@ -15,6 +15,19 @@ import { allChanges, debugFile, samplesRoot } from './helpers';
 const dir = path.join(samplesRoot, 'csharp');
 const dll = path.join(dir, 'bin', 'Debug', 'net8.0', 'Exemplos.dll');
 
+/**
+ * No CI, a extensão C# já deixou de registrar o "coreclr" sem erro nenhum na
+ * ativação. O log dela (canal "C#") diz por quê: vai para a saída do teste.
+ */
+function printCsharpLog(): void {
+  const logs = path.join(samplesRoot, '..', '.vscode-test', 'user-data', 'logs');
+  const runs = fs.existsSync(logs) ? fs.readdirSync(logs).sort() : [];
+  const dir = runs.length > 0 ? path.join(logs, runs[runs.length - 1], 'window1', 'exthost', 'ms-dotnettools.csharp') : logs;
+  const file = path.join(dir, 'C#.log');
+  const tail = fs.existsSync(file) ? fs.readFileSync(file, 'utf-8').split(/\r?\n/).slice(-80).join('\n') : undefined;
+  console.warn(tail ? `log da extensão C#:\n${tail}` : `sem log da extensão C# em ${dir}`);
+}
+
 function debugCs(name: string, breakpointLine: number, steps: number): Promise<Snapshot[]> {
   return debugFile({
     file: path.join(dir, `${name}.cs`),
@@ -24,7 +37,9 @@ function debugCs(name: string, breakpointLine: number, steps: number): Promise<S
     dump: `cs-${name}`,
     async before() {
       // A extensão C# baixa o debugger na primeira ativação; sem esperar, o "coreclr" ainda não existe.
-      await vscode.extensions.getExtension('ms-dotnettools.csharp')?.activate();
+      const api: unknown = await vscode.extensions.getExtension('ms-dotnettools.csharp')?.activate();
+      // A extensão devolve null quando desiste de ativar (plataforma, por exemplo).
+      if (api === null || api === undefined) console.warn(`C#: activate() devolveu ${api}`);
     },
   });
 }
@@ -35,6 +50,14 @@ describe('C# (vsdbg) real', function () {
     if (build.status !== 0 || !fs.existsSync(dll) || !vscode.extensions.getExtension('ms-dotnettools.csharp')) {
       console.warn('C#: sem .NET ou sem a extensão C#; testes pulados.');
       this.skip();
+    }
+  });
+
+  let logged = false;
+  afterEach(function () {
+    if (this.currentTest?.state === 'failed' && !logged) {
+      logged = true;
+      printCsharpLog();
     }
   });
 
