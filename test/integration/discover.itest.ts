@@ -41,23 +41,23 @@ function py(name: string, line: number, steps: Scenario['steps']): Scenario {
 const over = (n: number) => Array<'over'>(n).fill('over');
 const into = (n: number) => Array<'into'>(n).fill('into');
 
+// Os exemplos da rodada atual; os anteriores já viraram adaptador e teste.
 const SCENARIOS: Scenario[] = [
-  java('Referencias', 18, over(8)),
-  java('ListaLigada', 13, over(6)),
-  java('Dicionario', 7, over(8)),
-  java('Fatorial', 12, into(6)),
-  java('ForaDoLimite', 7, ['continue']),
-  js('referencias', 14, over(8)),
-  js('listaLigada', 10, over(6)),
-  js('dicionario', 4, over(8)),
-  js('fatorial', 11, into(6)),
-  js('foraDoLimite', 6, ['continue']),
-  js('escopo', 3, over(9)),
-  py('referencias', 12, over(8)),
-  py('lista_ligada', 10, over(6)),
-  py('dicionario', 4, over(8)),
-  py('fatorial', 10, into(6)),
-  py('fora_do_limite', 6, ['continue']),
+  java('Turma', 16, over(8)),
+  java('Grafo', 16, over(8)),
+  java('Heranca', 39, into(6)),
+  java('TrataErro', 6, over(8)),
+  java('Numeros', 4, over(8)),
+  js('turma', 10, over(8)),
+  js('grafo', 10, over(8)),
+  js('heranca', 26, into(6)),
+  js('trataErro', 5, over(8)),
+  js('numeros', 3, over(6)),
+  py('turma', 9, over(8)),
+  py('grafo', 13, over(8)),
+  py('heranca', 22, into(6)),
+  py('trata_erro', 5, over(8)),
+  py('numeros', 3, over(6)),
 ];
 
 async function waitFor<T>(check: () => T | undefined, ms: number): Promise<T | undefined> {

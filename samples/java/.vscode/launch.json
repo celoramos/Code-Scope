@@ -102,6 +102,48 @@
       "name": "Escopo",
       "request": "launch",
       "mainClass": "Escopo"
+    },
+    {
+      "type": "java",
+      "name": "Turma",
+      "request": "launch",
+      "mainClass": "Turma"
+    },
+    {
+      "type": "java",
+      "name": "Texto",
+      "request": "launch",
+      "mainClass": "Texto"
+    },
+    {
+      "type": "java",
+      "name": "TrataErro",
+      "request": "launch",
+      "mainClass": "TrataErro"
+    },
+    {
+      "type": "java",
+      "name": "Heranca",
+      "request": "launch",
+      "mainClass": "Heranca"
+    },
+    {
+      "type": "java",
+      "name": "Grafo",
+      "request": "launch",
+      "mainClass": "Grafo"
+    },
+    {
+      "type": "java",
+      "name": "Numeros",
+      "request": "launch",
+      "mainClass": "Numeros"
+    },
+    {
+      "type": "java",
+      "name": "Fibonacci",
+      "request": "launch",
+      "mainClass": "Fibonacci"
     }
   ]
 }
