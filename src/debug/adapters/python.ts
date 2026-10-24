@@ -17,6 +17,8 @@ import { asInteger, methodsCalledOn, numericIndex, type CollectionRole, type Lan
 const LISTS = new Set(['list', 'deque']);
 const ARRAYS = new Set(['tuple', 'array']);
 const SCALARS = new Set(['str', 'bool', 'float', 'NoneType', 'complex']);
+/** Objeto de uma classe: "<__main__.No object at 0x00000146F06538C0>"; o endereço é a identidade. */
+const PY_OBJECT = /^<([\w.]+) object at (0x[0-9a-fA-F]+)>$/;
 
 export function pythonRole(source: string, name: string): CollectionRole | undefined {
   const calls = methodsCalledOn(source, name);
@@ -49,8 +51,16 @@ export const pythonAdapter: LanguageAdapter = {
       return n !== undefined ? { kind: 'integer', value: n } : { kind: 'scalar', value: v.value };
     }
     if (v.type && SCALARS.has(v.type)) return { kind: 'scalar', value: v.value };
+    const obj = PY_OBJECT.exec(v.value);
+    if (obj && v.variablesReference > 0) return { kind: 'object', type: obj[1].split('.').pop() ?? obj[1], id: obj[2].toLowerCase() };
     return { kind: 'skip' };
   },
+
+  // "special variables", "function variables", "class variables" e "len()" são do debugpy.
+  objectFields: (fields) => fields.filter((f) => !/^(special|function|class) variables$/.test(f.name) && f.name !== 'len()'),
+  isNull: (v) => v.type === 'NoneType' || v.value === 'None',
+  // Listas não mostram endereço no valor: "a is b" decide se são a mesma.
+  identityExpr: (a, b) => `(${a}) is (${b})`,
 
   elementIndex: numericIndex,
   formatElement: (v) => v.value,

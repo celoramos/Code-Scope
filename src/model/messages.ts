@@ -74,6 +74,21 @@ export interface Messages {
   callReturning(name: string, value: string): string;
   /** Uma chamada inteira aconteceu dentro do passo (F10 por cima dela). */
   callGaveBack(name: string, value: string): string;
+
+  /** "o objeto Conta ('Ana')": value é o primeiro campo simples. */
+  objectLabel(type: string, value: string): string;
+  newObjectLabel(type: string, value: string): string;
+  /** Nó de lista ligada ou árvore: o valor basta. */
+  nodeLabel(value: string): string;
+  newNodeLabel(value: string): string;
+  objectCreated(type: string, name: string, value?: string): string;
+  refPointsTo(name: string, label: string): string;
+  refAlias(name: string, other: string): string;
+  refNull(name: string): string;
+  fieldChanged(path: string, from: string, to: string): string;
+  fieldPointsTo(path: string, label: string): string;
+  fieldNull(path: string): string;
+  arrayAlias(first: string, other: string): string;
 }
 
 function count(n: number, one: string, many: string): string {
@@ -164,6 +179,21 @@ const pt: Messages = {
     `${name} terminou${value !== undefined ? ` e devolveu ${value}` : ''}. ${to ? `A chamada de ${to}` : 'Quem chamou'} continua de onde parou.`,
   callReturning: (name, value) => `${name} chegou ao return: vai devolver ${value} para quem chamou.`,
   callGaveBack: (name, value) => `A chamada de ${name} rodou inteira neste passo e devolveu ${value}.`,
+
+  objectLabel: (type, value) => `o objeto ${type} (${value})`,
+  newObjectLabel: (type, value) => `um objeto ${type} novo (${value})`,
+  nodeLabel: (value) => `o nó ${value}`,
+  newNodeLabel: (value) => `um nó novo (${value})`,
+  objectCreated: (type, name, value) =>
+    `Um objeto ${type} novo foi criado${value !== undefined ? ` (${value})` : ''}, e ${name} aponta para ele.`,
+  refPointsTo: (name, label) => `${name} agora aponta para ${label}.`,
+  refAlias: (name, other) =>
+    `${name} aponta para o mesmo objeto que ${other}: não é uma cópia. Mudar o objeto por um muda para o outro.`,
+  refNull: (name) => `${name} agora não aponta para nenhum objeto.`,
+  fieldChanged: (path, from, to) => `${path} mudou de ${from} para ${to}.`,
+  fieldPointsTo: (path, label) => `${path} agora aponta para ${label}.`,
+  fieldNull: (path) => `${path} agora não aponta para nada: a ligação acabou ali.`,
+  arrayAlias: (first, other) => `${other} não é uma cópia: ${first} e ${other} são o mesmo array. Mudar um muda o outro.`,
 };
 
 const enPositions = (n: number) => count(n, 'position', 'positions');
@@ -246,6 +276,21 @@ const en: Messages = {
     `${name} finished${value !== undefined ? ` and returned ${value}` : ''}. ${to ? `The call of ${to}` : 'The caller'} continues where it stopped.`,
   callReturning: (name, value) => `${name} reached the return: it will give ${value} back to the caller.`,
   callGaveBack: (name, value) => `The call of ${name} ran entirely in this step and returned ${value}.`,
+
+  objectLabel: (type, value) => `the ${type} object (${value})`,
+  newObjectLabel: (type, value) => `a new ${type} object (${value})`,
+  nodeLabel: (value) => `the node ${value}`,
+  newNodeLabel: (value) => `a new node (${value})`,
+  objectCreated: (type, name, value) =>
+    `A new ${type} object was created${value !== undefined ? ` (${value})` : ''}, and ${name} points to it.`,
+  refPointsTo: (name, label) => `${name} now points to ${label}.`,
+  refAlias: (name, other) =>
+    `${name} points to the same object as ${other}: it is not a copy. Changing the object through one changes it for the other.`,
+  refNull: (name) => `${name} no longer points to any object.`,
+  fieldChanged: (path, from, to) => `${path} changed from ${from} to ${to}.`,
+  fieldPointsTo: (path, label) => `${path} now points to ${label}.`,
+  fieldNull: (path) => `${path} now points to nothing: the chain ends there.`,
+  arrayAlias: (first, other) => `${other} is not a copy: ${first} and ${other} are the same array. Changing one changes the other.`,
 };
 
 export const MESSAGES: Record<Language, Messages> = { pt, en };

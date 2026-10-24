@@ -14,7 +14,15 @@ export type VariableShape =
    * Coleção indexada a ser expandida. "list" cresce e encolhe; "array" tem tamanho
    * fixo. Sem length, o tamanho é contado pelas posições que o debugger devolver.
    */
-  | { kind: 'sequence'; length?: number; collection: 'array' | 'list' }
+  | { kind: 'sequence'; length?: number; collection: 'array' | 'list'; id?: string }
+  /**
+   * Instância de uma classe. id é a identidade na memória quando o debugger
+   * mostra uma ("@12" no Java, "0x..." no Python); sem ela, o coletor compara
+   * com evaluate.
+   */
+  | { kind: 'object'; type: string; id?: string }
+  /** Referência vazia: null do Java, que não diz o tipo. */
+  | { kind: 'null' }
   /** Coleção vazia que o debugger não deixa expandir, mas que o aluno precisa ver nascer. */
   | { kind: 'empty-list' }
   /** Inteiro que pode servir de índice (i, j, inicio...). */
@@ -60,6 +68,21 @@ export interface LanguageAdapter {
    * ("Return value" no js-debug, "(return) f" no debugpy). Não é variável do aluno.
    */
   returnValue?(v: DapVariable): ReturnedValue | undefined;
+
+  /** Campos de um objeto, sem o que o debugger acrescenta ("special variables", "[[Prototype]]"). */
+  objectFields?(fields: DapVariable[]): DapVariable[];
+  /** Valor vazio num campo de objeto: null, None, undefined. */
+  isNull?(v: DapVariable): boolean;
+  /**
+   * Expressão que diz se a e b são o mesmo objeto ("a === b", "a is b"). Só
+   * para debuggers que não mostram a identidade no valor.
+   */
+  identityExpr?(a: string, b: string): string;
+}
+
+/** Classes declaradas no arquivo: só objetos delas são desenhados. */
+export function declaredClasses(source: string): Set<string> {
+  return new Set([...source.matchAll(/\bclass\s+([A-Za-z_$][\w$]*)/g)].map((m) => m[1]));
 }
 
 export interface ReturnedValue {

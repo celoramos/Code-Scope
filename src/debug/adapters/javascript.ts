@@ -1,3 +1,4 @@
+import type { DapVariable } from '../dap';
 import { asInteger, methodsCalledOn, numericIndex, type CollectionRole, type LanguageAdapter, type VariableShape } from './adapter';
 
 /*
@@ -36,9 +37,12 @@ export const javascriptAdapter: LanguageAdapter = {
   },
 
   shape(v): VariableShape {
+    // Dentro de um método, this é o objeto: esse sim interessa.
+    if (v.name === 'this') return isClassInstance(v) ? { kind: 'object', type: v.type ?? '' } : { kind: 'skip' };
     if (NODE_MODULE_NAMES.has(v.name)) return { kind: 'skip' };
     const m = ARRAY_VALUE.exec(v.value);
     if (m && v.variablesReference > 0) return { kind: 'sequence', length: Number(m[1]), collection: 'list' };
+    if (isClassInstance(v)) return { kind: 'object', type: v.type ?? '' };
     if (v.variablesReference > 0) return { kind: 'skip' };
     if (v.type === 'number') {
       const n = asInteger(v.value);
@@ -54,4 +58,17 @@ export const javascriptAdapter: LanguageAdapter = {
   collectionRole: javascriptRole,
   // O js-debug mostra, ainda dentro da função, o valor que ela está para devolver.
   returnValue: (v) => (v.name === 'Return value' ? { value: v.value, pending: true } : undefined),
+  // "[[Prototype]]", "[[Scopes]]" e "__proto__" são do motor, não campos do aluno.
+  objectFields: (fields) => fields.filter((f) => !f.name.startsWith('[[') && f.name !== '__proto__'),
+  isNull: (v) => v.value === 'null' || v.value === 'undefined',
+  // O js-debug não mostra identidade no valor; quem decide é o próprio JavaScript.
+  identityExpr: (a, b) => `(${a}) === (${b})`,
 };
+
+/** Tipos que o js-debug usa para o que não é objeto de uma classe do aluno. */
+const BUILTIN_TYPES = new Set(['Object', 'Function', 'function', 'global', 'Map', 'Set', 'WeakMap', 'WeakSet', 'Promise', 'RegExp', 'Date', 'Error', 'Array', 'Symbol', 'Module']);
+
+/** Objeto criado com new de uma classe: o js-debug põe o nome da classe em type. */
+export function isClassInstance(v: DapVariable): boolean {
+  return v.variablesReference > 0 && !!v.type && !BUILTIN_TYPES.has(v.type) && !/Error$/.test(v.type) && !v.value.startsWith('ƒ');
+}

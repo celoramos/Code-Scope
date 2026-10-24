@@ -56,7 +56,41 @@ export function isListVariable(v: DapVariable): boolean {
 export function formatElement(v: DapVariable): string {
   const value = cleanValue(v.value);
   if (v.type === 'char' || v.type === 'Character') return `'${value}'`;
+  if (v.type && /^(double|float|Double|Float)$/.test(v.type)) return formatDecimal(value);
   return value;
+}
+
+/**
+ * O debugger formata double com a vírgula e as casas do sistema
+ * ("150,000000"); o aluno escreve e imprime "150.0".
+ */
+export function formatDecimal(value: string): string {
+  const m = /^(-?\d+)[.,](\d+)$/.exec(value);
+  if (!m) return value;
+  const decimals = m[2].replace(/0+$/, '');
+  return `${m[1]}.${decimals || '0'}`;
+}
+
+/** Objeto comum: "Referencias$Conta@12", sem "size=" (coleções) nem embrulho de primitivo. */
+const OBJECT_VALUE = /^([\w.$]+)@(\d+)$/;
+
+/** Classe e identidade de um objeto; undefined se não é objeto de classe. */
+export function objectShape(v: DapVariable): { type: string; id: string } | undefined {
+  if (v.variablesReference <= 0 || isBoxed(v) || v.type === 'String') return undefined;
+  const m = OBJECT_VALUE.exec(v.value);
+  if (!m) return undefined;
+  return { type: simpleClassName(v.type ?? m[1]), id: `@${m[2]}` };
+}
+
+/** "Referencias$Conta" e "java.util.Random" viram "Conta" e "Random". */
+export function simpleClassName(type: string): string {
+  return type.replace(/<.*$/, '').split(/[.$]/).pop() ?? type;
+}
+
+/** "@26" de "int[3]@26" ou "ArrayList@11 size=2": mesmo número, mesmo objeto. */
+export function arrayId(v: DapVariable): string | undefined {
+  const m = /@(\d+)(?:\s|$)/.exec(v.value);
+  return m ? `@${m[1]}` : undefined;
 }
 
 /**
@@ -143,13 +177,20 @@ export const javaAdapter: LanguageAdapter = {
   shape(v): VariableShape {
     if (isEmptyList(v)) return { kind: 'empty-list' };
     if (isArrayVariable(v)) {
-      return { kind: 'sequence', length: arrayLength(v) ?? 0, collection: isListVariable(v) ? 'list' : 'array' };
+      const id = arrayId(v);
+      return { kind: 'sequence', length: arrayLength(v) ?? 0, collection: isListVariable(v) ? 'list' : 'array', ...(id ? { id } : {}) };
     }
     const n = integralValue(v);
     if (n !== undefined) return { kind: 'integer', value: n };
     const s = scalarValue(v);
-    return s !== undefined ? { kind: 'scalar', value: s } : { kind: 'skip' };
+    if (s !== undefined) return { kind: 'scalar', value: s };
+    // Referência vazia: o debugger manda "null" sem tipo.
+    if (v.value === 'null' && v.variablesReference <= 0) return { kind: 'null' };
+    const obj = objectShape(v);
+    return obj ? { kind: 'object', ...obj } : { kind: 'skip' };
   },
+
+  isNull: (v) => v.value === 'null' && v.variablesReference <= 0,
 
   elementIndex,
   formatElement,

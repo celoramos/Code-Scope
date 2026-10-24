@@ -21,6 +21,7 @@ export interface PanelStrings {
     explanation: string;
     variables: string;
     arrays: string;
+    objects: string;
   };
   script: Record<
     | 'idle'
@@ -75,7 +76,17 @@ export interface PanelStrings {
     | 'programFrame'
     | 'returned'
     | 'finished'
-    | 'callRunning',
+    | 'callRunning'
+    | 'sameArray'
+    | 'pointsToNull'
+    | 'linkedTitle'
+    | 'treeTitle'
+    | 'oneNode'
+    | 'nodes'
+    | 'cycle'
+    | 'noVariable'
+    | 'objectLabel'
+    | 'truncated',
     string
   >;
 }
@@ -100,6 +111,7 @@ const pt: PanelStrings = {
     explanation: 'O que mudou',
     variables: 'Variáveis inteiras',
     arrays: 'Arrays',
+    objects: 'Objetos',
   },
   script: {
     idle: 'Pronto para visualizar',
@@ -155,6 +167,16 @@ const pt: PanelStrings = {
     returned: 'devolveu {0}',
     finished: 'terminou',
     callRunning: 'rodando',
+    sameArray: 'o mesmo array',
+    pointsToNull: 'não aponta para nenhum objeto (null)',
+    linkedTitle: 'Lista ligada de {0}',
+    treeTitle: 'Árvore de {0}',
+    oneNode: '1 nó',
+    nodes: '{0} nós',
+    cycle: 'volta ao começo',
+    noVariable: 'nenhuma variável aponta para ele',
+    objectLabel: 'Objeto {0}, apontado por {1}',
+    truncated: 'Campos não lidos: o painel lê no máximo 40 objetos por passo.',
   },
 };
 
@@ -178,6 +200,7 @@ const en: PanelStrings = {
     explanation: 'What changed',
     variables: 'Integer variables',
     arrays: 'Arrays',
+    objects: 'Objects',
   },
   script: {
     idle: 'Ready to visualize',
@@ -233,6 +256,16 @@ const en: PanelStrings = {
     returned: 'returned {0}',
     finished: 'finished',
     callRunning: 'running',
+    sameArray: 'the same array',
+    pointsToNull: 'points to no object (null)',
+    linkedTitle: 'Linked list of {0}',
+    treeTitle: 'Tree of {0}',
+    oneNode: '1 node',
+    nodes: '{0} nodes',
+    cycle: 'back to the start',
+    noVariable: 'no variable points to it',
+    objectLabel: '{0} object, pointed to by {1}',
+    truncated: 'Fields not read: the panel reads at most 40 objects per step.',
   },
 };
 

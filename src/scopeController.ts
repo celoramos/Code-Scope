@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { readSettings, uiLanguage } from './config';
 import { collectSnapshot } from './debug/dapCollector';
 import { applyCollectionRoles, pickAdapter } from './debug/adapters';
+import { declaredClasses } from './debug/adapters/adapter';
 import { readExceptionInfo, type ExceptionInfoBody } from './debug/exceptionFilters';
 import { registerPauseOnErrors } from './debug/pauseOnErrors';
 import { registerStopTracker } from './debug/trackerFactory';
@@ -77,10 +78,22 @@ export class ScopeController implements vscode.Disposable {
     try {
       const thread = threadId ?? (await firstThread(session));
       if (thread === undefined) return;
-      const collected = await collectSnapshot(session, thread, (file) => pickAdapter(session.type, file), readSettings().limits);
+      // O mesmo arquivo serve para achar as classes do aluno e o texto da linha.
+      const sources = new Map<string, ReturnType<typeof readSource>>();
+      const sourceOf = (file: string) => {
+        if (!sources.has(file)) sources.set(file, readSource(file));
+        return sources.get(file) as ReturnType<typeof readSource>;
+      };
+      const collected = await collectSnapshot(session, thread, (file) => pickAdapter(session.type, file), readSettings().limits, {
+        userTypes: async (file) => {
+          const s = await sourceOf(file);
+          return s ? declaredClasses(s.text) : undefined;
+        },
+        previous: this.history.last(),
+      });
       if (!collected) return;
       const snap = collected.snapshot;
-      const source = await readSource(snap.file);
+      const source = await sourceOf(snap.file);
       snap.code = source?.lines[snap.line - 1]?.trim();
       if (source) applyCollectionRoles(snap, source.text, collected.adapter);
       if (reason === 'exception') snap.exception = await readException(session, thread);

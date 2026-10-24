@@ -1,7 +1,9 @@
 import type * as vscode from 'vscode';
 import type { DapScope, DapStackFrame, DapVariable } from './dap';
 import type { ArrayVar, CallFrame, Pointer, Scalar, Snapshot } from '../model/snapshot';
+import { alignHeap } from '../model/heapIdentity';
 import { isRangeGroup, type LanguageAdapter, type VariableShape } from './adapters/adapter';
+import { collectHeap, linkSameArrays } from './heapCollector';
 
 type Sequence = Extract<VariableShape, { kind: 'sequence' }>;
 
@@ -30,11 +32,19 @@ export interface Collected {
 
 export type Session = Pick<vscode.DebugSession, 'customRequest'>;
 
+export interface CollectOptions {
+  /** Classes declaradas no arquivo parado: só objetos delas são desenhados. */
+  userTypes?: (file: string) => Promise<ReadonlySet<string> | undefined>;
+  /** Passo anterior: objetos sem identidade no debugger herdam o id pelos caminhos. */
+  previous?: Snapshot;
+}
+
 export async function collectSnapshot(
   session: Session,
   threadId: number,
   pick: LanguageAdapter | ((file: string) => LanguageAdapter),
   limits: Limits = DEFAULT_LIMITS,
+  opts: CollectOptions = {},
 ): Promise<Collected | undefined> {
   const { stackFrames } = (await session.customRequest('stackTrace', {
     threadId,
@@ -56,6 +66,7 @@ export async function collectSnapshot(
   }
 
   const arrays: ArrayVar[] = [];
+  const arrayVars: { array: ArrayVar; v: DapVariable }[] = [];
   const pointers: Pointer[] = [];
   const scalars: Scalar[] = [];
   const elements: Record<string, DapVariable[]> = {};
@@ -69,7 +80,9 @@ export async function collectSnapshot(
       case 'sequence': {
         if (arrays.length >= limits.maxArrays) break;
         const { array, children } = await readSequence(session, adapter, v, v.name, shape, limits.maxElements, true);
+        if (shape.id) array.id = shape.id;
         arrays.push(array);
+        arrayVars.push({ array, v });
         elements[v.name] = children.slice(0, 3);
         break;
       }
@@ -90,6 +103,13 @@ export async function collectSnapshot(
     scalars,
   };
   if (returned) snapshot.returned = returned;
+
+  await linkSameArrays(session, adapter, arrayVars, frame.id);
+  const { heap, refs } = await collectHeap(session, adapter, locals, { frameId: frame.id, userTypes: await opts.userTypes?.(file) });
+  if (heap.length > 0) snapshot.heap = heap;
+  if (refs.length > 0) snapshot.refs = refs;
+  alignHeap(opts.previous, snapshot);
+
   const calls = await readCalls(session, adapter, stackFrames, snapshot);
   if (calls.length > 0) snapshot.calls = calls;
 

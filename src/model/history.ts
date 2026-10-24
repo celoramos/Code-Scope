@@ -29,6 +29,11 @@ export class History {
     this.cursor = this.items.length - 1;
   }
 
+  /** O passo mais recente, onde quer que o cursor esteja. */
+  last(): Snapshot | undefined {
+    return this.items.at(-1);
+  }
+
   /** Cópia de todos os snapshots, do mais antigo ao mais novo. */
   all(): Snapshot[] {
     return [...this.items];

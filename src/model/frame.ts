@@ -3,6 +3,7 @@ import { diff, type Change } from './diff';
 import { explain } from './explain';
 import { explainError, type ErrorView } from './errors';
 import { explainFlow } from './flow';
+import { arrayAliases, explainHeap, heapDelta, heapView, referenceNames, type HeapDelta, type HeapView } from './heap';
 import { MESSAGES, type Language } from './messages';
 import type { Step } from './history';
 import { arrowsFor, matrixAxesFor, VALUE_NAMES, type Arrow, type MatrixAxes } from './pointers';
@@ -21,6 +22,10 @@ export interface Frame {
   changes: Change[];
   /** Chamadas que começaram ou terminaram neste passo. */
   calls: CallChange[];
+  /** Objetos prontos para desenhar: listas ligadas, árvores e cartões. */
+  heap: HeapView;
+  /** Objetos novos e campos alterados neste passo, para destacar. */
+  heapDelta: HeapDelta;
   /** Setas por nome de array (vazio para matrizes). */
   arrows: Record<string, Arrow[]>;
   /** Linha e coluna apontadas em cada matriz, lidas do código. */
@@ -71,24 +76,35 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
   let explanation: string[] = [];
   if (options.beginnerMode && switched) {
     explanation = calls.map((c) => describeCall(c, options.language));
-  } else if (options.beginnerMode && !(snapshot.exception && changes.length === 0)) {
+  } else if (options.beginnerMode) {
+    const heapNotes = prev ? explainHeap(prev, snapshot, options.language) : [];
+    // Dois nomes para o mesmo array: as mudanças aparecem nos dois, mas basta contar uma vez.
+    const extraNames = new Set([...arrayAliases(snapshot).values()].flatMap((names) => names.slice(1)));
+    // raiz = None virando objeto (ou o contrário) é referência: quem explica é explainHeap.
+    const refNames = referenceNames(prev, snapshot);
+    const told = changes.filter((c) => !('array' in c && extraNames.has(c.array)) && !(c.kind === 'scalar' && refNames.has(c.name)));
     // No erro, "nada mudou" só atrapalha: o cartão do erro é o que importa.
-    explanation = explain(
-      changes,
-      prev === undefined,
-      [
-        peekNote(executed?.code, snapshot, changes, options.language),
-        returnNote(snapshot, prev, options.language),
-        explainFlow(executed, snapshot, options.language),
-      ].filter(isText),
-      options.language,
-    );
+    if (!(snapshot.exception && told.length === 0 && heapNotes.length === 0)) {
+      explanation = explain(
+        told,
+        prev === undefined,
+        [
+          ...heapNotes,
+          peekNote(executed?.code, snapshot, changes, options.language),
+          returnNote(snapshot, prev, options.language),
+          explainFlow(executed, snapshot, options.language),
+        ].filter(isText),
+        options.language,
+      );
+    }
   }
   return {
     snapshot,
     executed,
     changes,
     calls,
+    heap: heapView(snapshot),
+    heapDelta: switched ? { added: [], fields: {} } : heapDelta(prev, snapshot),
     arrows,
     axes,
     explanation,

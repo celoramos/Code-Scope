@@ -40,7 +40,7 @@ describe('collectSnapshot', () => {
       line: 8,
       file: '/x/BubbleSort.java',
       arrays: [
-        { name: 'numeros', values: ['5', '1', '4', '2', '8'], length: 5 },
+        { name: 'numeros', values: ['5', '1', '4', '2', '8'], length: 5, id: '@10' },
       ],
       pointers: [
         { name: 'i', value: 0 },
@@ -169,9 +169,10 @@ describe('collectSnapshot', () => {
           { name: 'grade[0]', values: ['1', '2'], length: 2 },
           { name: 'grade[1]', values: ['3', '4'], length: 2 },
         ],
+        id: '@10',
       },
-      { name: 'lista', values: ['"arroz"', '"café"'], length: 2, kind: 'list' },
-      { name: 'letras', values: ["'r'", "'a'"], length: 2 },
+      { name: 'lista', values: ['"arroz"', '"café"'], length: 2, kind: 'list', id: '@11' },
+      { name: 'letras', values: ["'r'", "'a'"], length: 2, id: '@12' },
     ]);
     assert.deepEqual(got.scalars, [
       { name: 'ok', value: 'true' },
@@ -181,7 +182,7 @@ describe('collectSnapshot', () => {
 
   it('respeita o limite de elementos', async () => {
     const got = await collectSnapshot(fakeJavaSession(), 1, javaAdapter, { maxElements: 3, maxArrays: 20 });
-    assert.deepEqual(got?.snapshot.arrays[0], { name: 'numeros', values: ['5', '1', '4'], length: 5 });
+    assert.deepEqual(got?.snapshot.arrays[0], { name: 'numeros', values: ['5', '1', '4'], length: 5, id: '@10' });
   });
 
   it('funciona quando o adaptador recusa paginação', async () => {

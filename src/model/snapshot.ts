@@ -21,6 +21,41 @@ export interface ArrayVar {
    * Quando existe, values guarda só um resumo de cada linha.
    */
   rows?: ArrayVar[];
+  /** Identidade do objeto na memória: duas variáveis com o mesmo id são o mesmo array. */
+  id?: string;
+}
+
+/**
+ * Objeto de uma classe do aluno (Conta, No...). id identifica o objeto na
+ * memória dentro do passo e, sempre que o debugger permite, entre passos.
+ */
+export interface HeapObject {
+  id: string;
+  /** Nome curto da classe: "Conta", "No". */
+  type: string;
+  fields: ObjectField[];
+  /** O limite de objetos lidos acabou antes deste: os campos não foram lidos. */
+  truncated?: boolean;
+  /**
+   * Expressão que alcança o objeto neste passo ("inicio.proximo"). Serve para
+   * reconhecer o mesmo objeto no passo seguinte quando o debugger não mostra
+   * identidade (JavaScript).
+   */
+  expr?: string;
+}
+
+export interface ObjectField {
+  name: string;
+  /** Valor como texto; para referência, o texto que o debugger mostra. */
+  value: string;
+  /** id do objeto apontado; null quando o campo é null/None/undefined de propósito. */
+  ref?: string | null;
+}
+
+/** Variável local que guarda um objeto (ou null). */
+export interface Reference {
+  name: string;
+  ref: string | null;
 }
 
 /** Inteiro que pode apontar para uma posição: i, j, inicio, fim... */
@@ -44,6 +79,10 @@ export interface Snapshot {
   arrays: ArrayVar[];
   pointers: Pointer[];
   scalars?: Scalar[];
+  /** Objetos das classes do aluno que as variáveis alcançam. */
+  heap?: HeapObject[];
+  /** Variáveis locais que apontam para objetos. */
+  refs?: Reference[];
   /**
    * Chamadas em andamento só do código do aluno, da mais antiga (embaixo) até
    * a atual (no topo). Vazio quando o debugger não informa.
