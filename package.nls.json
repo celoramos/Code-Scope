@@ -15,5 +15,6 @@
   "config.animationSpeed.off.label": "Off",
   "config.maxElements": "How many positions of each array are read and drawn.",
   "config.valueNames": "Names of integer variables that hold a value, not a position. They do not become arrows under the arrays.",
-  "config.revealOnDebug": "Opens the Code Scope panel on the first stop of each debug session."
+  "config.revealOnDebug": "Opens the Code Scope panel on the first stop of each debug session.",
+  "config.pauseOnErrors": "Pauses the program on errors that nobody handles (uncaught exceptions), so the panel can show where and why it broke."
 }

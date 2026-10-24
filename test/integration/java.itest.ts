@@ -107,6 +107,15 @@ describe('Java Debugger real', () => {
     assert.deepEqual(abertos?.values, ["'{'", "'['"]);
   });
 
+  it('ForaDoLimite: para no erro de índice e mostra a posição que não existe', async () => {
+    const snaps = await debugSample('ForaDoLimite', 7, 12);
+    const stop = snaps.find((s) => s.exception);
+    assert.ok(stop, `o programa não parou no erro: ${JSON.stringify(snaps.map((s) => s.line))}`);
+    assert.equal(stop.exception?.type, 'ArrayIndexOutOfBoundsException');
+    const frame = makeFrame({ snapshot: stop, index: 1, total: 1, past: [stop] });
+    assert.deepEqual(frame.error?.missing, { array: 'notas', index: 3 });
+  });
+
   it('InverterArray: lê os dois ponteiros', async () => {
     const snaps = await debugSample('InverterArray', 6, 8);
     const last = snaps[snaps.length - 1];

@@ -44,4 +44,12 @@ export interface Snapshot {
   arrays: ArrayVar[];
   pointers: Pointer[];
   scalars?: Scalar[];
+  /** O programa parou por um erro que ninguém tratou. */
+  exception?: ExceptionInfo;
+}
+
+export interface ExceptionInfo {
+  /** Nome curto do tipo: "ArrayIndexOutOfBoundsException", "IndexError", "TypeError". */
+  type: string;
+  message: string;
 }

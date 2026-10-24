@@ -2,9 +2,12 @@ import * as vscode from 'vscode';
 import { readSettings, uiLanguage } from './config';
 import { collectSnapshot } from './debug/dapCollector';
 import { applyCollectionRoles, pickAdapter } from './debug/adapters';
+import { readExceptionInfo, type ExceptionInfoBody } from './debug/exceptionFilters';
+import { registerPauseOnErrors } from './debug/pauseOnErrors';
 import { registerStopTracker } from './debug/trackerFactory';
 import { makeFrame } from './model/frame';
 import { History } from './model/history';
+import type { Snapshot } from './model/snapshot';
 import type { FromWebview, ScopeViewProvider } from './webview/scopeViewProvider';
 import { readError } from './webview/strings';
 
@@ -27,7 +30,8 @@ export class ScopeController implements vscode.Disposable {
     private readonly log: vscode.LogOutputChannel,
   ) {
     this.disposables.push(
-      registerStopTracker((session, threadId) => void this.onStopped(session, threadId)),
+      registerStopTracker((session, threadId, reason) => void this.onStopped(session, threadId, reason)),
+      registerPauseOnErrors(() => readSettings().pauseOnErrors, log),
       view.onMessage((msg) => this.onMessage(msg)),
       vscode.debug.onDidStartDebugSession((s) => void this.onSessionStart(s)),
       vscode.debug.onDidTerminateDebugSession(() => {
@@ -68,7 +72,7 @@ export class ScopeController implements vscode.Disposable {
     await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
   }
 
-  private async onStopped(session: vscode.DebugSession, threadId: number | undefined) {
+  private async onStopped(session: vscode.DebugSession, threadId: number | undefined, reason?: string) {
     const gen = ++this.generation;
     try {
       const thread = threadId ?? (await firstThread(session));
@@ -79,6 +83,7 @@ export class ScopeController implements vscode.Disposable {
       const source = await readSource(snap.file);
       snap.code = source?.lines[snap.line - 1]?.trim();
       if (source) applyCollectionRoles(snap, source.text, collected.adapter);
+      if (reason === 'exception') snap.exception = await readException(session, thread);
       if (gen !== this.generation) return;
       this.log.debug(`adaptador: ${collected.adapter.id} (sessão ${session.type})`);
       this.log.debug('scopes', JSON.stringify(collected.raw.scopes));
@@ -141,6 +146,18 @@ export class ScopeController implements vscode.Disposable {
 async function firstThread(session: vscode.DebugSession): Promise<number | undefined> {
   const { threads } = (await session.customRequest('threads')) as { threads: { id: number }[] };
   return threads[0]?.id;
+}
+
+/**
+ * Tipo e mensagem do erro que parou o programa. Todos os debuggers testados
+ * respondem exceptionInfo; se algum não responder, fica só o aviso genérico.
+ */
+async function readException(session: vscode.DebugSession, threadId: number): Promise<Snapshot['exception']> {
+  try {
+    return readExceptionInfo((await session.customRequest('exceptionInfo', { threadId })) as ExceptionInfoBody);
+  } catch {
+    return { type: '', message: '' };
+  }
 }
 
 /** Texto do arquivo; sem arquivo legível, o painel só mostra o número da linha. */

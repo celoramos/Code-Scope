@@ -8,6 +8,8 @@ export type Language = 'pt' | 'en';
 
 export type CollectionKind = 'list' | 'stack' | 'queue';
 
+export type ErrorKindName = 'index' | 'null' | 'zero' | 'key' | 'format' | 'recursion' | 'name' | 'type' | 'other';
+
 export interface Messages {
   firstStepNoArrays: string;
   firstStep(description: string): string;
@@ -54,6 +56,15 @@ export interface Messages {
 
   peekStack(array: string, value: string): string;
   peekQueue(array: string, value: string): string;
+
+  errorTitle(type: string): string;
+  /** arr[expr] pediu uma posição que não existe; last é a última que existe. */
+  errorIndex(array: string, expr: string, index: number, last: number): string;
+  errorIndexEmpty(array: string, expr: string, index: number): string;
+  errorIndexTip(length: number): string;
+  /** JavaScript: a posição inexistente vira undefined, e o erro vem ao usar esse undefined. */
+  errorUndefinedFromIndex(array: string, index: number): string;
+  errorKind(kind: ErrorKindName, message: string): string;
 }
 
 function count(n: number, one: string, many: string): string {
@@ -114,6 +125,27 @@ const pt: Messages = {
 
   peekStack: (arr, v) => `peek() só olhou o topo de ${arr}: ${v} continua lá.`,
   peekQueue: (arr, v) => `peek() só olhou a frente da fila ${arr}: ${v} continua lá.`,
+
+  errorTitle: (type) => (type ? `Erro: ${type}` : 'Erro'),
+  errorIndex: (arr, expr, i, last) =>
+    `${arr}[${expr}] tentou usar a posição ${i}, mas ${arr} só tem as posições de 0 a ${last}.`,
+  errorIndexEmpty: (arr, expr, i) => `${arr}[${expr}] tentou usar a posição ${i}, mas ${arr} está vazio: não tem nenhuma posição.`,
+  errorIndexTip: (n) =>
+    `Com ${ptPositions(n)}, a última é a ${Math.max(n - 1, 0)}. Se o laço usa <= com o tamanho, ele passa uma vez a mais: troque por <.`,
+  errorUndefinedFromIndex: (arr, i) =>
+    `Em JavaScript, ler uma posição que não existe não dá erro na hora: ${arr}[${i}] vale undefined, e o erro aparece ao usar esse undefined.`,
+  errorKind: (kind, msg) =>
+    ({
+      index: 'O programa tentou usar uma posição que não existe na coleção.',
+      null: 'O programa tentou usar um valor vazio (null, undefined ou None) como se fosse um objeto: não dá para ler campos nem chamar métodos de algo que não existe.',
+      zero: 'Divisão por zero: nenhum número pode ser dividido por 0. Confira o valor do divisor antes de dividir.',
+      key: `A chave ${msg} não existe no dicionário. Confira se ela está lá antes de ler, ou use um valor padrão.`,
+      format: 'Um texto que não é número foi convertido para número.',
+      recursion: 'Recursão sem fim: a função chamou a si mesma tantas vezes que a pilha de chamadas encheu. Confira o caso base, a condição que faz a recursão parar.',
+      name: 'O programa usou um nome que não foi criado: confira se está escrito igual à declaração e se ela vem antes do uso.',
+      type: 'Um valor foi usado com o tipo errado, como somar texto com número ou chamar algo que não é função.',
+      other: 'O programa parou por causa de um erro que ninguém tratou.',
+    })[kind],
 };
 
 const enPositions = (n: number) => count(n, 'position', 'positions');
@@ -166,6 +198,27 @@ const en: Messages = {
 
   peekStack: (arr, v) => `peek() only looked at the top of ${arr}: ${v} is still there.`,
   peekQueue: (arr, v) => `peek() only looked at the front of the queue ${arr}: ${v} is still there.`,
+
+  errorTitle: (type) => (type ? `Error: ${type}` : 'Error'),
+  errorIndex: (arr, expr, i, last) =>
+    `${arr}[${expr}] tried to use position ${i}, but ${arr} only has positions 0 to ${last}.`,
+  errorIndexEmpty: (arr, expr, i) => `${arr}[${expr}] tried to use position ${i}, but ${arr} is empty: it has no positions.`,
+  errorIndexTip: (n) =>
+    `With ${enPositions(n)}, the last one is ${Math.max(n - 1, 0)}. If the loop uses <= with the length, it runs one extra time: change it to <.`,
+  errorUndefinedFromIndex: (arr, i) =>
+    `In JavaScript, reading a position that does not exist is not an error right away: ${arr}[${i}] is undefined, and the error shows up when that undefined is used.`,
+  errorKind: (kind, msg) =>
+    ({
+      index: 'The program tried to use a position that does not exist in the collection.',
+      null: 'The program tried to use an empty value (null, undefined or None) as if it were an object: you cannot read fields or call methods on something that does not exist.',
+      zero: 'Division by zero: no number can be divided by 0. Check the divisor before dividing.',
+      key: `The key ${msg} is not in the dictionary. Check that it is there before reading it, or use a default value.`,
+      format: 'A text that is not a number was converted to a number.',
+      recursion: 'Endless recursion: the function called itself so many times that the call stack filled up. Check the base case, the condition that stops the recursion.',
+      name: 'The program used a name that was never created: check that it is spelled like the declaration and that the declaration comes first.',
+      type: 'A value was used with the wrong type, like adding text to a number or calling something that is not a function.',
+      other: 'The program stopped because of an error that nobody handled.',
+    })[kind],
 };
 
 export const MESSAGES: Record<Language, Messages> = { pt, en };

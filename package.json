@@ -141,6 +141,11 @@
           "type": "boolean",
           "default": true,
           "description": "%config.revealOnDebug%"
+        },
+        "codeScope.pauseOnErrors": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.pauseOnErrors%"
         }
       }
     }

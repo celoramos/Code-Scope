@@ -22,6 +22,7 @@
    * texto por cima continua na cor de primeiro plano.
    */
   --cs-change: var(--vscode-charts-yellow);
+  --cs-error: var(--vscode-errorForeground);
   --cs-change-bg: color-mix(in srgb, var(--cs-change) 22%, var(--cs-cell-bg));
   --cs-ptr-0: var(--vscode-charts-blue);
   --cs-ptr-1: var(--vscode-charts-purple);
@@ -988,6 +989,68 @@ kbd {
   white-space: nowrap;
 }
 
+/* ---------- Erro ---------- */
+
+.error-card {
+  margin: 0 0 var(--cs-space-3);
+  padding: var(--cs-space-2) var(--cs-space-3);
+  border-left: 3px solid var(--cs-error);
+  border-radius: 0 var(--cs-radius-sm) var(--cs-radius-sm) 0;
+  background: color-mix(in srgb, var(--cs-error) 10%, var(--cs-bg));
+}
+
+.error-title {
+  margin: 0 0 var(--cs-space-1);
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.error-text {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-wrap: pretty;
+}
+
+.error-item + .error-item {
+  margin-top: var(--cs-space-1);
+}
+
+/* A mensagem original, como o terminal mostraria: o aluno aprende a ler as duas. */
+.error-raw {
+  margin: var(--cs-space-2) 0 0;
+  color: var(--cs-muted);
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+  overflow-wrap: anywhere;
+}
+
+/* A posição que não existe: tracejada, vazia, fora do array. */
+.cell.is-missing .cell-value {
+  border: 1px dashed var(--cs-error);
+  background: color-mix(in srgb, var(--cs-error) 10%, var(--cs-bg));
+  color: var(--cs-error);
+  animation: missing-in var(--cs-flash) var(--cs-ease);
+}
+
+.cell.is-missing .cell-index {
+  color: var(--cs-error);
+  font-weight: 600;
+}
+
+.cell-missing-label {
+  color: var(--cs-error);
+  font-size: var(--cs-small);
+  white-space: nowrap;
+}
+
+@keyframes missing-in {
+  from {
+    opacity: 0;
+    transform: translateX(-30%);
+  }
+}
+
 /* ---------- Teste de mesa ---------- */
 
 .trace {
@@ -1119,6 +1182,7 @@ kbd {
   .cell.drop-in .cell-value,
   .cell.enter-back .cell-value,
   .cell.ghost,
+  .cell.is-missing .cell-value,
   .array.is-new {
     animation: none;
   }

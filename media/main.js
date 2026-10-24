@@ -18,6 +18,10 @@
   const explanationEl = byId('explanation');
   const varsEl = byId('vars');
   const arraysEl = byId('arrays');
+  const errorEl = byId('error');
+  const errorTitleEl = byId('error-title');
+  const errorTextEl = byId('error-text');
+  const errorRawEl = byId('error-raw');
   const traceEl = /** @type {HTMLDetailsElement} */ (byId('trace'));
   const traceTitleEl = byId('trace-title');
   const traceCountEl = byId('trace-count');
@@ -40,7 +44,8 @@
    * @typedef {{ line: number, code?: string }} LineRef
    * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[] },
    *             executed?: LineRef, changes: Change[], arrows: Record<string, Arrow[]>, axes: Record<string, Axes>,
-   *             explanation: string[], trace: Trace, step: number, total: number }} Frame
+   *             explanation: string[], trace: Trace, error?: ErrorView, step: number, total: number }} Frame
+   * @typedef {{ type: string, message: string, kind: string, title: string, sentences: string[], missing?: { array: string, index: number } }} ErrorView
    * @typedef {{ columns: string[], rows: { step: number, line: number, values: (string | null | undefined)[], changed: boolean[] }[], hidden: number }} Trace
    */
 
@@ -159,6 +164,7 @@
         return li;
       }),
     );
+    renderError(frame.error);
     renderVars(s.pointers, s.scalars ?? [], frame.changes, arrowNames);
     renderTrace(frame.trace, frame.step);
 
@@ -183,6 +189,7 @@
       } else {
         updateBlock(block, arr);
         animateBlock(block, arr.name, frame.changes, isNew);
+        if (kind === 'array') updateMissing(block, arr.name, frame.error?.missing);
         if (kind === 'array') updateArrows(block, frame.arrows[arr.name] ?? []);
         else updateMarkers(block, kind);
       }
@@ -365,7 +372,7 @@
     }
 
     const list = /** @type {HTMLElement} */ (block.querySelector('.cells'));
-    for (const ghost of Array.from(list.querySelectorAll('.ghost'))) ghost.remove();
+    for (const ghost of Array.from(list.querySelectorAll('.ghost, .is-missing'))) ghost.remove();
     while (list.children.length > arr.values.length) list.lastElementChild?.remove();
     while (list.children.length < arr.values.length) list.append(createCell(list.children.length));
     arr.values.forEach((value, i) => {
@@ -722,6 +729,50 @@
   }
 
   /**
+   * Erro que parou o programa: o que aconteceu em palavras simples e, embaixo,
+   * a mensagem original do debugger, para o aluno aprender a ler as duas.
+   * @param {ErrorView | undefined} error
+   */
+  function renderError(error) {
+    errorEl.hidden = !error;
+    if (!error) return;
+    errorTitleEl.textContent = error.title;
+    errorTextEl.replaceChildren(
+      ...error.sentences.map((text) => {
+        const li = el('li', 'error-item');
+        li.append(...highlightCode(text));
+        return li;
+      }),
+    );
+    errorRawEl.textContent = [error.type, error.message].filter(Boolean).join(': ');
+    errorRawEl.hidden = !errorRawEl.textContent;
+  }
+
+  /**
+   * Caixa tracejada depois do array, na posição que o código tentou usar e
+   * não existe. Ela some no passo seguinte.
+   * @param {HTMLElement} block
+   * @param {string} name
+   * @param {{ array: string, index: number } | undefined} missing
+   */
+  function updateMissing(block, name, missing) {
+    const list = /** @type {HTMLElement} */ (block.querySelector('.cells'));
+    list.querySelector('.cell.is-missing')?.remove();
+    if (!missing || missing.array !== name) return;
+    const cell = el('li', 'cell is-missing');
+    const idx = el('span', 'cell-index');
+    idx.textContent = String(missing.index);
+    const value = el('span', 'cell-value');
+    value.textContent = '?';
+    const label = el('span', 'cell-missing-label');
+    label.textContent = t('missing');
+    cell.append(idx, value, label);
+    cell.setAttribute('aria-label', t('missingLabel', name, missing.index));
+    list.append(cell);
+    cell.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  /**
    * Teste de mesa: refeito a cada passo, porque voltar no histórico também
    * encolhe a tabela. A linha atual fica marcada e visível.
    * @param {Trace | undefined} trace
@@ -792,7 +843,7 @@
 
   /** @param {HTMLElement} block */
   function cellsOf(block) {
-    return /** @type {HTMLElement[]} */ (Array.from(block.querySelectorAll('.cell:not(.ghost)')));
+    return /** @type {HTMLElement[]} */ (Array.from(block.querySelectorAll('.cell:not(.ghost):not(.is-missing)')));
   }
 
   /**

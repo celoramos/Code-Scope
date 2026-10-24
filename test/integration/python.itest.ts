@@ -1,6 +1,7 @@
 import * as assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { makeFrame } from '../../src/model/frame';
 import type { Snapshot } from '../../src/model/snapshot';
 import { allChanges, debugFile, samplesRoot } from './helpers';
 
@@ -72,5 +73,14 @@ describe('Python (debugpy) real', function () {
       allChanges(snaps).some((c) => c.kind === 'remove' && c.structure === 'queue' && c.index === 0 && c.value === "'pastel'"),
       `popleft não reconhecido: ${JSON.stringify(allChanges(snaps))}`,
     );
+  });
+
+  it('fora_do_limite.py: IndexError mostra a posição que não existe', async () => {
+    const snaps = await debugScript('fora_do_limite', 6, 12);
+    const stop = snaps.find((s) => s.exception);
+    assert.ok(stop, `o programa não parou no erro: ${JSON.stringify(snaps.map((s) => s.line))}`);
+    assert.equal(stop.exception?.type, 'IndexError');
+    const frame = makeFrame({ snapshot: stop, index: 1, total: 1, past: [stop] });
+    assert.deepEqual(frame.error?.missing, { array: 'notas', index: 3 });
   });
 });

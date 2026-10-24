@@ -100,6 +100,11 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
     </header>
 
     <p id="status" class="status" role="status" aria-live="polite"></p>
+    <section id="error" class="error-card" role="alert" hidden>
+      <h2 id="error-title" class="error-title"></h2>
+      <ul id="error-text" class="error-text"></ul>
+      <p id="error-raw" class="error-raw"></p>
+    </section>
     <ul id="explanation" class="explanation" aria-live="polite" aria-label="${t.explanation}"></ul>
     <ul id="vars" class="vars" aria-label="${t.variables}"></ul>
     <section id="arrays" class="arrays" aria-label="${t.arrays}"></section>

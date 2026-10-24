@@ -64,7 +64,9 @@ export interface PanelStrings {
     | 'traceStep'
     | 'traceLine'
     | 'traceGoto'
-    | 'traceHidden',
+    | 'traceHidden'
+    | 'missing'
+    | 'missingLabel',
     string
   >;
 }
@@ -133,6 +135,8 @@ const pt: PanelStrings = {
     traceLine: 'Linha',
     traceGoto: 'Ir para o passo {0}',
     traceHidden: 'Os {0} passos mais antigos não aparecem.',
+    missing: 'não existe',
+    missingLabel: '{0}[{1}] não existe',
   },
 };
 
@@ -200,6 +204,8 @@ const en: PanelStrings = {
     traceLine: 'Line',
     traceGoto: 'Go to step {0}',
     traceHidden: 'The {0} oldest steps are not shown.',
+    missing: 'missing',
+    missingLabel: '{0}[{1}] does not exist',
   },
 };
 

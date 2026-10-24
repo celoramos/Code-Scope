@@ -10,6 +10,7 @@ export interface Settings {
   frame: FrameOptions;
   animationSpeed: AnimationSpeed;
   revealOnDebug: boolean;
+  pauseOnErrors: boolean;
 }
 
 /** Lê as configurações codeScope.* a cada uso, para pegar mudanças sem recarregar. */
@@ -27,6 +28,7 @@ export function readSettings(): Settings {
     },
     animationSpeed: c.get<AnimationSpeed>('animationSpeed', 'normal'),
     revealOnDebug: c.get('revealOnDebug', true),
+    pauseOnErrors: c.get('pauseOnErrors', true),
   };
 }
 

@@ -1,5 +1,6 @@
 import * as assert from 'node:assert/strict';
 import * as path from 'node:path';
+import { makeFrame } from '../../src/model/frame';
 import type { Snapshot } from '../../src/model/snapshot';
 import { allChanges, debugFile, samplesRoot } from './helpers';
 
@@ -47,5 +48,14 @@ describe('JavaScript (js-debug) real', () => {
       allChanges(snaps).some((c) => c.kind === 'remove' && c.structure === 'queue' && c.index === 0),
       `shift não reconhecido: ${JSON.stringify(allChanges(snaps))}`,
     );
+  });
+
+  it('foraDoLimite.js: undefined de uma posição que não existe para o programa e é explicado', async () => {
+    const snaps = await debugScript('foraDoLimite', 6, 12);
+    const stop = snaps.find((s) => s.exception);
+    assert.ok(stop, `o programa não parou no erro: ${JSON.stringify(snaps.map((s) => s.line))}`);
+    assert.equal(stop.exception?.type, 'TypeError');
+    const frame = makeFrame({ snapshot: stop, index: 1, total: 1, past: [stop] });
+    assert.deepEqual(frame.error?.missing, { array: 'alunos', index: 2 });
   });
 });

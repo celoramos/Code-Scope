@@ -1,5 +1,6 @@
 import { diff, type Change } from './diff';
 import { explain } from './explain';
+import { explainError, type ErrorView } from './errors';
 import { explainFlow } from './flow';
 import { MESSAGES, type Language } from './messages';
 import type { Step } from './history';
@@ -23,6 +24,8 @@ export interface Frame {
   axes: Record<string, MatrixAxes>;
   /** Frases do modo iniciante; vazio quando o modo está desligado. */
   explanation: string[];
+  /** Erro que parou o programa neste passo, já explicado. */
+  error?: ErrorView;
   /** Teste de mesa até este passo. */
   trace: TraceTable;
   /** Posição no histórico, a partir de 1. */
@@ -63,7 +66,8 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
     changes,
     arrows,
     axes,
-    explanation: options.beginnerMode
+    // No erro, "nada mudou" só atrapalha: o cartão do erro é o que importa.
+    explanation: options.beginnerMode && !(snapshot.exception && changes.length === 0)
       ? explain(
           changes,
           prev === undefined,
@@ -71,6 +75,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
           options.language,
         )
       : [],
+    error: explainError(snapshot, options.language),
     trace: traceTable(step.past, step.index - step.past.length + 1),
     step: step.index,
     total: step.total,
