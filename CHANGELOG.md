@@ -1,6 +1,6 @@
 # Changelog
 
-## Não lançado
+## 0.6.0 (beta)
 
 ### Novo
 

@@ -4,9 +4,11 @@
 
 A VS Code extension that shows your code running, visually, for people learning to program. Free and open source ([MIT](LICENSE)).
 
+> **Beta.** Version 0.6.0 is a beta for people to try and help shape. Install it from the [release page](https://github.com/celoramos/Code-Scope/releases/tag/v0.6.0), and if something looks wrong or confusing, [open an issue](https://github.com/celoramos/Code-Scope/issues/new/choose): that is the most useful help right now.
+
 Everything happens inside VS Code: the panel sits in the sidebar, next to your code, and uses your theme's colors. It opens no browser, needs no account and sends nothing to the internet.
 
-While you debug, a side panel draws your program: arrays, matrices, lists, stacks, queues, dictionaries, objects, linked lists, trees and the call stack. Think of it as someone drawing your program on a whiteboard. It works with Java, JavaScript, TypeScript and Python, and with any other language that has a debugger in VS Code (see [Languages](#languages)). On every F10 the panel animates what changed and explains what happened:
+While you debug, a side panel draws your program: arrays, matrices, lists, stacks, queues, dictionaries, objects, linked lists, trees and the call stack. Think of it as someone drawing your program on a whiteboard. It works with Java, JavaScript, TypeScript, Python, C# and C, and with any other language that has a debugger in VS Code (see [Languages](#languages)). On every F10 the panel animates what changed and explains what happened:
 
 - the changed box flashes and stays highlighted;
 - a swap shows the two boxes crossing over, even when the code uses a `temp` variable and takes two steps;
@@ -110,7 +112,15 @@ The flow explanations (if, loops, break) understand the C family (Java, JavaScri
 
 ## Install
 
-Download `code-scope.vsix` from the latest CI run (the repository's **Actions** tab, artifact `code-scope-vsix`) or build your own:
+The extension is not on the VS Code Marketplace yet. Download `code-scope.vsix` from the [beta release](https://github.com/celoramos/Code-Scope/releases/tag/v0.6.0) and install it:
+
+```bash
+code --install-extension code-scope.vsix
+```
+
+Or, in VS Code, open the Extensions view, click the **...** menu and choose **Install from VSIX...**.
+
+To try the latest commit instead, take the `.vsix` from the latest CI run (the repository's **Actions** tab, artifact `code-scope-vsix`) or build your own:
 
 ```bash
 npm install
@@ -223,7 +233,7 @@ language debugger -- "stopped" event --> trackerFactory
 | Command | What it does |
 |---|---|
 | `npm test` | Unit tests for the model, adapters and collector, with responses recorded from the real debuggers |
-| `npm run test:integration` | Downloads an isolated VS Code into `.vscode-test/`, installs the Java Extension Pack and the Python Debugger in it, and really debugs the Java, JavaScript and Python samples. Your VS Code is not touched. Takes a few minutes the first time |
+| `npm run test:integration` | Downloads an isolated VS Code into `.vscode-test/`, installs the Java Extension Pack, the Python Debugger and, when the tools are there, the C# and C/C++ extensions in it, and really debugs the Java, JavaScript, Python, C# and C samples. Your VS Code is not touched. Takes a few minutes the first time |
 
 CI runs both on every push and publishes the `.vsix` as an artifact.
 

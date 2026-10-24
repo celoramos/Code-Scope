@@ -4,9 +4,11 @@
 
 Extensão do VS Code que mostra o código rodando de forma visual, para quem está aprendendo a programar. Gratuita e de código aberto ([MIT](LICENSE)).
 
+> **Beta.** A versão 0.6.0 é uma beta para as pessoas testarem e ajudarem a melhorar. Instale pela [página da release](https://github.com/celoramos/Code-Scope/releases/tag/v0.6.0) e, se algo parecer errado ou confuso, [abra uma issue](https://github.com/celoramos/Code-Scope/issues/new/choose): é a ajuda mais útil agora.
+
 Tudo acontece dentro do VS Code: o painel fica na barra lateral, ao lado do seu código, e usa as cores do seu tema. Não abre navegador, não precisa de conta e não envia nada para a internet.
 
-Enquanto você debuga, um painel lateral desenha o seu programa: arrays, matrizes, listas, pilhas, filas, dicionários, objetos, listas ligadas, árvores e a pilha de chamadas. É o "quer que eu desenhe?" da programação. Funciona com Java, JavaScript, TypeScript e Python, e com qualquer outra linguagem que tenha debugger no VS Code (veja [Linguagens](#linguagens)). A cada F10 o painel anima o que mudou e explica o que aconteceu:
+Enquanto você debuga, um painel lateral desenha o seu programa: arrays, matrizes, listas, pilhas, filas, dicionários, objetos, listas ligadas, árvores e a pilha de chamadas. É o "quer que eu desenhe?" da programação. Funciona com Java, JavaScript, TypeScript, Python, C# e C, e com qualquer outra linguagem que tenha debugger no VS Code (veja [Linguagens](#linguagens)). A cada F10 o painel anima o que mudou e explica o que aconteceu:
 
 - a caixa alterada pisca e fica marcada;
 - uma troca aparece como as duas caixas se cruzando, mesmo quando o código usa uma variável `temp` e leva dois passos;
@@ -110,7 +112,15 @@ As explicações de fluxo (if, laços, break) entendem a família de C (Java, Ja
 
 ## Instalar
 
-Baixe o `code-scope.vsix` da última execução do CI (aba **Actions** do repositório, artefato `code-scope-vsix`) ou gere o seu:
+A extensão ainda não está no Marketplace do VS Code. Baixe o `code-scope.vsix` da [release beta](https://github.com/celoramos/Code-Scope/releases/tag/v0.6.0) e instale:
+
+```bash
+code --install-extension code-scope.vsix
+```
+
+Ou, no VS Code, abra a aba Extensões, clique no menu **...** e escolha **Install from VSIX...**.
+
+Para testar o commit mais recente, pegue o `.vsix` da última execução do CI (aba **Actions** do repositório, artefato `code-scope-vsix`) ou gere o seu:
 
 ```bash
 npm install
@@ -223,7 +233,7 @@ debugger da linguagem -- evento "stopped" --> trackerFactory
 | Comando | O que faz |
 |---|---|
 | `npm test` | Testes unitários do modelo, dos adaptadores e do coletor, com respostas gravadas dos debuggers reais |
-| `npm run test:integration` | Baixa um VS Code isolado em `.vscode-test/`, instala nele o Java Extension Pack e o Python Debugger e debuga os exemplos de Java, JavaScript e Python de verdade. Seu VS Code não é tocado. Leva alguns minutos na primeira vez |
+| `npm run test:integration` | Baixa um VS Code isolado em `.vscode-test/`, instala nele o Java Extension Pack, o Python Debugger e, quando as ferramentas existem, as extensões C# e C/C++, e debuga de verdade os exemplos de Java, JavaScript, Python, C# e C. Seu VS Code não é tocado. Leva alguns minutos na primeira vez |
 
 O CI roda os dois a cada push e publica o `.vsix` como artefato.
 
