@@ -58,8 +58,10 @@
    * --cs-speed vem da configuração codeScope.animationSpeed (0 desliga).
    */
   --cs-speed: 1;
-  --cs-move: calc(420ms * var(--cs-speed));
-  --cs-flash: calc(900ms * var(--cs-speed));
+  /* Modo aula: tudo mais devagar, para a turma acompanhar. */
+  --cs-slow: 1;
+  --cs-move: calc(420ms * var(--cs-speed) * var(--cs-slow));
+  --cs-flash: calc(900ms * var(--cs-speed) * var(--cs-slow));
   --cs-ease: cubic-bezier(0.3, 0, 0.2, 1);
 }
 
@@ -71,6 +73,19 @@ body {
   font-family: var(--vscode-font-family);
   font-size: var(--vscode-font-size);
   line-height: 1.45;
+}
+
+/* Modo aula: o painel na área do editor, com letra grande para projetar. */
+:root.is-present {
+  --cs-slow: 1.6;
+  font-size: 125%;
+}
+
+:root.is-present body {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: var(--cs-space-5);
+  font-size: calc(var(--vscode-font-size) * 1.35);
 }
 
 [hidden] {
@@ -365,6 +380,11 @@ kbd {
   font: inherit;
   font-size: var(--cs-small);
   cursor: pointer;
+}
+
+/* Os botões ficam juntos, à direita. */
+.toggle-button + .toggle-button {
+  margin-left: 0;
 }
 
 .toggle-button:hover {
@@ -1895,6 +1915,12 @@ kbd {
   max-height: 16em;
   overflow: auto;
   border-top: 1px solid var(--cs-line);
+}
+
+/* Na imagem do passo, a tabela sai inteira. */
+.is-exporting .trace-scroll {
+  max-height: none;
+  overflow: visible;
 }
 
 .trace-table {

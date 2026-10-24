@@ -26,6 +26,7 @@ export interface PanelStrings {
     callTree: string;
     predictMode: string;
     predictSave: string;
+    saveImage: string;
   };
   script: Record<
     | 'idle'
@@ -160,6 +161,7 @@ const pt: PanelStrings = {
     callTree: 'Árvore de recursão',
     predictMode: 'Adivinhar antes',
     predictSave: 'Guardar palpite',
+    saveImage: 'Salvar imagem',
   },
   script: {
     idle: 'Pronto para visualizar',
@@ -293,6 +295,7 @@ const en: PanelStrings = {
     callTree: 'Recursion tree',
     predictMode: 'Guess first',
     predictSave: 'Save guess',
+    saveImage: 'Save image',
   },
   script: {
     idle: 'Ready to visualize',
@@ -402,6 +405,11 @@ const en: PanelStrings = {
 };
 
 export const PANEL_STRINGS: Record<Language, PanelStrings> = { pt, en };
+
+/** Aviso depois de salvar a imagem do passo. */
+export function imageSaved(language: Language, path: string): string {
+  return language === 'pt' ? `Imagem salva: ${path}` : `Image saved: ${path}`;
+}
 
 /** Aviso quando o debugger não responde às perguntas sobre as variáveis. */
 export function readError(language: Language, err: unknown): string {

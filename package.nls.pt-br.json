@@ -16,5 +16,6 @@
   "config.maxElements": "Quantas posições de cada array são lidas e desenhadas.",
   "config.valueNames": "Nomes de variáveis inteiras que guardam um valor, não uma posição. Elas não viram seta embaixo dos arrays.",
   "config.revealOnDebug": "Abre o painel do Code Scope na primeira parada de cada sessão de debug.",
-  "config.pauseOnErrors": "Pausa o programa nos erros que ninguém trata (exceções não tratadas), para o painel mostrar onde e por que ele quebrou."
+  "config.pauseOnErrors": "Pausa o programa nos erros que ninguém trata (exceções não tratadas), para o painel mostrar onde e por que ele quebrou.",
+  "command.present": "Modo aula (painel grande ao lado do código)"
 }

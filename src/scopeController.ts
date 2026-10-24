@@ -49,6 +49,7 @@ export class ScopeController implements vscode.Disposable {
         this.showCurrent();
       }),
       vscode.commands.registerCommand('codeScope.show', () => this.reveal()),
+      vscode.commands.registerCommand('codeScope.present', () => this.view.openPresentation()),
       vscode.commands.registerCommand('codeScope.clearHistory', () => {
         this.history.clear();
         this.view.post({ type: 'reset' });

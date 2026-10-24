@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { uiLanguage, type AnimationSpeed } from '../config';
 import type { Frame } from '../model/frame';
-import { PANEL_STRINGS } from './strings';
+import { imageSaved, PANEL_STRINGS } from './strings';
 
 /** Mensagens que a extensão envia para o painel. */
 export type ToWebview =
@@ -18,16 +18,25 @@ export type FromWebview =
   | { type: 'forward' }
   | { type: 'goto'; step: number }
   /** Depois do palpite, o foco volta ao editor para o F10 funcionar. */
-  | { type: 'focus-editor' };
+  | { type: 'focus-editor' }
+  /** O painel quer o CSS para montar a imagem do passo. */
+  | { type: 'export-css' }
+  /** Imagem do passo pronta, em PNG base64. */
+  | { type: 'save-image'; data: string; step: number };
+
+/** Respostas que só o painel que perguntou recebe. */
+type Reply = { type: 'css'; text: string };
 
 export class ScopeViewProvider implements vscode.WebviewViewProvider {
   static readonly viewId = 'codeScope.panel';
   readonly viewId = ScopeViewProvider.viewId;
 
   private view?: vscode.WebviewView;
+  /** Modo aula: o mesmo painel, grande, na área do editor. */
+  private presentation?: vscode.WebviewPanel;
 
   get visible(): boolean {
-    return this.view?.visible ?? false;
+    return (this.view?.visible ?? false) || (this.presentation?.visible ?? false);
   }
   private readonly messages = new vscode.EventEmitter<FromWebview>();
   /** O painel avisa "ready" ao carregar; quem escuta reenvia o estado atual. */
@@ -39,16 +48,49 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
     this.view = view;
     const media = vscode.Uri.joinPath(this.extensionUri, 'media');
     view.webview.options = { enableScripts: true, localResourceRoots: [media] };
-    view.webview.html = this.html(view.webview, media);
-    view.webview.onDidReceiveMessage((msg: FromWebview) => this.messages.fire(msg));
+    view.webview.html = this.html(view.webview, media, false);
+    view.webview.onDidReceiveMessage((msg: FromWebview) => this.receive(view.webview, msg));
     view.onDidDispose(() => (this.view = undefined));
+  }
+
+  /** Abre (ou traz para a frente) o modo aula ao lado do código. */
+  openPresentation() {
+    if (this.presentation) {
+      this.presentation.reveal(vscode.ViewColumn.Beside);
+      return;
+    }
+    const media = vscode.Uri.joinPath(this.extensionUri, 'media');
+    const panel = vscode.window.createWebviewPanel('codeScope.presentation', 'Code Scope', vscode.ViewColumn.Beside, {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+      localResourceRoots: [media],
+    });
+    panel.iconPath = vscode.Uri.joinPath(media, 'icon.svg');
+    panel.webview.html = this.html(panel.webview, media, true);
+    panel.webview.onDidReceiveMessage((msg: FromWebview) => this.receive(panel.webview, msg));
+    panel.onDidDispose(() => (this.presentation = undefined));
+    this.presentation = panel;
   }
 
   post(msg: ToWebview) {
     void this.view?.webview.postMessage(msg);
+    void this.presentation?.webview.postMessage(msg);
   }
 
-  private html(webview: vscode.Webview, media: vscode.Uri): string {
+  /** Pedidos da imagem ficam aqui; o resto vai para o controlador. */
+  private receive(webview: vscode.Webview, msg: FromWebview) {
+    if (msg.type === 'export-css') void this.sendCss(webview);
+    else if (msg.type === 'save-image') void saveImage(msg.data, msg.step);
+    else this.messages.fire(msg);
+  }
+
+  private async sendCss(webview: vscode.Webview) {
+    const bytes = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css'));
+    const reply: Reply = { type: 'css', text: new TextDecoder().decode(bytes) };
+    void webview.postMessage(reply);
+  }
+
+  private html(webview: vscode.Webview, media: vscode.Uri, present: boolean): string {
     const css = webview.asWebviewUri(vscode.Uri.joinPath(media, 'main.css'));
     const js = webview.asWebviewUri(vscode.Uri.joinPath(media, 'main.js'));
     const nonce = makeNonce();
@@ -56,11 +98,11 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
     // JSON dentro de <script>: "<" escapado para nenhum texto fechar a tag.
     const strings = JSON.stringify(script).replace(/</g, '\\u003c');
     return `<!DOCTYPE html>
-<html lang="${t.lang}">
+<html lang="${t.lang}"${present ? ' class="is-present"' : ''}>
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+        content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}'; img-src data:;">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="${css}">
   <title>Code Scope</title>
@@ -96,6 +138,7 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
       <div class="toolbar-actions">
         <button id="live" class="link-button" type="button" hidden>${t.live}</button>
         <button id="predict-toggle" class="toggle-button" type="button" aria-pressed="false">${t.predictMode}</button>
+        <button id="save-image" class="toggle-button" type="button">${t.saveImage}</button>
       </div>
       <p class="location">
         <span id="file" class="location-file"></span>
@@ -147,6 +190,19 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
 </body>
 </html>`;
   }
+}
+
+/** Pergunta onde salvar e grava a imagem do passo. */
+async function saveImage(base64: string, step: number) {
+  const folder = vscode.workspace.workspaceFolders?.[0]?.uri;
+  const name = `code-scope-passo-${step}.png`;
+  const target = await vscode.window.showSaveDialog({
+    defaultUri: folder ? vscode.Uri.joinPath(folder, name) : vscode.Uri.file(name),
+    filters: { PNG: ['png'] },
+  });
+  if (!target) return;
+  await vscode.workspace.fs.writeFile(target, Buffer.from(base64, 'base64'));
+  void vscode.window.showInformationMessage(imageSaved(uiLanguage(), target.fsPath));
 }
 
 function makeNonce(): string {
