@@ -15,6 +15,7 @@ import { asInteger, methodsCalledOn, numericIndex, type CollectionRole, type Lan
  */
 
 const LISTS = new Set(['list', 'deque']);
+const MAPS = new Set(['dict', 'defaultdict', 'OrderedDict', 'Counter']);
 const ARRAYS = new Set(['tuple', 'array']);
 const SCALARS = new Set(['str', 'bool', 'float', 'NoneType', 'complex']);
 /** Objeto de uma classe: "<__main__.No object at 0x00000146F06538C0>"; o endereço é a identidade. */
@@ -41,6 +42,8 @@ export const pythonAdapter: LanguageAdapter = {
   },
 
   shape(v): VariableShape {
+    // dict: value "{'sol': 1}", filhos "'sol'" com o valor, mais "len()" e as "special variables".
+    if (v.type && MAPS.has(v.type)) return { kind: 'map', ...(v.value === '{}' ? { length: 0 } : {}) };
     if (v.type && LISTS.has(v.type)) {
       if (/^(deque\()?\[\]\)?$/.test(v.value)) return { kind: 'empty-list' };
       return { kind: 'sequence', length: v.indexedVariables || undefined, collection: 'list' };
@@ -61,6 +64,8 @@ export const pythonAdapter: LanguageAdapter = {
   isNull: (v) => v.type === 'NoneType' || v.value === 'None',
   // Listas não mostram endereço no valor: "a is b" decide se são a mesma.
   identityExpr: (a, b) => `(${a}) is (${b})`,
+  mapEntry: (child) =>
+    /^(special|function|class) variables$/.test(child.name) || child.name === 'len()' ? undefined : { key: child.name, value: child.value },
 
   elementIndex: numericIndex,
   formatElement: (v) => v.value,

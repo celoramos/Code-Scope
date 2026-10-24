@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode';
 import type { DapScope, DapStackFrame, DapVariable } from './dap';
-import type { ArrayVar, CallFrame, Pointer, Scalar, Snapshot } from '../model/snapshot';
+import type { ArrayVar, CallFrame, MapVar, Pointer, Scalar, Snapshot } from '../model/snapshot';
 import { alignHeap } from '../model/heapIdentity';
 import { isRangeGroup, type LanguageAdapter, type VariableShape } from './adapters/adapter';
 import { collectHeap, linkSameArrays } from './heapCollector';
@@ -69,6 +69,7 @@ export async function collectSnapshot(
   const arrayVars: { array: ArrayVar; v: DapVariable }[] = [];
   const pointers: Pointer[] = [];
   const scalars: Scalar[] = [];
+  const maps: MapVar[] = [];
   const elements: Record<string, DapVariable[]> = {};
   for (const v of locals) {
     const shape = adapter.shape(v);
@@ -84,6 +85,11 @@ export async function collectSnapshot(
         arrays.push(array);
         arrayVars.push({ array, v });
         elements[v.name] = children.slice(0, 3);
+        break;
+      }
+      case 'map': {
+        const entries = await readMap(session, adapter, v, limits.maxElements);
+        maps.push({ name: v.name, entries, length: Math.max(shape.length ?? 0, entries.length), ...(shape.id ? { id: shape.id } : {}) });
         break;
       }
       case 'integer':
@@ -103,6 +109,7 @@ export async function collectSnapshot(
     scalars,
   };
   if (returned) snapshot.returned = returned;
+  if (maps.length > 0) snapshot.maps = maps;
 
   await linkSameArrays(session, adapter, arrayVars, frame.id);
   const { heap, refs } = await collectHeap(session, adapter, locals, { frameId: frame.id, userTypes: await opts.userTypes?.(file) });
@@ -211,6 +218,8 @@ function summarize(adapter: LanguageAdapter, v: DapVariable): Scalar[] {
       return [{ name: v.name, value: shape.length === undefined ? '[…]' : `[${shape.length}]` }];
     case 'empty-list':
       return [{ name: v.name, value: '[]' }];
+    case 'map':
+      return [{ name: v.name, value: shape.length === undefined ? '{…}' : `{${shape.length}}` }];
     default:
       return [];
   }
@@ -291,6 +300,24 @@ async function readSequence(
     }
   }
   return { array, children };
+}
+
+/**
+ * Entradas de um dicionário. O Map do JavaScript guarda as entradas num
+ * filho "[[Entries]]"; coleções grandes podem vir em grupos "[0..99]".
+ */
+async function readMap(session: Session, adapter: LanguageAdapter, v: DapVariable, max: number): Promise<MapVar['entries']> {
+  if (v.variablesReference <= 0 || !adapter.mapEntry) return [];
+  let children = await variables(session, v.variablesReference);
+  const inner = children.find((c) => c.name === '[[Entries]]') ?? children.find((c) => isRangeGroup(c.name));
+  if (inner) children = await variables(session, inner.variablesReference);
+  const entries: MapVar['entries'] = [];
+  for (const c of children) {
+    const e = adapter.mapEntry(c);
+    if (e) entries.push(e);
+    if (entries.length >= max) break;
+  }
+  return entries;
 }
 
 async function variables(session: Session, variablesReference: number, extra: object = {}): Promise<DapVariable[]> {

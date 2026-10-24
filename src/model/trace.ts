@@ -29,6 +29,7 @@ export interface TraceRow {
 export const MAX_TRACE_ROWS = 200;
 /** Arrays maiores que isto viram "[...]" na tabela: a célula precisa caber. */
 const MAX_INLINE_ARRAY = 8;
+const MAX_INLINE_MAP = 4;
 
 /** Variáveis do passo como texto, na ordem em que o painel mostra. */
 export function traceValues(s: Snapshot): Map<string, string> {
@@ -38,6 +39,9 @@ export function traceValues(s: Snapshot): Map<string, string> {
   for (const a of s.arrays) {
     if (a.rows) continue;
     out.set(a.name, a.length <= MAX_INLINE_ARRAY ? `[${a.values.join(', ')}]` : `[${a.length}]`);
+  }
+  for (const m of s.maps ?? []) {
+    out.set(m.name, m.length <= MAX_INLINE_MAP ? `{${m.entries.map((e) => `${e.key}: ${e.value}`).join(', ')}}` : `{${m.length}}`);
   }
   return out;
 }

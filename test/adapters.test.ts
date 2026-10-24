@@ -55,7 +55,7 @@ describe('javascriptAdapter (valores do js-debug real)', () => {
     assert.deepEqual(javascriptAdapter.shape(v('media', '2.5', 'number')), { kind: 'scalar', value: '2.5' });
     assert.deepEqual(javascriptAdapter.shape(v('nome', "'Ana'", 'string')), { kind: 'scalar', value: "'Ana'" });
     assert.deepEqual(javascriptAdapter.shape(v('__dirname', "'C:\\x'", 'string')), { kind: 'skip' });
-    assert.deepEqual(javascriptAdapter.shape(v('pessoa', '{nome: ...}', 'Object', 3)), { kind: 'skip' });
+    assert.deepEqual(javascriptAdapter.shape(v('pessoa', '{nome: ...}', 'Object', 3)), { kind: 'map' });
   });
 
   it('push com pop é pilha, push com shift é fila', () => {

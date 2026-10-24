@@ -19,6 +19,7 @@
   const varsEl = byId('vars');
   const arraysEl = byId('arrays');
   const heapEl = byId('heap');
+  const mapsEl = byId('maps');
   const callsEl = byId('calls');
   const callsTitleEl = byId('calls-title');
   const callsCountEl = byId('calls-count');
@@ -46,9 +47,9 @@
    * @typedef {{ name: string, value: string }} Scalar
    * @typedef {{ name: string, index: number }} Arrow
    * @typedef {{ row?: Arrow, col?: Arrow }} Axes
-   * @typedef {{ kind: string, array?: string, index?: number, a?: number, b?: number, name?: string, value?: string }} Change
+   * @typedef {{ kind: string, array?: string, map?: string, key?: string, from?: string, index?: number, a?: number, b?: number, name?: string, value?: string }} Change
    * @typedef {{ line: number, code?: string }} LineRef
-   * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[], calls?: CallFrame[] },
+   * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[], calls?: CallFrame[], maps?: MapVar[] },
    *             executed?: LineRef, changes: Change[], arrows: Record<string, Arrow[]>, axes: Record<string, Axes>,
    *             explanation: string[], trace: Trace, error?: ErrorView, calls?: CallChange[], heap?: HeapView, heapDelta?: HeapDelta,
    *             step: number, total: number }} Frame
@@ -61,6 +62,7 @@
    * @typedef {{ id: string, type: string, names: string[], fields: { name: string, value: string, ref?: string | null, target?: string }[], truncated?: boolean }} ObjectViewT
    * @typedef {{ lists: ListViewT[], trees: TreeViewT[], objects: ObjectViewT[], nulls: string[] }} HeapView
    * @typedef {{ added: string[], fields: Record<string, string[]> }} HeapDelta
+   * @typedef {{ name: string, entries: { key: string, value: string }[], length: number }} MapVar
    * @typedef {{ type: string, message: string, kind: string, title: string, sentences: string[], missing?: { array: string, index: number } }} ErrorView
    * @typedef {{ columns: string[], showCalls?: boolean, rows: { step: number, line: number, call?: string, values: (string | null | undefined)[], changed: boolean[] }[], hidden: number }} Trace
    */
@@ -138,7 +140,7 @@
     if (error) parts.push(error);
     // Só avisa quando não há nada para desenhar: sem arrays, sem variáveis e sem chamadas.
     const s = current?.snapshot;
-    if (s && s.arrays.length === 0 && s.pointers.length === 0 && !(s.scalars ?? []).length && callsEl.hidden && heapEl.hidden) parts.push(t('noArrays'));
+    if (s && s.arrays.length === 0 && s.pointers.length === 0 && !(s.scalars ?? []).length && callsEl.hidden && heapEl.hidden && mapsEl.hidden) parts.push(t('noArrays'));
     status.textContent = parts.join(' ');
     status.classList.toggle('is-error', Boolean(error));
   }
@@ -226,7 +228,54 @@
         blocks.delete(name);
       }
     }
+    renderMaps(s.maps ?? [], frame.changes);
     renderHeap(frame.heap, frame.heapDelta);
+  }
+
+  /**
+   * Dicionários: uma tabela chave e valor. A chave nova entra deslizando; o
+   * valor trocado pisca.
+   * @param {MapVar[]} maps
+   * @param {Change[]} changes
+   */
+  function renderMaps(maps, changes) {
+    mapsEl.replaceChildren(
+      ...maps.map((map) => {
+        const n = map.length;
+        const block = heapCard('map', map.name, n === 0 ? t('emptyMap') : n === 1 ? t('oneKey') : t('keys', n));
+        const puts = changes.filter((c) => c.kind === 'map-put' && c.map === map.name);
+        const table = el('table', 'map-table');
+        table.setAttribute('aria-label', map.name);
+        const head = el('tr', '');
+        for (const label of [t('mapKey'), t('mapValue')]) {
+          const th = el('th', '');
+          th.setAttribute('scope', 'col');
+          th.textContent = label;
+          head.append(th);
+        }
+        const thead = el('thead', '');
+        thead.append(head);
+        const body = el('tbody', '');
+        for (const e of map.entries) {
+          const put = puts.find((c) => c.key === e.key);
+          const tr = el('tr', put ? (put.from === undefined ? 'is-new' : 'is-changed') : '');
+          const k = el('th', 'map-key');
+          k.setAttribute('scope', 'row');
+          k.textContent = e.key;
+          const v = el('td', 'map-value');
+          v.textContent = e.value;
+          v.title = e.value;
+          tr.append(k, v);
+          body.append(tr);
+        }
+        table.append(thead, body);
+        const track = el('div', 'array-track');
+        track.append(table);
+        block.append(track);
+        return block;
+      }),
+    );
+    mapsEl.hidden = maps.length === 0;
   }
 
   /**

@@ -129,6 +129,8 @@ class HeapContext {
         return { name: c.name, value: s.length === undefined ? '[…]' : `[${s.length}]` };
       case 'empty-list':
         return { name: c.name, value: '[]' };
+      case 'map':
+        return { name: c.name, value: s.length === undefined ? '{…}' : `{${s.length}}` };
       default:
         return this.adapter.isNull?.(c) ? { name: c.name, value: c.value, ref: null } : undefined;
     }

@@ -9,8 +9,9 @@ export function explain(changes: Change[], isFirstStep = false, notes: string[] 
   const m = MESSAGES[language];
   if (isFirstStep) {
     const added = changes.filter((c): c is Extract<Change, { kind: 'array-added' }> => c.kind === 'array-added');
-    if (added.length === 0) return [m.firstStepNoArrays];
-    return added.map((c) => m.firstStep(describe(c, m)));
+    const maps = changes.filter((c): c is Extract<Change, { kind: 'map-added' }> => c.kind === 'map-added');
+    if (added.length === 0 && maps.length === 0) return [m.firstStepNoArrays];
+    return [...added.map((c) => m.firstStep(describe(c, m))), ...maps.map((c) => m.firstStep(m.describeMap(c.map, c.length)))];
   }
 
   // O que mudou vem antes das notas (caminho do programa, peek): os dados são o assunto.
@@ -57,7 +58,20 @@ function sentence(c: Change, m: Messages): string {
       if (c.to === c.from - 1) return m.pointerBack(c.name, c.from, c.to);
       if (c.to === 0 && c.from > 0) return m.pointerRestarted(c.name);
       return m.variableChanged(c.name, c.from, c.to);
+    case 'map-added':
+      return m.mapCreated(c.map, c.length);
+    case 'map-removed':
+      return m.variableGone(c.map);
+    case 'map-put':
+      return c.from === undefined ? m.mapPutNew(c.map, keyText(c.key), c.value) : m.mapUpdated(c.map, keyText(c.key), c.from, c.value);
+    case 'map-remove':
+      return m.mapRemoved(c.map, keyText(c.key));
   }
+}
+
+/** Chave como o aluno escreveria entre colchetes: texto sem aspas (JavaScript) ganha aspas. */
+function keyText(key: string): string {
+  return /^(["']).*\1$/.test(key) || /^-?\d+(\.\d+)?$/.test(key) ? key : `'${key}'`;
 }
 
 /** "numeros tem 5 posições", "lista é uma lista vazia", "grade tem 2 linhas e 3 colunas". */

@@ -3,6 +3,7 @@ import {
   asInteger,
   methodsCalledOn,
   numericIndex,
+  splitEntry,
   type CollectionRole,
   type LanguageAdapter,
   type VariableShape,
@@ -69,6 +70,15 @@ export function formatDecimal(value: string): string {
   if (!m) return value;
   const decimals = m[2].replace(/0+$/, '');
   return `${m[1]}.${decimals || '0'}`;
+}
+
+/** "HashMap@26 size=1", "TreeMap@3 size=0": qualquer classe terminada em Map. */
+const MAP_VALUE = /^([\w.$]*Map)@(\d+)\s+size=(\d+)/;
+
+export function mapShape(v: DapVariable): VariableShape | undefined {
+  const m = MAP_VALUE.exec(v.value);
+  if (!m) return undefined;
+  return { kind: 'map', length: Number(m[3]), id: `@${m[2]}` };
 }
 
 /** Objeto comum: "Referencias$Conta@12", sem "size=" (coleções) nem embrulho de primitivo. */
@@ -175,6 +185,9 @@ export const javaAdapter: LanguageAdapter = {
   },
 
   shape(v): VariableShape {
+    // Mapa antes de coleção: o HashMap também chega com indexedVariables.
+    const map = mapShape(v);
+    if (map) return map;
     if (isEmptyList(v)) return { kind: 'empty-list' };
     if (isArrayVariable(v)) {
       const id = arrayId(v);
@@ -191,6 +204,12 @@ export const javaAdapter: LanguageAdapter = {
   },
 
   isNull: (v) => v.value === 'null' && v.variablesReference <= 0,
+
+  mapEntry(child) {
+    // Entrada: 'HashMap$Node@44 "sol":"1"'.
+    const m = /^[\w.$]+@\d+\s+(.*)$/.exec(child.value);
+    return m ? splitEntry(m[1]) : undefined;
+  },
 
   elementIndex,
   formatElement,

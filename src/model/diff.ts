@@ -18,14 +18,19 @@ export type Change =
   | { kind: 'array-removed'; array: string }
   | { kind: 'array-resized'; array: string; from: number; to: number }
   | { kind: 'pointer'; name: string; from?: number; to?: number }
-  | { kind: 'scalar'; name: string; from?: string; to?: string };
+  | { kind: 'scalar'; name: string; from?: string; to?: string }
+  /** Dicionário: chave nova (sem from) ou valor trocado. */
+  | { kind: 'map-put'; map: string; key: string; value: string; from?: string }
+  | { kind: 'map-remove'; map: string; key: string; value: string }
+  | { kind: 'map-added'; map: string; length: number }
+  | { kind: 'map-removed'; map: string };
 
 /**
  * O que mudou de prev para next. Se older (o passo antes de prev) vier, uma
  * troca feita em dois passos com variável auxiliar também é reconhecida.
  */
 export function diff(prev: Snapshot | undefined, next: Snapshot, older?: Snapshot): Change[] {
-  if (!prev) return next.arrays.map(added);
+  if (!prev) return [...next.arrays.map(added), ...(next.maps ?? []).map((m): Change => ({ kind: 'map-added', map: m.name, length: m.length }))];
 
   const changes: Change[] = [];
   const before = byName(prev.arrays);
@@ -50,7 +55,7 @@ export function diff(prev: Snapshot | undefined, next: Snapshot, older?: Snapsho
     if (!after.has(p.name)) changes.push({ kind: 'array-removed', array: p.name });
   }
 
-  changes.push(...pointerChanges(prev, next), ...scalarChanges(prev, next));
+  changes.push(...dictionaryChanges(prev, next), ...pointerChanges(prev, next), ...scalarChanges(prev, next));
   return changes;
 }
 
@@ -176,4 +181,31 @@ function added(a: ArrayVar): Change {
 
 function byName(arrays: ArrayVar[]): Map<string, ArrayVar> {
   return new Map(arrays.map((a) => [a.name, a]));
+}
+
+/** Chaves que entraram, saíram ou trocaram de valor em cada dicionário. */
+function dictionaryChanges(prev: Snapshot, next: Snapshot): Change[] {
+  const changes: Change[] = [];
+  const before = new Map((prev.maps ?? []).map((m) => [m.name, m]));
+  for (const m of next.maps ?? []) {
+    const p = before.get(m.name);
+    if (!p) {
+      changes.push({ kind: 'map-added', map: m.name, length: m.length });
+      continue;
+    }
+    const old = new Map(p.entries.map((e) => [e.key, e.value]));
+    const now = new Set(m.entries.map((e) => e.key));
+    for (const e of m.entries) {
+      const was = old.get(e.key);
+      if (was === undefined) changes.push({ kind: 'map-put', map: m.name, key: e.key, value: e.value });
+      else if (was !== e.value) changes.push({ kind: 'map-put', map: m.name, key: e.key, value: e.value, from: was });
+    }
+    // Só dá para dizer que uma chave saiu quando o dicionário inteiro foi lido.
+    if (p.entries.length === p.length && m.entries.length === m.length) {
+      for (const e of p.entries) if (!now.has(e.key)) changes.push({ kind: 'map-remove', map: m.name, key: e.key, value: e.value });
+    }
+  }
+  const after = new Set((next.maps ?? []).map((m) => m.name));
+  for (const p of prev.maps ?? []) if (!after.has(p.name)) changes.push({ kind: 'map-removed', map: p.name });
+  return changes;
 }

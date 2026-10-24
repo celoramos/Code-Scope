@@ -8,6 +8,7 @@ import type { ArrayVar, Pointer } from './snapshot';
 export const VALUE_NAMES: ReadonlySet<string> = new Set([
   'temp', 'tmp', 'aux', 'alvo', 'target', 'valor', 'value', 'chave', 'key',
   'soma', 'sum', 'total', 'n', 'len', 'tamanho', 'size', 'count', 'contador',
+  'vezes', 'quantidade', 'qtd', 'resultado', 'result', 'produto',
 ]);
 
 export interface Arrow {

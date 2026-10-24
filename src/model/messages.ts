@@ -89,6 +89,12 @@ export interface Messages {
   fieldPointsTo(path: string, label: string): string;
   fieldNull(path: string): string;
   arrayAlias(first: string, other: string): string;
+
+  mapCreated(name: string, length: number): string;
+  describeMap(name: string, length: number): string;
+  mapPutNew(name: string, key: string, value: string): string;
+  mapUpdated(name: string, key: string, from: string, to: string): string;
+  mapRemoved(name: string, key: string): string;
 }
 
 function count(n: number, one: string, many: string): string {
@@ -194,6 +200,12 @@ const pt: Messages = {
   fieldPointsTo: (path, label) => `${path} agora aponta para ${label}.`,
   fieldNull: (path) => `${path} agora não aponta para nada: a ligação acabou ali.`,
   arrayAlias: (first, other) => `${other} não é uma cópia: ${first} e ${other} são o mesmo array. Mudar um muda o outro.`,
+
+  mapCreated: (name, n) => `O dicionário ${name} foi criado ${n === 0 ? 'vazio' : `com ${count(n, 'chave', 'chaves')}`}.`,
+  describeMap: (name, n) => `${name} é um dicionário ${n === 0 ? 'vazio' : `com ${count(n, 'chave', 'chaves')}`}`,
+  mapPutNew: (name, key, value) => `A chave ${key} entrou em ${name}, com o valor ${value}.`,
+  mapUpdated: (name, key, from, to) => `${name}[${key}] mudou de ${from} para ${to}: a chave já existia, só o valor foi trocado.`,
+  mapRemoved: (name, key) => `A chave ${key} saiu de ${name}.`,
 };
 
 const enPositions = (n: number) => count(n, 'position', 'positions');
@@ -291,6 +303,12 @@ const en: Messages = {
   fieldPointsTo: (path, label) => `${path} now points to ${label}.`,
   fieldNull: (path) => `${path} now points to nothing: the chain ends there.`,
   arrayAlias: (first, other) => `${other} is not a copy: ${first} and ${other} are the same array. Changing one changes the other.`,
+
+  mapCreated: (name, n) => `The dictionary ${name} was created ${n === 0 ? 'empty' : `with ${count(n, 'key', 'keys')}`}.`,
+  describeMap: (name, n) => `${name} is a dictionary ${n === 0 ? 'that is empty' : `with ${count(n, 'key', 'keys')}`}`,
+  mapPutNew: (name, key, value) => `The key ${key} was added to ${name}, with the value ${value}.`,
+  mapUpdated: (name, key, from, to) => `${name}[${key}] changed from ${from} to ${to}: the key already existed, only the value was replaced.`,
+  mapRemoved: (name, key) => `The key ${key} was removed from ${name}.`,
 };
 
 export const MESSAGES: Record<Language, Messages> = { pt, en };

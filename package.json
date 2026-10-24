@@ -133,7 +133,13 @@
             "tamanho",
             "size",
             "count",
-            "contador"
+            "contador",
+            "vezes",
+            "quantidade",
+            "qtd",
+            "resultado",
+            "result",
+            "produto"
           ],
           "description": "%config.valueNames%"
         },

@@ -58,6 +58,15 @@ export interface Reference {
   ref: string | null;
 }
 
+/** Dicionário: chave e valor como o aluno escreveria. */
+export interface MapVar {
+  name: string;
+  entries: { key: string; value: string }[];
+  /** Tamanho real; pode ser maior que entries.length se foi truncado. */
+  length: number;
+  id?: string;
+}
+
 /** Inteiro que pode apontar para uma posição: i, j, inicio, fim... */
 export interface Pointer {
   name: string;
@@ -79,6 +88,8 @@ export interface Snapshot {
   arrays: ArrayVar[];
   pointers: Pointer[];
   scalars?: Scalar[];
+  /** Dicionários: HashMap, dict, objeto literal, Map. */
+  maps?: MapVar[];
   /** Objetos das classes do aluno que as variáveis alcançam. */
   heap?: HeapObject[];
   /** Variáveis locais que apontam para objetos. */

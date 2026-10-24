@@ -23,6 +23,8 @@ export type VariableShape =
   | { kind: 'object'; type: string; id?: string }
   /** Referência vazia: null do Java, que não diz o tipo. */
   | { kind: 'null' }
+  /** Dicionário: HashMap, dict, objeto literal ou Map do JavaScript. */
+  | { kind: 'map'; length?: number; id?: string }
   /** Coleção vazia que o debugger não deixa expandir, mas que o aluno precisa ver nascer. */
   | { kind: 'empty-list' }
   /** Inteiro que pode servir de índice (i, j, inicio...). */
@@ -78,6 +80,44 @@ export interface LanguageAdapter {
    * para debuggers que não mostram a identidade no valor.
    */
   identityExpr?(a: string, b: string): string;
+  /**
+   * Uma entrada de dicionário a partir de um filho do dicionário; undefined
+   * para o que não é entrada ("len()", "[[Prototype]]"...).
+   */
+  mapEntry?(child: DapVariable): MapEntry | undefined;
+}
+
+export interface MapEntry {
+  key: string;
+  value: string;
+}
+
+/**
+ * Separa "chave:valor" no primeiro ":" fora de aspas. O Java mostra a
+ * entrada de um HashMap assim: '"sol":"1"'.
+ */
+export function splitEntry(text: string): MapEntry | undefined {
+  let quote: string | undefined;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quote) {
+      if (ch === '\\') i++;
+      else if (ch === quote) quote = undefined;
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+    } else if (ch === ':' || (ch === '=' && text[i + 1] === '>')) {
+      const key = text.slice(0, i).trim();
+      const value = text.slice(ch === ':' ? i + 1 : i + 2).trim();
+      return { key, value: unquoteSimple(value) };
+    }
+  }
+  return undefined;
+}
+
+/** '"1"' vira 1: o Java põe aspas até em números dentro de um mapa. */
+function unquoteSimple(value: string): string {
+  const m = /^"(-?\d+(?:\.\d+)?|true|false)"$/.exec(value);
+  return m ? m[1] : value;
 }
 
 /** Classes declaradas no arquivo: só objetos delas são desenhados. */

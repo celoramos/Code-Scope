@@ -22,6 +22,7 @@ export interface PanelStrings {
     variables: string;
     arrays: string;
     objects: string;
+    maps: string;
   };
   script: Record<
     | 'idle'
@@ -86,7 +87,12 @@ export interface PanelStrings {
     | 'cycle'
     | 'noVariable'
     | 'objectLabel'
-    | 'truncated',
+    | 'truncated'
+    | 'emptyMap'
+    | 'oneKey'
+    | 'keys'
+    | 'mapKey'
+    | 'mapValue',
     string
   >;
 }
@@ -112,6 +118,7 @@ const pt: PanelStrings = {
     variables: 'Variáveis inteiras',
     arrays: 'Arrays',
     objects: 'Objetos',
+    maps: 'Dicionários',
   },
   script: {
     idle: 'Pronto para visualizar',
@@ -177,6 +184,11 @@ const pt: PanelStrings = {
     noVariable: 'nenhuma variável aponta para ele',
     objectLabel: 'Objeto {0}, apontado por {1}',
     truncated: 'Campos não lidos: o painel lê no máximo 40 objetos por passo.',
+    emptyMap: 'dicionário vazio',
+    oneKey: '1 chave',
+    keys: '{0} chaves',
+    mapKey: 'chave',
+    mapValue: 'valor',
   },
 };
 
@@ -201,6 +213,7 @@ const en: PanelStrings = {
     variables: 'Integer variables',
     arrays: 'Arrays',
     objects: 'Objects',
+    maps: 'Dictionaries',
   },
   script: {
     idle: 'Ready to visualize',
@@ -266,6 +279,11 @@ const en: PanelStrings = {
     noVariable: 'no variable points to it',
     objectLabel: '{0} object, pointed to by {1}',
     truncated: 'Fields not read: the panel reads at most 40 objects per step.',
+    emptyMap: 'empty dictionary',
+    oneKey: '1 key',
+    keys: '{0} keys',
+    mapKey: 'key',
+    mapValue: 'value',
   },
 };
 

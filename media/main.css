@@ -1298,6 +1298,63 @@ kbd {
   font-weight: 600;
 }
 
+/* ---------- Dicionários ---------- */
+
+.map-table {
+  border-collapse: separate;
+  border-spacing: 0 2px;
+  font-family: var(--cs-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.map-table thead th {
+  padding: 0 var(--cs-space-2) 2px 0;
+  color: var(--cs-muted);
+  font-family: var(--vscode-font-family);
+  font-size: var(--cs-small);
+  font-weight: 400;
+  text-align: left;
+}
+
+/* Chave e valor em caixas, como as posições de um array, ligadas pela mesma linha. */
+.map-key,
+.map-value {
+  padding: 2px var(--cs-space-2);
+  border: 1px solid var(--cs-line);
+  background: var(--cs-cell-bg);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.map-key {
+  border-radius: var(--cs-radius-sm) 0 0 var(--cs-radius-sm);
+  color: var(--cs-muted);
+  font-weight: 400;
+}
+
+.map-value {
+  max-width: 12em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-left: 0;
+  border-radius: 0 var(--cs-radius-sm) var(--cs-radius-sm) 0;
+  font-weight: 600;
+}
+
+.map-table tr.is-changed .map-value,
+.map-table tr.is-new > * {
+  border-color: var(--cs-change);
+  background: var(--cs-change-bg);
+}
+
+.map-table tr.is-changed .map-value {
+  animation: cs-flash var(--cs-flash) var(--cs-ease);
+}
+
+.map-table tr.is-new > * {
+  animation: cs-node-in var(--cs-move) var(--cs-ease);
+}
+
 /* ---------- Pilha de chamadas ---------- */
 
 .calls {
@@ -1560,6 +1617,7 @@ kbd {
   .node-box.is-new,
   .node-link.is-changed::after,
   .heap-card.is-new,
+  .map-table tr > *,
   .array.is-new {
     animation: none;
   }

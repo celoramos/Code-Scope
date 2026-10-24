@@ -188,4 +188,15 @@ describe('Java Debugger real', () => {
     assert.deepEqual(inOrder, [...inOrder].sort((a, b) => Number(a) - Number(b)));
     assert.ok(inOrder.length >= 4, `nós: ${inOrder.join(', ')}`);
   });
+
+  it('Java dicionário: conta as palavras com chave nova e valor trocado', async () => {
+    const snaps = await debugSample('Dicionario', 7, 18);
+    const last = [...snaps].reverse().find((s) => s.maps?.length) ?? snaps.at(-1)!;
+    const map = last.maps?.find((m) => m.name === 'contagem');
+    assert.ok(map, `maps: ${JSON.stringify(last.maps)}`);
+    assert.equal(map.entries.find((e) => e.key === '"sol"')?.value, '2');
+    const changes = allChanges(snaps);
+    assert.ok(changes.some((c) => c.kind === 'map-put' && c.from === undefined), 'nenhuma chave nova reconhecida');
+    assert.ok(changes.some((c) => c.kind === 'map-put' && c.from === '1' && c.value === '2'), `trocas: ${JSON.stringify(changes.filter((c) => c.kind === 'map-put'))}`);
+  });
 });

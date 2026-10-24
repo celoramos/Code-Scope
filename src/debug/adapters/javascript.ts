@@ -1,5 +1,5 @@
 import type { DapVariable } from '../dap';
-import { asInteger, methodsCalledOn, numericIndex, type CollectionRole, type LanguageAdapter, type VariableShape } from './adapter';
+import { asInteger, methodsCalledOn, numericIndex, splitEntry, type CollectionRole, type LanguageAdapter, type VariableShape } from './adapter';
 
 /*
  * JavaScript e TypeScript pelo debugger que já vem no VS Code (js-debug).
@@ -43,6 +43,9 @@ export const javascriptAdapter: LanguageAdapter = {
     const m = ARRAY_VALUE.exec(v.value);
     if (m && v.variablesReference > 0) return { kind: 'sequence', length: Number(m[1]), collection: 'list' };
     if (isClassInstance(v)) return { kind: 'object', type: v.type ?? '' };
+    // Objeto literal ({sol: 1}) e Map são os dicionários do JavaScript.
+    if (v.variablesReference > 0 && v.type === 'Object' && v.value.startsWith('{')) return { kind: 'map' };
+    if (v.variablesReference > 0 && v.type === 'Map') return { kind: 'map', length: Number(/^Map\((\d+)\)/.exec(v.value)?.[1] ?? 0) };
     if (v.variablesReference > 0) return { kind: 'skip' };
     if (v.type === 'number') {
       const n = asInteger(v.value);
@@ -63,6 +66,14 @@ export const javascriptAdapter: LanguageAdapter = {
   isNull: (v) => v.value === 'null' || v.value === 'undefined',
   // O js-debug não mostra identidade no valor; quem decide é o próprio JavaScript.
   identityExpr: (a, b) => `(${a}) === (${b})`,
+
+  mapEntry(child) {
+    if (child.name.startsWith('[[') || child.name === '__proto__' || child.name === 'size') return undefined;
+    // Entrada de Map, dentro de [[Entries]]: "{'sol' => 1}".
+    const entry = /^\{(.*)\}$/.exec(child.value);
+    if (/^\d+$/.test(child.name) && entry && entry[1].includes('=>')) return splitEntry(entry[1]);
+    return { key: child.name, value: child.value };
+  },
 };
 
 /** Tipos que o js-debug usa para o que não é objeto de uma classe do aluno. */
