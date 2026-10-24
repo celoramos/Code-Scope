@@ -56,11 +56,41 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
     new vscode.SourceBreakpoint(new vscode.Location(uri, new vscode.Position(run.breakpointLine - 1, 0))),
   ]);
 
-  const folder = vscode.workspace.workspaceFolders?.[0];
-  assert.ok(await vscode.debug.startDebugging(folder, run.config), `não iniciou o debug de ${run.dump}`);
+  // Guarda o que o debugger escreveu no Debug Console e avisa se a sessão acabou antes de parar,
+  // para a falha dizer o motivo em vez de esperar o tempo todo.
+  const output: string[] = [];
+  let ended = false;
+  const listeners = [
+    vscode.debug.registerDebugAdapterTrackerFactory('*', {
+      createDebugAdapterTracker: () => ({
+        onDidSendMessage: (m: { type?: string; event?: string; body?: { output?: string } }) => {
+          if (m.type === 'event' && m.event === 'output' && m.body?.output) output.push(m.body.output);
+        },
+        onError: (e: Error) => output.push(`erro do adaptador: ${e.message}\n`),
+      }),
+    }),
+    vscode.debug.onDidTerminateDebugSession(() => (ended = true)),
+  ];
 
-  // Iniciar o debug limpa o histórico; espera a primeira parada.
-  await waitFor('a primeira parada', () => cs.snapshots().length >= 1 || undefined, 240_000);
+  try {
+    const folder = vscode.workspace.workspaceFolders?.[0];
+    assert.ok(await vscode.debug.startDebugging(folder, run.config), `não iniciou o debug de ${run.dump}`);
+
+    // Iniciar o debug limpa o histórico; espera a primeira parada.
+    await waitFor('a primeira parada', () => cs.snapshots().length >= 1 || ended || undefined, 240_000);
+    assert.ok(
+      cs.snapshots().length >= 1,
+      `o debug de ${run.dump} terminou sem parar no breakpoint. Saída do debugger:\n${output.join('')}`,
+    );
+  } catch (err) {
+    if (err instanceof Error && !err.message.includes('Saída do debugger')) {
+      err.message += `\nSaída do debugger:\n${output.join('')}`;
+    }
+    await stopAll();
+    throw err;
+  } finally {
+    listeners.forEach((l) => l.dispose());
+  }
   const raw = cs.lastRaw();
   // O painel abre na primeira parada; dá um instante para o VS Code trocar a barra lateral.
   await new Promise((r) => setTimeout(r, 1500));
