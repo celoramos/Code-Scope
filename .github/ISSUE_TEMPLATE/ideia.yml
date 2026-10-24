@@ -1,17 +1,17 @@
-name: Ideia ou sugestão
-description: Uma estrutura de dados, uma explicação, uma linguagem ou qualquer coisa que ajudaria a aprender.
+name: Ideia ou sugestão / Idea or suggestion
+description: Uma estrutura de dados, uma explicação, uma linguagem ou qualquer coisa que ajudaria a aprender. / A data structure, an explanation, a language or anything that would help people learn.
 labels: [ideia]
 body:
   - type: textarea
     id: ideia
     attributes:
-      label: A ideia
-      description: O que o Code Scope deveria mostrar ou explicar, e por que isso ajudaria quem está aprendendo.
+      label: A ideia / The idea
+      description: O que o Code Scope deveria mostrar ou explicar, e por que isso ajudaria quem está aprendendo. / What Code Scope should show or explain, and why it would help someone learning.
     validations:
       required: true
   - type: textarea
     id: exemplo
     attributes:
-      label: Um exemplo de código (opcional)
-      description: Um programa curto onde a ideia faria diferença.
+      label: Um exemplo de código (opcional) / A code example (optional)
+      description: Um programa curto onde a ideia faria diferença. / A short program where the idea would make a difference.
       render: text

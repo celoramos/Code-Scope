@@ -23,7 +23,17 @@ Enquanto você debuga, um painel lateral desenha o seu programa: arrays, matrize
 - em buscas e ordenações, as posições comparadas ganham contorno, o pedaço do array que a busca já descartou fica apagado, e o painel conta comparações e trocas;
 - quando o programa quebra, o painel para no erro e explica em palavras simples; um índice fora do limite aparece como a posição que não existe, tracejada, depois do array;
 - um teste de mesa vai sendo preenchido passo a passo, uma linha por passo e uma coluna por variável, como o professor pede no papel;
-- a variável que sai de escopo fica um passo, riscada, e a variável de um bloco que esconde outra de mesmo nome é marcada.
+- a variável que sai de escopo fica um passo, riscada, e a variável de um bloco que esconde outra de mesmo nome é marcada;
+- quando a recursão se divide em duas, como `fib(n - 1) + fib(n - 2)`, uma árvore de recursão mostra todas as chamadas, o valor que cada uma devolveu e quantas vezes a mesma conta foi refeita;
+- uma lista de objetos mostra cada objeto dentro da sua posição (`turma[1]` com nome e nota); um dicionário de listas vira grafo, com os visitados, o nó atual e a fila de uma busca em largura;
+- dentro de um `catch`, o painel explica qual linha deu erro e que o resto do `try` não rodou; quando roda o método de uma subclasse, diz por que foi aquela versão (polimorfismo);
+- texto lido letra por letra vira uma fileira de letras com a seta do índice, e as pegadinhas de número são explicadas quando acontecem: divisão de inteiros, `0.1 + 0.2`, overflow.
+
+Três ferramentas para a aula:
+
+- **Adivinhar antes**: antes de uma linha rodar, o painel pergunta quanto a variável vai valer. Depois do F10 diz se o palpite acertou e guarda o placar.
+- **Modo aula**: o painel abre grande ao lado do código, com letra maior e animações mais lentas, pronto para projetar.
+- **Salvar imagem**: o passo atual vira um PNG, para slides e listas de exercício.
 
 O painel fala português e inglês e segue o idioma do seu VS Code: português quando o VS Code está em português, inglês nos outros casos.
 
@@ -67,6 +77,9 @@ As explicações de fluxo (if, laços, break) entendem a família de C (Java, Ja
 | Dicionários | Tabela de chave e valor; a chave nova entra deslizando e o valor trocado pisca. |
 | Objetos | Um cartão por objeto de uma classe sua, com as variáveis que apontam para ele. Lista ligada como nós e setas, árvore como árvore. |
 | Teste de mesa | Uma linha por passo e uma coluna por variável, com a célula que mudou marcada. Clique no número do passo para voltar a ele. |
+| Árvore de recursão | Quando a recursão se divide: todas as chamadas, cada uma pendurada em quem chamou, com o que devolveu. |
+| Grafo | Um dicionário de listas que apontam para as próprias chaves, com os visitados, o nó atual e a fila de espera. |
+| Adivinhar antes | Uma pergunta antes da linha rodar, a conferência depois do F10 e o placar. |
 
 ## Requisitos
 
@@ -131,6 +144,13 @@ Na janela do Extension Development Host:
 | `Dicionario` / `dicionario` | Contando palavras num dicionário: chaves novas e valores sendo trocados |
 | `BuscaBinaria` / `buscaBinaria` / `busca_binaria` | Busca binária: a posição comparada contornada e a metade descartada apagando |
 | `Escopo` / `escopo` | Variáveis nascendo e sumindo com cada bloco; um `total` de bloco escondendo o de fora (JavaScript); um parâmetro com o mesmo nome de um campo |
+| `Fibonacci` / `fibonacci` | A árvore de recursão: use **F11** e veja `fib(2)` sendo calculado mais de uma vez |
+| `Turma` / `turma` | Uma lista de alunos: cada objeto dentro da sua posição, e `melhor` apontando para um deles |
+| `Grafo` / `grafo` | Busca em largura num grafo de cidades: visitados, nó atual e a fila |
+| `Heranca` / `heranca` | Herança: com **F11**, veja rodar `Cachorro.falar` em vez de `Animal.falar` |
+| `TrataErro` / `trataErro` / `trata_erro` | `try/catch`: a linha que deu erro e o pulo para o `catch` |
+| `Texto` / `texto` | Uma palavra lida letra por letra, e o `+` criando um texto novo |
+| `Numeros` / `numeros` | Divisão de inteiros, `0.1 + 0.2` e overflow do int |
 
 Com o painel em foco: setas esquerda e direita andam um passo, Home e End vão para o primeiro e para o último.
 
@@ -147,7 +167,7 @@ Se o painel não mostrar o que você esperava, abra **Output**, escolha **Code S
 | `codeScope.revealOnDebug` | `true` | Abre o painel na primeira parada de cada sessão de debug |
 | `codeScope.pauseOnErrors` | `true` | Pausa o programa nos erros que ninguém trata, para o painel mostrar onde e por que ele quebrou. O que você marcou no painel de breakpoints continua como está |
 
-Comandos na paleta: **Code Scope: Mostrar painel** e **Code Scope: Limpar histórico**.
+Comandos na paleta: **Code Scope: Mostrar painel**, **Code Scope: Limpar histórico** e **Code Scope: Modo aula**.
 
 ## Como funciona
 
@@ -202,11 +222,11 @@ Os testes de Python precisam de um interpretador. Aponte um com a variável `COD
 
 ## Roadmap
 
-1. Arrays de objetos (uma lista de alunos, cada um num cartão)
+1. Adaptadores próprios para C# e C/C++ (em andamento)
 2. Variáveis das chamadas de baixo com arrays e objetos, não só valores simples
 3. `HashSet` e `set` do Python
 4. JavaScript no navegador, testado com o debugger real
-5. Adaptadores próprios para C#, C/C++ e Go
+5. Adaptador para Go
 
 ## Contribuindo
 
@@ -218,7 +238,7 @@ O Code Scope é open source para ajudar o máximo de pessoas a entrar na program
 - escreva o adaptador da sua linguagem favorita;
 - implemente um item do roadmap.
 
-O [guia de contribuição](CONTRIBUTING.md) explica como preparar o ambiente, rodar os testes e onde fica cada parte do código. Toda participação segue o [código de conduta](CODE_OF_CONDUCT.md).
+A lista de [tarefas para começar](docs/tarefas-para-comecar.md) diz o que fazer, onde mexer e como saber que terminou, desde tarefas sem código até adaptadores de linguagens novas. O [guia de contribuição](CONTRIBUTING.pt-br.md) explica como preparar o ambiente, rodar os testes e onde fica cada parte do código. Toda participação segue o [código de conduta](CODE_OF_CONDUCT.md).
 
 ## Licença
 

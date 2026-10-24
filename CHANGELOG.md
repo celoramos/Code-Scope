@@ -1,5 +1,21 @@
 # Changelog
 
+## Não lançado
+
+### Novo
+
+- Árvore de recursão: quando a recursão se divide (`fib(n - 1) + fib(n - 2)`), todas as chamadas aparecem com o que devolveram, e o painel diz quantas vezes a mesma conta foi refeita.
+- Modo de adivinhar ("Adivinhar antes"): antes de uma linha rodar, o painel pergunta quanto a variável vai valer e, depois do F10, diz se o palpite acertou, com placar.
+- Modo aula (comando "Code Scope: Modo aula"): o painel grande ao lado do código, com letra maior e animações mais lentas.
+- Salvar imagem: o passo atual vira PNG, para slides e listas de exercício.
+- Lista de objetos: cada objeto aparece dentro da sua posição, com a classe quando o array mistura classes.
+- Grafo: dicionário de listas que apontam para as próprias chaves vira grafo, com visitados, nó atual e fila.
+- try/catch: o passo que entra no catch explica a linha que deu erro e o pulo.
+- Herança e polimorfismo: a explicação diz quando rodou a versão da subclasse ou a herdada.
+- Texto lido letra por letra vira uma fileira de letras com a seta do índice.
+- Pegadinhas de número: divisão de inteiros, `//` do Python, `0.1 + 0.2` e overflow.
+- Para quem quer contribuir: guia em inglês (`CONTRIBUTING.md`) e português, lista de tarefas para começar (`docs/good-first-issues.md`), formulários de issue e de pull request nos dois idiomas.
+
 ## 0.5.0
 
 ### Novo

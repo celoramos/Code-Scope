@@ -1,32 +1,34 @@
-name: Algo não funcionou
-description: O painel mostrou algo errado, não mostrou nada, ou a extensão deu erro.
+name: Algo não funcionou / Something went wrong
+description: O painel mostrou algo errado, não mostrou nada, ou a extensão deu erro. / The panel showed something wrong, nothing at all, or the extension failed.
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
         Obrigado por avisar. Não se preocupe em acertar todos os detalhes: conte o que você viu, do jeito que conseguir.
+
+        Thank you for reporting. Do not worry about getting every detail right: tell us what you saw, as best you can. English or Portuguese, either is fine.
   - type: textarea
     id: o-que-aconteceu
     attributes:
-      label: O que aconteceu
-      description: O que você esperava ver no painel, e o que apareceu.
+      label: O que aconteceu / What happened
+      description: O que você esperava ver no painel, e o que apareceu. / What you expected to see in the panel, and what showed up.
     validations:
       required: true
   - type: textarea
     id: codigo
     attributes:
-      label: Código que você estava debugando
-      description: Cole o trecho (ou o arquivo inteiro, se for pequeno) e diga em qual linha estava o breakpoint.
+      label: Código que você estava debugando / Code you were debugging
+      description: Cole o trecho (ou o arquivo, se for pequeno) e diga a linha do breakpoint. / Paste the code (or the file, if small) and say which line had the breakpoint.
       render: text
   - type: textarea
     id: log
     attributes:
-      label: Log do Code Scope (opcional)
-      description: Em View, Output, escolha "Code Scope" na lista, mude o nível para Debug, repita o passo e cole o que aparecer.
+      label: Log do Code Scope (opcional) / Code Scope log (optional)
+      description: Em View, Output, escolha "Code Scope", mude o nível para Debug, repita o passo e cole o que aparecer. / In View, Output, pick "Code Scope", set the level to Debug, repeat the step and paste what shows up.
       render: text
   - type: input
     id: versoes
     attributes:
-      label: Versões e linguagem
-      description: Versão do VS Code, do Code Scope, a linguagem e o debugger (por exemplo "VS Code 1.143, Code Scope 0.4.0, Python 3.12 com debugpy").
+      label: Versões e linguagem / Versions and language
+      description: Por exemplo / For example "VS Code 1.143, Code Scope 0.5.0, Python 3.12 + debugpy".

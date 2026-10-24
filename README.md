@@ -23,7 +23,17 @@ While you debug, a side panel draws your program: arrays, matrices, lists, stack
 - in searches and sorts, the positions being compared get an outline, the part of the array a search has already discarded fades out, and the panel counts comparisons and swaps;
 - when the program crashes, the panel stops at the error and explains it in plain words; an index out of range shows the position that does not exist, dashed, next to the array;
 - a trace table fills in step by step, one row per step and one column per variable, like the one teachers ask for on paper;
-- a variable that leaves scope stays one step, crossed out, and a block variable that hides another one with the same name is marked.
+- a variable that leaves scope stays one step, crossed out, and a block variable that hides another one with the same name is marked;
+- when recursion splits in two, like `fib(n - 1) + fib(n - 2)`, a recursion tree shows every call, the value each one returned and how many times the same work was redone;
+- a list of objects shows each object inside its position (`turma[1]` with its name and grade); a dictionary of lists becomes a graph, with the visited nodes, the current one and the queue of a breadth-first search;
+- inside a `catch`, the panel explains which line raised the error and that the rest of the `try` did not run; when a subclass method runs, it says why it was that version (polymorphism);
+- text read letter by letter becomes a row of letters with the index arrow, and the classic number traps are explained when they happen: integer division, `0.1 + 0.2`, overflow.
+
+Three tools for class:
+
+- **Guess first**: before a line runs, the panel asks what the variable will be. After F10 it says if the guess was right and keeps the score.
+- **Classroom mode**: the panel opens large next to the code, with bigger text and slower animations, ready to project.
+- **Save image**: the current step becomes a PNG, for slides and assignments.
 
 The panel speaks English and Portuguese and follows the language of your VS Code: Portuguese when VS Code is in Portuguese, English otherwise.
 
@@ -67,6 +77,9 @@ The flow explanations (if, loops, break) understand the C family (Java, JavaScri
 | Dictionaries | Key and value table; a new key slides in, a replaced value flashes. |
 | Objects | One card per object of a class you wrote, with the variables that point to it. Linked lists as nodes and arrows, trees as trees. |
 | Trace table | One row per step and one column per variable, with the changed cell highlighted. Click a step number to go back to it. |
+| Recursion tree | When recursion splits in two: all calls, each hanging from its caller, with what it returned. |
+| Graph | A dictionary of lists that point to its own keys, with the visited nodes, the current one and the waiting queue. |
+| Guess first | A question before the line runs, the check after F10 and the score. |
 
 ## Requirements
 
@@ -131,6 +144,13 @@ In the Extension Development Host window:
 | `Dicionario` / `dicionario` | Counting words in a dictionary: new keys and values being replaced |
 | `BuscaBinaria` / `buscaBinaria` / `busca_binaria` | Binary search: the compared position outlined and the discarded half fading out |
 | `Escopo` / `escopo` | Variables born and gone with each block; a block `total` hiding the outer one (JavaScript); a parameter with the same name as a field |
+| `Fibonacci` / `fibonacci` | The recursion tree: use **F11** and watch `fib(2)` being computed more than once |
+| `Turma` / `turma` | A list of students: each object inside its position, and `melhor` pointing to one of them |
+| `Grafo` / `grafo` | Breadth-first search on a graph of cities: visited nodes, current node and the queue |
+| `Heranca` / `heranca` | Inheritance: with **F11**, see `Cachorro.falar` run instead of `Animal.falar` |
+| `TrataErro` / `trataErro` / `trata_erro` | `try/catch`: the line that raised the error and the jump to the `catch` |
+| `Texto` / `texto` | A word read letter by letter, and `+` creating a new text |
+| `Numeros` / `numeros` | Integer division, `0.1 + 0.2` and int overflow |
 
 With the panel focused: left and right arrows move one step, Home and End jump to the first and last.
 
@@ -147,7 +167,7 @@ If the panel does not show what you expected, open **Output**, pick **Code Scope
 | `codeScope.revealOnDebug` | `true` | Opens the panel on the first stop of each debug session |
 | `codeScope.pauseOnErrors` | `true` | Pauses the program on errors nobody handles, so the panel can show where and why it broke. What you checked in the Breakpoints view stays as it is |
 
-Commands in the palette: **Code Scope: Show panel** and **Code Scope: Clear history**.
+Commands in the palette: **Code Scope: Show panel**, **Code Scope: Clear history** and **Code Scope: Classroom mode**.
 
 ## How it works
 
@@ -202,11 +222,11 @@ The Python tests need an interpreter. Point to one with the `CODE_SCOPE_PYTHON` 
 
 ## Roadmap
 
-1. Arrays of objects (a list of students, each one a card)
+1. Dedicated adapters for C# and C/C++ (in progress)
 2. Variables of earlier calls with their arrays and objects, not only simple values
 3. `HashSet` and Python `set`
 4. JavaScript in the browser, tested with the real debugger
-5. Dedicated adapters for C#, C/C++ and Go
+5. Adapter for Go
 
 ## Contributing
 
@@ -218,7 +238,7 @@ Code Scope is open source to help as many people as possible get into programmin
 - write the adapter for your favorite language;
 - implement a roadmap item.
 
-The [contributing guide](CONTRIBUTING.md) (in Portuguese) explains how to set up the environment, run the tests and where each part of the code lives. All participation follows the [code of conduct](CODE_OF_CONDUCT.md).
+The [good first issues](docs/good-first-issues.md) list says what to do, where to look and how to know you are done, from tasks that need no code to new language adapters. The [contributing guide](CONTRIBUTING.md) explains how to set up the environment, run the tests and where each part of the code lives. All participation follows the [code of conduct](CODE_OF_CONDUCT.md).
 
 ## License
 
