@@ -19,6 +19,12 @@
   const varsEl = byId('vars');
   const arraysEl = byId('arrays');
 
+  /** Textos no idioma do VS Code, que a extensão põe no HTML. */
+  /** @type {Record<string, string>} */
+  const T = JSON.parse(byId('strings').textContent || '{}');
+  // O CSS escreve "vazia" dentro da pilha e da fila sem itens.
+  document.documentElement.style.setProperty('--cs-empty-label', JSON.stringify(t('empty')));
+
   /**
    * @typedef {{ name: string, values: string[], length: number, kind?: 'array' | 'list' | 'stack' | 'queue', rows?: ArrayVar[] }} ArrayVar
    * @typedef {{ name: string, value: number }} Pointer
@@ -35,11 +41,7 @@
   /** Multiplicador das durações em CSS; 0 desliga o movimento. */
   const SPEED = { lenta: 2, normal: 1, rapida: 0.5, desligada: 0 };
 
-  const EMPTY_TITLE = {
-    idle: 'Pronto para visualizar',
-    running: 'Aguardando um breakpoint',
-    ended: 'Sessão encerrada',
-  };
+  const EMPTY_TITLE = { idle: t('idle'), running: t('running'), ended: t('ended') };
 
   /** Quantas cores de ponteiro o CSS declara (--cs-ptr-0 até --cs-ptr-3). */
   const POINTER_COLORS = 4;
@@ -107,7 +109,7 @@
 
     const parts = [];
     if (error) parts.push(error);
-    if (current && current.snapshot.arrays.length === 0) parts.push('Nenhum array nas variáveis locais deste ponto.');
+    if (current && current.snapshot.arrays.length === 0) parts.push(t('noArrays'));
     status.textContent = parts.join(' ');
     status.classList.toggle('is-error', Boolean(error));
   }
@@ -132,11 +134,11 @@
       ...Object.values(frame.axes ?? {}).flatMap((ax) => [ax.row?.name, ax.col?.name].filter(isString)),
     ]);
 
-    counter.textContent = `Passo ${frame.step} de ${frame.total}`;
+    counter.textContent = t('step', frame.step, frame.total);
     timeline.max = String(frame.total);
     timeline.value = String(frame.step);
     timeline.disabled = frame.total <= 1;
-    timeline.setAttribute('aria-valuetext', `Passo ${frame.step} de ${frame.total}`);
+    timeline.setAttribute('aria-valuetext', t('step', frame.step, frame.total));
     timeline.style.setProperty('--progress', String(frame.total > 1 ? (frame.step - 1) / (frame.total - 1) : 1));
     backBtn.disabled = frame.step <= 1;
     forwardBtn.disabled = frame.step >= frame.total;
@@ -195,8 +197,8 @@
   function renderCode(executed, next) {
     /** @type {HTMLElement[]} */
     const rows = [];
-    if (executed) rows.push(...codeRow('Executou', executed, 'is-executed'));
-    rows.push(...codeRow('Próxima', next, 'is-next'));
+    if (executed) rows.push(...codeRow(t('executed'), executed, 'is-executed'));
+    rows.push(...codeRow(t('nextLine'), next, 'is-next'));
     codeEl.replaceChildren(...rows);
   }
 
@@ -297,15 +299,15 @@
     block.append(header, track);
 
     if (kind === 'stack') {
-      cells.setAttribute('aria-label', `Pilha ${name}, do fundo para o topo`);
+      cells.setAttribute('aria-label', t('stackLabel', name));
       track.append(cells, markers);
-      block.append(rule('Último a entrar, primeiro a sair.'));
+      block.append(rule(t('stackRule')));
     } else if (kind === 'queue') {
-      cells.setAttribute('aria-label', `Fila ${name}, da frente para o fim`);
-      track.append(laneEnd('saída'), cells, laneEnd('entrada'), markers);
-      block.append(rule('Primeiro a entrar, primeiro a sair.'));
+      cells.setAttribute('aria-label', t('queueLabel', name));
+      track.append(laneEnd('exit'), cells, laneEnd('entry'), markers);
+      block.append(rule(t('queueRule')));
     } else {
-      cells.setAttribute('aria-label', `Posições de ${name}`);
+      cells.setAttribute('aria-label', t('arrayLabel', name));
       track.append(cells, markers);
     }
     return block;
@@ -321,14 +323,14 @@
   /**
    * Ponta da esteira da fila. As duas setas apontam para a esquerda: é o
    * sentido em que a fila anda.
-   * @param {'saída' | 'entrada'} label
+   * @param {'exit' | 'entry'} side
    */
-  function laneEnd(label) {
-    const end = el('div', `lane-end ${label === 'saída' ? 'is-exit' : 'is-entry'}`);
+  function laneEnd(side) {
+    const end = el('div', `lane-end is-${side}`);
     end.setAttribute('aria-hidden', 'true');
     end.innerHTML = '<svg viewBox="0 0 16 16"><path d="M10 3.5 5.5 8l4.5 4.5" /></svg>';
     const text = el('span', 'lane-label');
-    text.textContent = label;
+    text.textContent = t(side);
     end.append(text);
     return end;
   }
@@ -340,13 +342,13 @@
   function updateBlock(block, arr) {
     const meta = /** @type {HTMLElement} */ (block.querySelector('.array-meta'));
     const collection = arr.kind === 'list' || arr.kind === 'stack' || arr.kind === 'queue';
-    const unit = collection ? ['item', 'itens'] : ['posição', 'posições'];
+    const unit = collection ? [t('item'), t('items')] : [t('position'), t('positions')];
     const count =
       arr.values.length < arr.length
-        ? `${arr.values.length} de ${arr.length} ${unit[1]}`
+        ? t('partial', arr.values.length, arr.length, unit[1])
         : `${arr.length} ${arr.length === 1 ? unit[0] : unit[1]}`;
-    const noun = { list: 'lista', stack: 'pilha', queue: 'fila' }[arr.kind ?? ''];
-    meta.textContent = noun ? (arr.length === 0 ? `${noun} vazia` : `${noun}, ${count}`) : count;
+    const noun = collection ? t(arr.kind ?? '') : undefined;
+    meta.textContent = noun ? (arr.length === 0 ? t('emptyCollection', noun) : t('collectionCount', noun, count)) : count;
     block.classList.toggle('is-list', arr.kind === 'list');
     if (arr.kind === 'stack') {
       // A torre reserva altura e nunca encolhe: a base fica parada e os itens entram e saem por cima.
@@ -484,8 +486,8 @@
   }
 
   /**
-   * Etiquetas que dizem o papel de cada ponta: "topo" na pilha, "frente" e
-   * "fim" na fila. São elementos fixos que só mudam de lugar, então deslizam
+   * Etiquetas que dizem o papel de cada ponta: "top" na pilha, "front" e
+   * "back" na fila (o texto vem traduzido). São elementos fixos que só mudam de lugar, então deslizam
    * quando a ponta muda.
    * @param {HTMLElement} block
    * @param {'stack' | 'queue'} kind
@@ -496,10 +498,10 @@
     /** @type {[string, HTMLElement | undefined][]} */
     const wanted =
       kind === 'stack'
-        ? [['topo', cells.at(-1)]]
+        ? [['top', cells.at(-1)]]
         : [
-            ['frente', cells[0]],
-            ['fim', cells.length > 1 ? cells.at(-1) : undefined],
+            ['front', cells[0]],
+            ['back', cells.length > 1 ? cells.at(-1) : undefined],
           ];
     for (const [label, cell] of wanted) {
       let m = /** @type {HTMLElement | null} */ (layer.querySelector(`[data-label="${label}"]`));
@@ -513,12 +515,12 @@
         m.dataset.label = label;
         const head = el('span', 'marker-head');
         const text = el('span', 'marker-text');
-        text.textContent = cells.length === 1 && kind === 'queue' ? 'frente e fim' : label;
+        text.textContent = cells.length === 1 && kind === 'queue' ? t('frontAndBack') : t(label);
         m.append(head, text);
         layer.append(m);
       }
       const text = /** @type {HTMLElement} */ (m.querySelector('.marker-text'));
-      text.textContent = kind === 'queue' && label === 'frente' && cells.length === 1 ? 'frente e fim' : label;
+      text.textContent = kind === 'queue' && label === 'front' && cells.length === 1 ? t('frontAndBack') : t(label);
       // Medidas de layout (offset*), não getBoundingClientRect: o item pode estar no meio
       // da animação de entrada, e a etiqueta deve ir para onde ele vai parar.
       const value = /** @type {HTMLElement} */ (cell.querySelector('.cell-value'));
@@ -540,8 +542,8 @@
       const base = cell.dataset.label ?? '';
       const role =
         kind === 'stack'
-          ? i === cells.length - 1 ? ', topo' : ''
-          : [i === 0 ? 'frente' : '', i === cells.length - 1 ? 'fim' : ''].filter(Boolean).join(' e ');
+          ? i === cells.length - 1 ? `, ${t('top')}` : ''
+          : [i === 0 ? t('front') : '', i === cells.length - 1 ? t('back') : ''].filter(Boolean).join(t('and'));
       cell.setAttribute('aria-label', role ? `${base}${kind === 'stack' ? role : `, ${role}`}` : base);
     });
   }
@@ -566,7 +568,7 @@
     const track = el('div', 'array-track');
     const grid = el('div', 'matrix');
     grid.setAttribute('role', 'table');
-    grid.setAttribute('aria-label', `Matriz ${name}`);
+    grid.setAttribute('aria-label', t('matrixLabel', name));
     track.append(grid);
     block.append(header, track);
     return block;
@@ -587,7 +589,7 @@
     const rows = arr.rows ?? [];
     const cols = Math.max(0, ...rows.map((r) => r.values.length));
     const meta = /** @type {HTMLElement} */ (block.querySelector('.array-meta'));
-    meta.textContent = `${rows.length} ${rows.length === 1 ? 'linha' : 'linhas'}, ${cols} ${cols === 1 ? 'coluna' : 'colunas'}`;
+    meta.textContent = `${rows.length} ${t(rows.length === 1 ? 'row' : 'rows')}, ${cols} ${t(cols === 1 ? 'column' : 'columns')}`;
 
     const grid = /** @type {HTMLElement} */ (block.querySelector('.matrix'));
     grid.style.setProperty('--cols', String(cols));
@@ -708,7 +710,7 @@
     cells.forEach((cell, i) => {
       const names = arrows.filter((a) => a.index === i).map((a) => a.name);
       const base = cell.dataset.label ?? '';
-      cell.setAttribute('aria-label', names.length ? `${base}, apontada por ${names.join(', ')}` : base);
+      cell.setAttribute('aria-label', names.length ? t('pointedBy', base, names.join(', ')) : base);
     });
   }
 
@@ -725,6 +727,15 @@
   /** @param {HTMLElement} block */
   function cellsOf(block) {
     return /** @type {HTMLElement[]} */ (Array.from(block.querySelectorAll('.cell:not(.ghost)')));
+  }
+
+  /**
+   * Texto traduzido, trocando {0}, {1}... pelos valores.
+   * @param {string} key
+   * @param {...(string | number)} args
+   */
+  function t(key, ...args) {
+    return (T[key] ?? key).replace(/\{(\d+)\}/g, (_, i) => String(args[Number(i)]));
   }
 
   /** @param {string} id */

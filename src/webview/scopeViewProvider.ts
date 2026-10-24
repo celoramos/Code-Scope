@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
-import type { AnimationSpeed } from '../config';
+import { uiLanguage, type AnimationSpeed } from '../config';
 import type { Frame } from '../model/frame';
+import { PANEL_STRINGS } from './strings';
 
 /** Mensagens que a extensão envia para o painel. */
 export type ToWebview =
@@ -49,8 +50,11 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
     const css = webview.asWebviewUri(vscode.Uri.joinPath(media, 'main.css'));
     const js = webview.asWebviewUri(vscode.Uri.joinPath(media, 'main.js'));
     const nonce = makeNonce();
+    const { html: t, script } = PANEL_STRINGS[uiLanguage()];
+    // JSON dentro de <script>: "<" escapado para nenhum texto fechar a tag.
+    const strings = JSON.stringify(script).replace(/</g, '\\u003c');
     return `<!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="${t.lang}">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy"
@@ -68,40 +72,39 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
         <rect x="84" y="14" width="30" height="30" rx="5" />
         <path d="M60 52 l-5 8 h10 z" class="empty-art-pointer" />
       </svg>
-      <h2 id="empty-title" class="empty-title">Pronto para visualizar</h2>
+      <h2 id="empty-title" class="empty-title">${t.emptyIdle}</h2>
       <ol class="empty-steps">
-        <li><span>Coloque um breakpoint num programa Java.</span></li>
-        <li><span>Inicie o debug com <kbd>F5</kbd>.</span></li>
-        <li><span>Avance linha a linha com <kbd>F10</kbd>.</span></li>
+        ${t.emptySteps.map((s) => `<li><span>${s}</span></li>`).join('\n        ')}
       </ol>
     </section>
 
     <header id="toolbar" class="toolbar" hidden>
-      <nav class="stepper" aria-label="Histórico de passos">
-        <button id="back" class="icon-button" type="button" aria-label="Passo anterior" title="Passo anterior (seta esquerda)">
+      <nav class="stepper" aria-label="${t.history}">
+        <button id="back" class="icon-button" type="button" aria-label="${t.previous}" title="${t.previousTitle}">
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" /></svg>
         </button>
         <div class="step">
           <span id="counter" class="counter"></span>
-          <input id="timeline" class="timeline" type="range" min="1" max="1" value="1" aria-label="Ir para o passo">
+          <input id="timeline" class="timeline" type="range" min="1" max="1" value="1" aria-label="${t.gotoStep}">
         </div>
-        <button id="forward" class="icon-button" type="button" aria-label="Próximo passo" title="Próximo passo (seta direita)">
+        <button id="forward" class="icon-button" type="button" aria-label="${t.next}" title="${t.nextTitle}">
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
         </button>
       </nav>
-      <button id="live" class="link-button" type="button" hidden>Voltar ao passo mais recente</button>
+      <button id="live" class="link-button" type="button" hidden>${t.live}</button>
       <p class="location">
         <span id="file" class="location-file"></span>
-        <span id="ended" class="badge" hidden>sessão encerrada</span>
+        <span id="ended" class="badge" hidden>${t.sessionEnded}</span>
       </p>
       <dl id="code" class="code-lines"></dl>
     </header>
 
     <p id="status" class="status" role="status" aria-live="polite"></p>
-    <ul id="explanation" class="explanation" aria-live="polite" aria-label="O que mudou"></ul>
-    <ul id="vars" class="vars" aria-label="Variáveis inteiras"></ul>
-    <section id="arrays" class="arrays" aria-label="Arrays"></section>
+    <ul id="explanation" class="explanation" aria-live="polite" aria-label="${t.explanation}"></ul>
+    <ul id="vars" class="vars" aria-label="${t.variables}"></ul>
+    <section id="arrays" class="arrays" aria-label="${t.arrays}"></section>
   </main>
+  <script id="strings" type="application/json">${strings}</script>
   <script nonce="${nonce}" src="${js}"></script>
 </body>
 </html>`;

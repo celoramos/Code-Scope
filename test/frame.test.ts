@@ -29,7 +29,7 @@ describe('makeFrame', () => {
     const h = new History();
     h.push({ ...snap([5, 1], 0), line: 9, code: 'int temp = arr[j];' });
     h.push({ ...snap([5, 1], 0), line: 10 });
-    const frame = makeFrame(h.current()!, { valueNames: new Set(['i']), beginnerMode: false });
+    const frame = makeFrame(h.current()!, { valueNames: new Set(['i']), beginnerMode: false, language: 'pt' });
     assert.deepEqual(frame.executed, { line: 9, code: 'int temp = arr[j];' });
     assert.deepEqual(frame.arrows, { arr: [] });
     assert.deepEqual(frame.explanation, []);

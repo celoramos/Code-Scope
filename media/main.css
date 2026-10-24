@@ -711,7 +711,7 @@ kbd {
 
 .array.is-stack .cells:empty::before,
 .array.is-queue .cells:empty::before {
-  content: 'vazia';
+  content: var(--cs-empty-label, 'vazia');
   align-self: center;
   margin: auto;
   color: var(--cs-muted);

@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
-import { readSettings } from './config';
+import { readSettings, uiLanguage } from './config';
 import { collectSnapshot } from './debug/dapCollector';
 import { applyCollectionRoles, pickAdapter } from './debug/adapters';
 import { registerStopTracker } from './debug/trackerFactory';
 import { makeFrame } from './model/frame';
 import { History } from './model/history';
 import type { FromWebview, ScopeViewProvider } from './webview/scopeViewProvider';
+import { readError } from './webview/strings';
 
 type SessionState = 'idle' | 'running' | 'ended';
 
@@ -90,7 +91,7 @@ export class ScopeController implements vscode.Disposable {
     } catch (err) {
       if (gen !== this.generation) return;
       this.log.error('falha ao ler variáveis', err instanceof Error ? err : String(err));
-      this.view.post({ type: 'error', text: `Não consegui ler as variáveis deste passo: ${String(err)}` });
+      this.view.post({ type: 'error', text: readError(uiLanguage(), err) });
     }
   }
 

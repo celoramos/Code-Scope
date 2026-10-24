@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import type { Limits } from './debug/dapCollector';
 import type { FrameOptions } from './model/frame';
+import type { Language } from './model/messages';
 
 export type AnimationSpeed = 'lenta' | 'normal' | 'rapida' | 'desligada';
 
@@ -22,10 +23,20 @@ export function readSettings(): Settings {
     frame: {
       valueNames: new Set(c.get<string[]>('valueNames', []).map((n) => n.toLowerCase())),
       beginnerMode: c.get('beginnerMode', true),
+      language: uiLanguage(),
     },
     animationSpeed: c.get<AnimationSpeed>('animationSpeed', 'normal'),
     revealOnDebug: c.get('revealOnDebug', true),
   };
+}
+
+/**
+ * O painel fala a língua do VS Code: português para qualquer variante de
+ * "pt", inglês para o resto. Trocar o idioma do VS Code recarrega a janela,
+ * então basta ler uma vez por uso.
+ */
+export function uiLanguage(): Language {
+  return vscode.env.language.toLowerCase().startsWith('pt') ? 'pt' : 'en';
 }
 
 function clamp(n: number, min: number, max: number): number {

@@ -1,6 +1,7 @@
 import { diff, type Change } from './diff';
 import { explain } from './explain';
 import { explainFlow } from './flow';
+import { MESSAGES, type Language } from './messages';
 import type { Step } from './history';
 import { arrowsFor, matrixAxesFor, VALUE_NAMES, type Arrow, type MatrixAxes } from './pointers';
 import type { Snapshot } from './snapshot';
@@ -30,9 +31,11 @@ export interface FrameOptions {
   /** Nomes de inteiros que guardam valor e não viram seta. */
   valueNames: ReadonlySet<string>;
   beginnerMode: boolean;
+  /** Idioma das frases do modo iniciante. */
+  language: Language;
 }
 
-export const DEFAULT_FRAME_OPTIONS: FrameOptions = { valueNames: VALUE_NAMES, beginnerMode: true };
+export const DEFAULT_FRAME_OPTIONS: FrameOptions = { valueNames: VALUE_NAMES, beginnerMode: true, language: 'pt' };
 
 export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTIONS): Frame {
   const { snapshot, prev, older } = step;
@@ -58,7 +61,12 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
     arrows,
     axes,
     explanation: options.beginnerMode
-      ? explain(changes, prev === undefined, [peekNote(executed?.code, snapshot, changes), explainFlow(executed, snapshot)].filter(isText))
+      ? explain(
+          changes,
+          prev === undefined,
+          [peekNote(executed?.code, snapshot, changes, options.language), explainFlow(executed, snapshot, options.language)].filter(isText),
+          options.language,
+        )
       : [],
     step: step.index,
     total: step.total,
@@ -69,7 +77,12 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
  * peek() não muda nada, então o diff não vê. Mas é justamente o que o aluno
  * precisa entender: olhar a ponta não tira o item de lá.
  */
-export function peekNote(code: string | undefined, snapshot: Snapshot, changes: Change[]): string | undefined {
+export function peekNote(
+  code: string | undefined,
+  snapshot: Snapshot,
+  changes: Change[],
+  language: Language = 'pt',
+): string | undefined {
   const m = code && /\b([A-Za-z_$][\w$]*)\s*\.\s*peek\s*\(/.exec(code);
   if (!m) return undefined;
   const arr = snapshot.arrays.find((a) => a.name === m[1]);
@@ -77,9 +90,8 @@ export function peekNote(code: string | undefined, snapshot: Snapshot, changes: 
   if (changes.some((c) => 'array' in c && c.array === arr.name)) return undefined;
   const value = arr.kind === 'stack' ? arr.values.at(-1) : arr.values[0];
   if (value === undefined) return undefined;
-  return arr.kind === 'stack'
-    ? `peek() só olhou o topo de ${arr.name}: ${value} continua lá.`
-    : `peek() só olhou a frente da fila ${arr.name}: ${value} continua lá.`;
+  const msg = MESSAGES[language];
+  return arr.kind === 'stack' ? msg.peekStack(arr.name, value) : msg.peekQueue(arr.name, value);
 }
 
 function isText(s: string | undefined): s is string {

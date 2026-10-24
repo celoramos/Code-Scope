@@ -1,89 +1,70 @@
 import type { Change } from './diff';
+import { MESSAGES, type Language, type Messages } from './messages';
 
 /**
  * Modo iniciante: uma frase curta por mudança, na ordem em que o aluno deve
  * ler. Arrays primeiro, porque são o assunto; ponteiros depois.
  */
-export function explain(changes: Change[], isFirstStep = false, notes: string[] = []): string[] {
+export function explain(changes: Change[], isFirstStep = false, notes: string[] = [], language: Language = 'pt'): string[] {
+  const m = MESSAGES[language];
   if (isFirstStep) {
     const added = changes.filter((c): c is Extract<Change, { kind: 'array-added' }> => c.kind === 'array-added');
-    if (added.length === 0) return ['Primeiro passo. Ainda não há arrays nas variáveis locais.'];
-    return added.map((c) => `Primeiro passo: ${describe(c)}.`);
+    if (added.length === 0) return [m.firstStepNoArrays];
+    return added.map((c) => m.firstStep(describe(c, m)));
   }
 
   // O que mudou vem antes das notas (caminho do programa, peek): os dados são o assunto.
   const isVariable = (c: Change) => c.kind === 'pointer' || c.kind === 'scalar';
-  const arrays = changes.filter((c) => !isVariable(c)).map(sentence);
-  const variables = changes.filter(isVariable).map(sentence);
+  const arrays = changes.filter((c) => !isVariable(c)).map((c) => sentence(c, m));
+  const variables = changes.filter(isVariable).map((c) => sentence(c, m));
   const all = [...arrays, ...variables, ...notes];
-  return all.length > 0 ? all : ['Nada mudou neste passo.'];
+  return all.length > 0 ? all : [m.nothingChanged];
 }
 
-function sentence(c: Change): string {
+function sentence(c: Change, m: Messages): string {
   switch (c.kind) {
     case 'set':
-      return `${c.array}[${c.index}] mudou de ${c.from} para ${c.to}.`;
+      return m.set(c.array, c.index, c.from, c.to);
     case 'swap':
-      return c.steps === 2
-        ? `${c.array}[${c.a}] e ${c.array}[${c.b}] terminaram de trocar de lugar. A troca levou dois passos e usou uma variável auxiliar.`
-        : `${c.array}[${c.a}] e ${c.array}[${c.b}] trocaram de lugar.`;
+      return c.steps === 2 ? m.swapTwoSteps(c.array, c.a, c.b) : m.swap(c.array, c.a, c.b);
     case 'array-added':
       if (c.structure === 'list' || c.structure === 'stack' || c.structure === 'queue') {
-        const noun = { list: 'A lista', stack: 'A pilha', queue: 'A fila' }[c.structure];
-        return `${noun} ${c.array} foi criada ${c.length === 0 ? 'vazia' : `com ${plural(c.length, 'item', 'itens')}`}.`;
+        return m.collectionCreated(c.structure, c.array, c.length);
       }
-      if (c.structure === 'matrix') return `A matriz ${c.array} foi criada com ${size(c)}.`;
-      return `O array ${c.array} foi criado com ${plural(c.length, 'posição', 'posições')}.`;
+      if (c.structure === 'matrix') return m.matrixCreated(c.array, c.length, c.cols ?? 0);
+      return m.arrayCreated(c.array, c.length);
     case 'array-removed':
-      return `O array ${c.array} saiu de escopo.`;
+      return m.arrayRemoved(c.array);
     case 'array-resized':
-      return `${c.array} agora tem ${plural(c.to, 'posição', 'posições')} (antes tinha ${c.from}).`;
+      return m.arrayResized(c.array, c.from, c.to);
     case 'insert':
-      if (c.structure === 'stack' && !c.shifted) return `${c.value} foi empilhado no topo de ${c.array}.`;
-      if (c.structure === 'queue' && !c.shifted) return `${c.value} entrou no fim da fila ${c.array}.`;
-      return c.shifted
-        ? `${c.array} ganhou ${c.value} na posição ${c.index}. Os itens que estavam dali em diante andaram uma posição.`
-        : `${c.array} ganhou ${c.value} no fim, na posição ${c.index}.`;
+      if (c.structure === 'stack' && !c.shifted) return m.pushed(c.array, c.value);
+      if (c.structure === 'queue' && !c.shifted) return m.enqueued(c.array, c.value);
+      return c.shifted ? m.insertedShifting(c.array, c.value, c.index) : m.insertedAtEnd(c.array, c.value, c.index);
     case 'remove':
-      // A regra da estrutura vai junto: é o que o aluno precisa guardar.
-      if (c.structure === 'stack' && !c.shifted) {
-        return `${c.value} saiu do topo de ${c.array}. Na pilha, sai sempre o último que entrou.`;
-      }
-      if (c.structure === 'queue' && c.index === 0) {
-        return `${c.value} saiu da frente da fila ${c.array}. Na fila, sai sempre quem chegou primeiro.`;
-      }
-      return c.shifted
-        ? `${c.value} saiu de ${c.array} (posição ${c.index}). Os itens seguintes voltaram uma posição.`
-        : `${c.value} saiu do fim de ${c.array} (posição ${c.index}).`;
+      if (c.structure === 'stack' && !c.shifted) return m.popped(c.array, c.value);
+      if (c.structure === 'queue' && c.index === 0) return m.dequeued(c.array, c.value);
+      return c.shifted ? m.removedShifting(c.array, c.value, c.index) : m.removedFromEnd(c.array, c.value, c.index);
     case 'scalar':
-      if (c.from === undefined) return `${c.name} foi criada valendo ${c.to}.`;
-      if (c.to === undefined) return `${c.name} saiu de escopo.`;
-      return `${c.name} mudou de ${c.from} para ${c.to}.`;
+      if (c.from === undefined) return m.variableCreated(c.name, String(c.to));
+      if (c.to === undefined) return m.variableGone(c.name);
+      return m.variableChanged(c.name, c.from, c.to);
     case 'pointer':
-      if (c.from === undefined) return `${c.name} foi criada valendo ${c.to}.`;
-      if (c.to === undefined) return `${c.name} saiu de escopo.`;
+      if (c.from === undefined) return m.variableCreated(c.name, String(c.to));
+      if (c.to === undefined) return m.variableGone(c.name);
       // Contadores de laço andam de um em um; o verbo diz a direção sem o aluno fazer a conta.
-      if (c.to === c.from + 1) return `${c.name} avançou de ${c.from} para ${c.to}.`;
-      if (c.to === c.from - 1) return `${c.name} recuou de ${c.from} para ${c.to}.`;
-      if (c.to === 0 && c.from > 0) return `${c.name} voltou para 0 (o laço recomeçou).`;
-      return `${c.name} mudou de ${c.from} para ${c.to}.`;
+      if (c.to === c.from + 1) return m.pointerForward(c.name, c.from, c.to);
+      if (c.to === c.from - 1) return m.pointerBack(c.name, c.from, c.to);
+      if (c.to === 0 && c.from > 0) return m.pointerRestarted(c.name);
+      return m.variableChanged(c.name, c.from, c.to);
   }
 }
 
 /** "numeros tem 5 posições", "lista é uma lista vazia", "grade tem 2 linhas e 3 colunas". */
-function describe(c: Extract<Change, { kind: 'array-added' }>): string {
-  if (c.structure === 'matrix') return `${c.array} tem ${size(c)}`;
+function describe(c: Extract<Change, { kind: 'array-added' }>, m: Messages): string {
+  if (c.structure === 'matrix') return m.describeMatrix(c.array, c.length, c.cols ?? 0);
   if (c.structure === 'list' || c.structure === 'stack' || c.structure === 'queue') {
-    const noun = { list: 'lista', stack: 'pilha', queue: 'fila' }[c.structure];
-    return c.length === 0 ? `${c.array} é uma ${noun} vazia` : `${c.array} é uma ${noun} com ${plural(c.length, 'item', 'itens')}`;
+    return m.describeCollection(c.structure, c.array, c.length);
   }
-  return `${c.array} tem ${plural(c.length, 'posição', 'posições')}`;
-}
-
-function size(c: { length: number; cols?: number }): string {
-  return `${plural(c.length, 'linha', 'linhas')} e ${plural(c.cols ?? 0, 'coluna', 'colunas')}`;
-}
-
-function plural(n: number, one: string, many: string): string {
-  return `${n} ${n === 1 ? one : many}`;
+  return m.describeArray(c.array, c.length);
 }

@@ -1,0 +1,19 @@
+{
+  "description": "Shows your code running, visually, while you debug, to teach programming. Java, JavaScript, TypeScript, Python and any language with a debugger in VS Code.",
+  "view.name": "Visualization",
+  "command.show": "Show panel",
+  "command.clearHistory": "Clear history",
+  "config.beginnerMode": "Shows a sentence explaining what changed in each step.",
+  "config.animationSpeed": "Speed of the panel animations.",
+  "config.animationSpeed.slow": "Movements take twice as long, good for presenting in class.",
+  "config.animationSpeed.normal": "Default duration.",
+  "config.animationSpeed.fast": "Half the duration, for those who step quickly with F10.",
+  "config.animationSpeed.off": "No movement; changes are still highlighted.",
+  "config.animationSpeed.slow.label": "Slow",
+  "config.animationSpeed.normal.label": "Normal",
+  "config.animationSpeed.fast.label": "Fast",
+  "config.animationSpeed.off.label": "Off",
+  "config.maxElements": "How many positions of each array are read and drawn.",
+  "config.valueNames": "Names of integer variables that hold a value, not a position. They do not become arrows under the arrays.",
+  "config.revealOnDebug": "Opens the Code Scope panel on the first stop of each debug session."
+}

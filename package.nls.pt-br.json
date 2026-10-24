@@ -1,0 +1,19 @@
+{
+  "description": "Mostra o código rodando de forma visual durante o debug, para ensinar programação. Java, JavaScript, TypeScript, Python e qualquer linguagem com debugger no VS Code.",
+  "view.name": "Visualização",
+  "command.show": "Mostrar painel",
+  "command.clearHistory": "Limpar histórico",
+  "config.beginnerMode": "Mostra uma frase explicando o que mudou em cada passo.",
+  "config.animationSpeed": "Velocidade das animações do painel.",
+  "config.animationSpeed.slow": "Movimentos com o dobro da duração, bom para apresentar em aula.",
+  "config.animationSpeed.normal": "Duração padrão.",
+  "config.animationSpeed.fast": "Metade da duração, para quem avança rápido com F10.",
+  "config.animationSpeed.off": "Sem movimento; as mudanças continuam destacadas.",
+  "config.animationSpeed.slow.label": "Lenta",
+  "config.animationSpeed.normal.label": "Normal",
+  "config.animationSpeed.fast.label": "Rápida",
+  "config.animationSpeed.off.label": "Desligada",
+  "config.maxElements": "Quantas posições de cada array são lidas e desenhadas.",
+  "config.valueNames": "Nomes de variáveis inteiras que guardam um valor, não uma posição. Elas não viram seta embaixo dos arrays.",
+  "config.revealOnDebug": "Abre o painel do Code Scope na primeira parada de cada sessão de debug."
+}

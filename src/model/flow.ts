@@ -6,6 +6,8 @@
  * forma de laço ("loop", "repeat") só não ganham a frase de fluxo.
  */
 
+import { MESSAGES, type Language } from './messages';
+
 export interface LineRef {
   line: number;
   code?: string;
@@ -14,14 +16,15 @@ export interface LineRef {
 const CONDITION = /^(?:\}\s*)?(?:else\s+if|elif|if)\b/;
 const LOOP = /^(?:for|while)\b/;
 
-export function explainFlow(executed: LineRef | undefined, next: LineRef): string | undefined {
+export function explainFlow(executed: LineRef | undefined, next: LineRef, language: Language = 'pt'): string | undefined {
+  const m = MESSAGES[language];
   const code = executed?.code;
   if (!executed || code === undefined) return undefined;
 
-  if (/^break\b/.test(code)) return 'O break interrompeu o laço.';
+  if (/^break\b/.test(code)) return m.flowBreak;
 
   if (LOOP.test(next.code ?? '') && next.line < executed.line) {
-    return `Fim de uma volta do laço: o programa voltou para a linha ${next.line}.`;
+    return m.flowLoopEnd(next.line);
   }
 
   // Pular para a linha seguinte é entrar no bloco; pular mais adiante é passar por cima dele.
@@ -29,12 +32,12 @@ export function explainFlow(executed: LineRef | undefined, next: LineRef): strin
   const skipped = next.line > executed.line + 1;
 
   if (CONDITION.test(code)) {
-    if (entered) return `A condição da linha ${executed.line} foi verdadeira: o programa entrou no if.`;
-    if (skipped) return `A condição da linha ${executed.line} foi falsa: o programa pulou o bloco do if.`;
+    if (entered) return m.flowIfTrue(executed.line);
+    if (skipped) return m.flowIfFalse(executed.line);
   }
   if (LOOP.test(code)) {
-    if (entered) return `A condição do laço na linha ${executed.line} é verdadeira: o programa entra no corpo do laço.`;
-    if (skipped) return `A condição do laço na linha ${executed.line} ficou falsa: o laço terminou.`;
+    if (entered) return m.flowLoopEnter(executed.line);
+    if (skipped) return m.flowLoopExit(executed.line);
   }
   return undefined;
 }
