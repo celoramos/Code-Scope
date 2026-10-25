@@ -45,10 +45,15 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
 
   constructor(private readonly extensionUri: vscode.Uri) {}
 
+  /** O script do painel, empacotado de media/src pelo esbuild.js. */
+  private get dist() {
+    return vscode.Uri.joinPath(this.extensionUri, 'dist');
+  }
+
   resolveWebviewView(view: vscode.WebviewView) {
     this.view = view;
     const media = vscode.Uri.joinPath(this.extensionUri, 'media');
-    view.webview.options = { enableScripts: true, localResourceRoots: [media] };
+    view.webview.options = { enableScripts: true, localResourceRoots: [media, this.dist] };
     view.webview.html = this.html(view.webview, media, false);
     view.webview.onDidReceiveMessage((msg: FromWebview) => this.receive(view.webview, msg));
     view.onDidDispose(() => (this.view = undefined));
@@ -64,7 +69,7 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
     const panel = vscode.window.createWebviewPanel('codeScope.presentation', 'Code Scope', vscode.ViewColumn.Beside, {
       enableScripts: true,
       retainContextWhenHidden: true,
-      localResourceRoots: [media],
+      localResourceRoots: [media, this.dist],
     });
     panel.iconPath = vscode.Uri.joinPath(media, 'icon.svg');
     panel.webview.html = this.html(panel.webview, media, true);
@@ -95,7 +100,7 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
     return panelHtml({
       cspSource: webview.cspSource,
       cssUri: webview.asWebviewUri(vscode.Uri.joinPath(media, 'main.css')).toString(),
-      jsUri: webview.asWebviewUri(vscode.Uri.joinPath(media, 'main.js')).toString(),
+      jsUri: webview.asWebviewUri(vscode.Uri.joinPath(this.dist, 'webview.js')).toString(),
       nonce: makeNonce(),
       present,
       language: uiLanguage(),

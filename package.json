@@ -163,7 +163,7 @@
   },
   "scripts": {
     "compile": "npm run check-types && node esbuild.js",
-    "check-types": "tsc --noEmit && tsc --noEmit --allowJs --checkJs --lib dom,es2022 --target es2022 --skipLibCheck --types node media/main.js",
+    "check-types": "tsc --noEmit && tsc --noEmit --allowJs --checkJs --lib dom,es2022 --target es2022 --skipLibCheck --types node media/src/main.js",
     "watch": "node esbuild.js --watch",
     "package": "npm run check-types && node esbuild.js --production",
     "lint": "eslint .",

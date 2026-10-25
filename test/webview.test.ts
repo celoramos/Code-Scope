@@ -1,6 +1,7 @@
 import * as assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as esbuild from 'esbuild';
 import { JSDOM, VirtualConsole } from 'jsdom';
 import { makeFrame } from '../src/model/frame';
 import { History } from '../src/model/history';
@@ -11,7 +12,10 @@ import { panelHtml } from '../src/webview/html';
 import type { FromWebview, ToWebview } from '../src/webview/scopeViewProvider';
 
 const root = path.join(__dirname, '..');
-const mainJs = fs.readFileSync(path.join(root, 'media', 'main.js'), 'utf8');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { webview } = require('../esbuild.js') as { webview: esbuild.BuildOptions };
+// O script do painel empacotado na hora, com as opções do build: o teste nunca roda um dist velho.
+const mainJs = esbuild.buildSync({ ...webview, absWorkingDir: root, write: false }).outputFiles[0].text;
 
 /** Snapshots coletados dos exemplos em Java com o debugger real (só os snapshots, sem o caminho local). */
 function fixture(name: string): Snapshot[] {

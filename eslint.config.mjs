@@ -27,7 +27,7 @@ export default tseslint.config(
   {
     files: ['media/**/*.js'],
     languageOptions: {
-      sourceType: 'script',
+      sourceType: 'module',
       globals: {
         window: 'readonly',
         document: 'readonly',
@@ -41,7 +41,7 @@ export default tseslint.config(
   },
   {
     files: ['*.js', '*.mjs'],
-    languageOptions: { globals: { require: 'readonly', process: 'readonly', console: 'readonly', __dirname: 'readonly' } },
+    languageOptions: { globals: { require: 'readonly', process: 'readonly', console: 'readonly', __dirname: 'readonly', module: 'writable' } },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
 );

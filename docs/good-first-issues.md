@@ -52,7 +52,7 @@ Levels: **no code** (you do not need to program), **beginner** (a few lines, one
 ### 8. Python `set` and Java `HashSet`
 
 - **Why:** sets are the one common collection the panel does not draw yet.
-- **Where:** the adapters in `src/debug/adapters/`, a new kind in `src/model/snapshot.ts`, the drawing in `media/main.js`. Start by running the discovery test (see CONTRIBUTING) to see the real format.
+- **Where:** the adapters in `src/debug/adapters/`, a new kind in `src/model/snapshot.ts`, the drawing in `media/src/` (arrays in `arrays.js`, objects in `heap.js`). Start by running the discovery test (see CONTRIBUTING) to see the real format.
 - **Done when:** a set is drawn as boxes without positions, adding and removing are explained, with unit and integration tests.
 
 ### 9. JavaScript in the browser
@@ -75,4 +75,4 @@ Levels: **no code** (you do not need to program), **beginner** (a few lines, one
 ### 12. Variables of earlier calls with arrays and objects
 
 - **Why:** in the call stack, calls below the current one show only simple values. In merge sort, for example, each call has its own piece of the array.
-- **Where:** `readCalls` in `src/debug/dapCollector.ts` and `renderCalls` in `media/main.js`.
+- **Where:** `readCalls` in `src/debug/dapCollector.ts` and `renderCalls` in `media/src/calls.js`.

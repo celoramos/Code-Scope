@@ -52,7 +52,7 @@ Níveis: **sem código** (não precisa programar), **iniciante** (poucas linhas,
 ### 8. `set` do Python e `HashSet` do Java
 
 - **Por quê:** conjunto é a coleção comum que o painel ainda não desenha.
-- **Onde:** os adaptadores em `src/debug/adapters/`, um tipo novo em `src/model/snapshot.ts`, o desenho em `media/main.js`. Comece rodando o teste de descoberta (veja o CONTRIBUTING) para ver o formato real.
+- **Onde:** os adaptadores em `src/debug/adapters/`, um tipo novo em `src/model/snapshot.ts`, o desenho em `media/src/` (arrays em `arrays.js`, objetos em `heap.js`). Comece rodando o teste de descoberta (veja o CONTRIBUTING) para ver o formato real.
 - **Pronto quando:** o conjunto aparece como caixas sem posição, entrar e sair são explicados, com testes unitários e de integração.
 
 ### 9. JavaScript no navegador
@@ -75,4 +75,4 @@ Níveis: **sem código** (não precisa programar), **iniciante** (poucas linhas,
 ### 12. Variáveis das chamadas de baixo com arrays e objetos
 
 - **Por quê:** na pilha de chamadas, as chamadas de baixo só mostram valores simples. No merge sort, por exemplo, cada chamada tem o seu pedaço do array.
-- **Onde:** `readCalls` em `src/debug/dapCollector.ts` e `renderCalls` em `media/main.js`.
+- **Onde:** `readCalls` em `src/debug/dapCollector.ts` e `renderCalls` em `media/src/calls.js`.
