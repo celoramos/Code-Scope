@@ -102,7 +102,7 @@ As explicações de fluxo (if, laços, break) entendem a família de C (Java, Ja
 
 ## Requisitos
 
-- VS Code 1.90 ou mais novo
+- VS Code 1.95 ou mais novo
 - O debugger da sua linguagem:
   - Java: **Extension Pack for Java** (`code --install-extension vscjava.vscode-java-pack`) e um JDK
   - JavaScript e TypeScript: Node.js 22 ou mais novo; o debugger vem no VS Code. Com o Node.js 20, o debugger do VS Code (js-debug 1.140) roda o programa sem parar nos breakpoints

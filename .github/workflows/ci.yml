@@ -70,9 +70,9 @@ jobs:
             vscode: stable
             grep: JavaScript|Python
             extensions: ms-python.debugpy
-          - name: VS Code 1.90
+          - name: VS Code 1.95
             os: windows-latest
-            vscode: 1.90.0
+            vscode: 1.95.0
             grep: JavaScript
             extensions: ''
     runs-on: ${{ matrix.os }}

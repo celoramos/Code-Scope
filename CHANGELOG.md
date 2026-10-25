@@ -5,6 +5,7 @@
 ### Mudou
 
 - `codeScope.animationSpeed` agora usa `slow`, `normal`, `fast` e `off` no `settings.json`. Os valores antigos (`lenta`, `rapida`, `desligada`) continuam funcionando.
+- Pede VS Code 1.95 ou mais novo (antes, 1.90). No 1.90 até o 1.94, o debugger de JavaScript que vem com o VS Code não mostrava os objetos ao dar F10 por cima de um `new`; o teste de integração agora roda no 1.95 para garantir.
 
 ## 0.6.0 (beta)
 

@@ -102,7 +102,7 @@ The flow explanations (if, loops, break) understand the C family (Java, JavaScri
 
 ## Requirements
 
-- VS Code 1.90 or newer
+- VS Code 1.95 or newer
 - The debugger for your language:
   - Java: **Extension Pack for Java** (`code --install-extension vscjava.vscode-java-pack`) and a JDK
   - JavaScript and TypeScript: Node.js 22 or newer; the debugger ships with VS Code. With Node.js 20 the VS Code debugger (js-debug 1.140) runs the program without stopping at breakpoints
