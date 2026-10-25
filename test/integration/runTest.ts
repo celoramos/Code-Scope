@@ -33,11 +33,15 @@ async function main() {
   if (only === undefined && has('dotnet')) extensions.push('ms-dotnettools.csharp');
   if (only === undefined && has('gcc') && has('gdb')) extensions.push('ms-vscode.cpptools');
 
-  cp.spawnSync(cli, [...cliArgs, '--extensions-dir', extensionsDir, ...extensions.flatMap((e) => ['--install-extension', e])], {
-    encoding: 'utf-8',
-    stdio: 'inherit',
-    shell: process.platform === 'win32',
-  });
+  // Sem extensão para instalar, o CLI abriria uma janela do VS Code; com ela aberta,
+  // versões antigas (1.90) se recusam a rodar os testes.
+  if (extensions.length > 0) {
+    cp.spawnSync(cli, [...cliArgs, '--extensions-dir', extensionsDir, ...extensions.flatMap((e) => ['--install-extension', e])], {
+      encoding: 'utf-8',
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+    });
+  }
 
   await runTests({
     vscodeExecutablePath: vscodePath,
