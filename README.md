@@ -194,7 +194,7 @@ If the panel does not show what you expected, open **Output**, pick **Code Scope
 | Setting | Default | What it does |
 |---|---|---|
 | `codeScope.beginnerMode` | `true` | Shows the sentence explaining each step |
-| `codeScope.animationSpeed` | `normal` | Slow, Normal, Fast or Off (in `settings.json`: `lenta`, `normal`, `rapida`, `desligada`). If the system asks for reduced motion, animations are off regardless |
+| `codeScope.animationSpeed` | `normal` | Slow, Normal, Fast or Off (in `settings.json`: `slow`, `normal`, `fast`, `off`). If the system asks for reduced motion, animations are off regardless |
 | `codeScope.maxElements` | `50` | How many positions of each array, list or matrix row are read |
 | `codeScope.valueNames` | `temp`, `aux`, `alvo`, `soma`... | Integers with these names hold a value, not a position, and do not become arrows |
 | `codeScope.revealOnDebug` | `true` | Opens the panel on the first stop of each debug session |

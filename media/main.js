@@ -84,7 +84,7 @@
    */
 
   /** Multiplicador das durações em CSS; 0 desliga o movimento. */
-  const SPEED = { lenta: 2, normal: 1, rapida: 0.5, desligada: 0 };
+  const SPEED = { slow: 2, normal: 1, fast: 0.5, off: 0 };
 
   const EMPTY_TITLE = { idle: t('idle'), running: t('running'), ended: t('ended') };
 

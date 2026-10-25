@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
+import { readAnimationSpeed, type AnimationSpeed } from './animationSpeed';
 import type { Limits } from './debug/dapCollector';
 import type { FrameOptions } from './model/frame';
 import type { Language } from './model/messages';
 
-export type AnimationSpeed = 'lenta' | 'normal' | 'rapida' | 'desligada';
+export type { AnimationSpeed };
 
 export interface Settings {
   limits: Limits;
@@ -26,7 +27,7 @@ export function readSettings(): Settings {
       beginnerMode: c.get('beginnerMode', true),
       language: uiLanguage(),
     },
-    animationSpeed: c.get<AnimationSpeed>('animationSpeed', 'normal'),
+    animationSpeed: readAnimationSpeed(c.get('animationSpeed')),
     revealOnDebug: c.get('revealOnDebug', true),
     pauseOnErrors: c.get('pauseOnErrors', true),
   };

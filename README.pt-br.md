@@ -194,7 +194,7 @@ Se o painel não mostrar o que você esperava, abra **Output**, escolha **Code S
 | Configuração | Padrão | O que faz |
 |---|---|---|
 | `codeScope.beginnerMode` | `true` | Mostra a frase explicando cada passo |
-| `codeScope.animationSpeed` | `normal` | Lenta, Normal, Rápida ou Desligada (no `settings.json`: `lenta`, `normal`, `rapida`, `desligada`). Se o sistema pedir menos movimento, as animações ficam desligadas de qualquer forma |
+| `codeScope.animationSpeed` | `normal` | Lenta, Normal, Rápida ou Desligada (no `settings.json`: `slow`, `normal`, `fast`, `off`). Se o sistema pedir menos movimento, as animações ficam desligadas de qualquer forma |
 | `codeScope.maxElements` | `50` | Quantas posições de cada array, lista ou linha de matriz são lidas |
 | `codeScope.valueNames` | `temp`, `aux`, `alvo`, `soma`... | Inteiros com esses nomes guardam valor, não posição, e não viram seta |
 | `codeScope.revealOnDebug` | `true` | Abre o painel na primeira parada de cada sessão de debug |

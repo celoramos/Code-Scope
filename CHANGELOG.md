@@ -1,5 +1,11 @@
 # Changelog
 
+## Não lançado
+
+### Mudou
+
+- `codeScope.animationSpeed` agora usa `slow`, `normal`, `fast` e `off` no `settings.json`. Os valores antigos (`lenta`, `rapida`, `desligada`) continuam funcionando.
+
 ## 0.6.0 (beta)
 
 ### Novo

@@ -88,10 +88,10 @@
         "codeScope.animationSpeed": {
           "type": "string",
           "enum": [
-            "lenta",
+            "slow",
             "normal",
-            "rapida",
-            "desligada"
+            "fast",
+            "off"
           ],
           "enumDescriptions": [
             "%config.animationSpeed.slow%",
