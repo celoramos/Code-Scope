@@ -81,6 +81,7 @@ export class ScopeController implements vscode.Disposable {
 
   private async onStopped(session: vscode.DebugSession, threadId: number | undefined, reason?: string) {
     const gen = ++this.generation;
+    const started = Date.now();
     try {
       const thread = threadId ?? (await firstThread(session));
       if (thread === undefined) return;
@@ -116,10 +117,10 @@ export class ScopeController implements vscode.Disposable {
       const parsed = snap.exception ? undefined : parseCondition(snap.code, collected.adapter.id === 'python' ? 'python' : 'c');
       if (parsed) snap.condition = await evaluateCondition(session, collected.raw.frame.id, parsed, snap);
       if (gen !== this.generation) return;
-      this.log.debug(`adaptador: ${collected.adapter.id} (sessão ${session.type})`);
+      this.log.debug(`adaptador: ${collected.adapter.id} (sessão ${session.type}), coleta em ${Date.now() - started} ms`);
       this.log.debug('scopes', JSON.stringify(collected.raw.scopes));
       this.log.debug('locals', JSON.stringify(collected.raw.locals));
-      this.log.info('snapshot', JSON.stringify(collected.snapshot));
+      this.log.debug('snapshot', JSON.stringify(collected.snapshot));
       this.lastRaw = collected.raw;
       this.history.push(collected.snapshot);
       this.showCurrent();
