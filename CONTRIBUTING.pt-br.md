@@ -34,7 +34,7 @@ npm test                   # testes unitários, rápidos
 npm run test:integration   # debuga os exemplos de Java, JavaScript e Python com os debuggers reais
 ```
 
-Para rodar só parte dos testes de integração, use `CODE_SCOPE_GREP` com um pedaço do nome (`CODE_SCOPE_GREP=JavaScript npm run test:integration`).
+Para rodar só parte dos testes de integração, use `CODE_SCOPE_GREP` com um pedaço do nome ou uma expressão regular (`CODE_SCOPE_GREP=JavaScript npm run test:integration`, `CODE_SCOPE_GREP="JavaScript|Python"`). `CODE_SCOPE_EXTENSIONS` troca a lista de extensões instaladas no VS Code de teste (separadas por vírgula; vazia não instala nenhuma), e `CODE_SCOPE_VSCODE` escolhe a versão dele (padrão `stable`).
 
 O teste de integração baixa um VS Code isolado em `.vscode-test/` na primeira vez e leva alguns minutos. Os testes de Python precisam de um interpretador; o README (seção Testes) explica como usar um Python portátil, sem instalar nada. Ele não mexe no seu VS Code. O CI roda os três a cada pull request.
 

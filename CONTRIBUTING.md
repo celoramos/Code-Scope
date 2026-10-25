@@ -35,7 +35,7 @@ npm test                   # unit tests, fast
 npm run test:integration   # debugs the Java, JavaScript and Python samples with the real debuggers
 ```
 
-To run only part of the integration tests, set `CODE_SCOPE_GREP` to part of the test name (`CODE_SCOPE_GREP=JavaScript npm run test:integration`).
+To run only part of the integration tests, set `CODE_SCOPE_GREP` to part of the test name, or a regular expression (`CODE_SCOPE_GREP=JavaScript npm run test:integration`, `CODE_SCOPE_GREP="JavaScript|Python"`). `CODE_SCOPE_EXTENSIONS` replaces the list of extensions installed in the test VS Code (comma separated; empty installs none), and `CODE_SCOPE_VSCODE` picks its version (default `stable`).
 
 The integration test downloads an isolated VS Code into `.vscode-test/` the first time and takes a few minutes. The Python tests need an interpreter; the README (Tests section) explains how to use a portable Python without installing anything. It does not touch your VS Code. CI runs all three on every pull request.
 

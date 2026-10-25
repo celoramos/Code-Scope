@@ -15,7 +15,8 @@ import {
 async function main() {
   const root = path.resolve(__dirname, '../..');
   const extensionsDir = path.join(root, '.vscode-test', 'extensions');
-  const vscodePath = await downloadAndUnzipVSCode('stable');
+  // CODE_SCOPE_VSCODE escolhe a versão (o CI testa a mínima do engines).
+  const vscodePath = await downloadAndUnzipVSCode(process.env.CODE_SCOPE_VSCODE ?? 'stable');
   const [cli, ...cliArgs] = resolveCliArgsFromVSCodeExecutablePath(vscodePath);
 
   // C# e C/C++ só entram quando há com o que compilar: um .NET e um gcc portáteis em
@@ -25,9 +26,12 @@ async function main() {
   if (extraPath.length > 0) process.env.PATH = [...extraPath, process.env.PATH].join(path.delimiter);
   if (fs.existsSync(path.join(tools, 'dotnet'))) process.env.DOTNET_ROOT = path.join(tools, 'dotnet');
   const has = (cmd: string) => cp.spawnSync(cmd, ['--version'], { shell: process.platform === 'win32' }).status === 0;
-  const extensions = ['vscjava.vscode-java-pack', 'ms-python.debugpy'];
-  if (has('dotnet')) extensions.push('ms-dotnettools.csharp');
-  if (has('gcc') && has('gdb')) extensions.push('ms-vscode.cpptools');
+  // CODE_SCOPE_EXTENSIONS troca a lista (separada por vírgula; vazia instala nada), para rodar só
+  // algumas linguagens sem baixar o Java Extension Pack.
+  const only = process.env.CODE_SCOPE_EXTENSIONS;
+  const extensions = only !== undefined ? only.split(',').filter(Boolean) : ['vscjava.vscode-java-pack', 'ms-python.debugpy'];
+  if (only === undefined && has('dotnet')) extensions.push('ms-dotnettools.csharp');
+  if (only === undefined && has('gcc') && has('gdb')) extensions.push('ms-vscode.cpptools');
 
   cp.spawnSync(cli, [...cliArgs, '--extensions-dir', extensionsDir, ...extensions.flatMap((e) => ['--install-extension', e])], {
     encoding: 'utf-8',

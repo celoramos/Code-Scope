@@ -52,3 +52,46 @@ jobs:
       - run: npm run test:integration
         env:
           CODE_SCOPE_PYTHON: ${{ steps.python.outputs.python-path }}
+
+  integration-other:
+    name: Integração em ${{ matrix.name }}
+    # Linux e macOS com os debuggers mais leves; no Windows, a versão mínima do engines.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-latest
+            vscode: stable
+            grep: JavaScript|Python
+            extensions: ms-python.debugpy
+          - name: macOS
+            os: macos-latest
+            vscode: stable
+            grep: JavaScript|Python
+            extensions: ms-python.debugpy
+          - name: VS Code 1.90
+            os: windows-latest
+            vscode: 1.90.0
+            grep: JavaScript
+            extensions: ''
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v7
+        id: python
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      # O VS Code precisa de uma tela; no Linux ela é virtual.
+      - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:integration
+        env:
+          CODE_SCOPE_PYTHON: ${{ steps.python.outputs.python-path }}
+          CODE_SCOPE_GREP: ${{ matrix.grep }}
+          CODE_SCOPE_EXTENSIONS: ${{ matrix.extensions }}
+          CODE_SCOPE_VSCODE: ${{ matrix.vscode }}
