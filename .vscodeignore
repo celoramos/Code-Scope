@@ -17,3 +17,4 @@ tsconfig.json
 .gitattributes
 CONTRIBUTING.md
 CODE_OF_CONDUCT.md
+eslint.config.mjs

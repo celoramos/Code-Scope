@@ -5,7 +5,6 @@ import { samenessNotes } from '../../src/model/sameness';
 import { mutationNotes } from '../../src/model/mutation';
 import { polymorphismNote } from '../../src/model/calls';
 import { graphViews } from '../../src/model/graph';
-import { fieldShadows } from '../../src/model/scope';
 import { heapView } from '../../src/model/heap';
 import * as assert from 'node:assert/strict';
 import * as path from 'node:path';

@@ -166,20 +166,24 @@
     "check-types": "tsc --noEmit && tsc --noEmit --allowJs --checkJs --lib dom,es2022 --target es2022 --skipLibCheck --types node media/main.js",
     "watch": "node esbuild.js --watch",
     "package": "npm run check-types && node esbuild.js --production",
+    "lint": "eslint .",
     "test": "mocha",
     "test:integration": "npm run compile && node esbuild.test.js && tsx test/integration/runTest.ts",
     "vscode:prepublish": "npm run package",
     "vsix": "vsce package --out code-scope.vsix"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.17.0",
     "@types/vscode": "^1.90.0",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.25.0",
+    "eslint": "^9.39.5",
     "mocha": "^11.1.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.72.0"
   }
 }

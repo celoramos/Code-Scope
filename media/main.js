@@ -1,6 +1,6 @@
 // @ts-check
 (function () {
-  // @ts-ignore acquireVsCodeApi é injetado pelo VS Code
+  // @ts-expect-error acquireVsCodeApi é injetado pelo VS Code
   const vscode = acquireVsCodeApi();
 
   const empty = byId('empty');
