@@ -35,7 +35,14 @@
     "java",
     "javascript",
     "typescript",
-    "python"
+    "python",
+    "c#",
+    "c",
+    "debugger",
+    "visualization",
+    "data structures",
+    "beginners",
+    "recursion"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
