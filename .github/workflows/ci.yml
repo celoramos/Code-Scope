@@ -63,9 +63,24 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y gdb
       - run: npm ci
       # O VS Code precisa de uma tela; no Linux ela é virtual.
-      - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:integration
+      - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:integration 2>&1 | tee itest.log
+        shell: bash
         env:
           CODE_SCOPE_PYTHON: ${{ steps.python.outputs.python-path }}
+      # O log do job só abre com login no GitHub; anotações qualquer um vê na página do run.
+      # Resumo: quantos testes passaram por linguagem, os pulados e o nome de cada falha.
+      - if: always()
+        shell: bash
+        run: |
+          [ -f itest.log ] || exit 0
+          # Cada describe do mocha começa na coluna 2 ("Java Debugger real"); a descoberta de formatos sempre pula.
+          per=$(awk '/^  [A-Z]/ && !/DISCOVER/ {s=$0; sub(/^ +/, "", s); o[++k]=s} /DISCOVER/ {s=""}
+            s != "" && /^ +(✔|√) / {n[s]++} s != "" && /^ +- / {p[s]++}
+            END {for (i = 1; i <= k; i++) printf "%s: %d ok, %d pulados. ", o[i], n[o[i]], p[o[i]]}' itest.log)
+          total=$(grep -oE '[0-9]+ (passing|failing|pending)' itest.log | paste -sd ',' -)
+          echo "::notice title=Integração (${{ matrix.name }})::${total}. ${per}"
+          grep -E 'testes pulados' itest.log | sort -u | sed 's/^/::warning::/' || true
+          grep -E -A1 '^ +[0-9]+\) ' itest.log | grep -vE '^--$' | paste -d ' ' - - | head -10 | sed 's/^ */::error::/' || true
 
   minimum:
     name: Integração no VS Code 1.95
