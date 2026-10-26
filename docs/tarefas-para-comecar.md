@@ -24,10 +24,10 @@ Níveis: **sem código** (não precisa programar), **iniciante** (poucas linhas,
 - **Por quê:** o painel tem rótulos para leitores de tela e passa numa verificação automática (axe-core), mas ninguém ouviu ainda com NVDA, JAWS ou VoiceOver. Uma ferramenta não diz se o que é lido faz sentido.
 - **Como:** avance pelo `samples/java/BubbleSort.java` e pelo `samples/java/ListaLigada.java` e conte, numa issue, o que é lido e o que falta.
 
-### 4. Conferir tema claro e de alto contraste
+### 4. Conferir outros temas de cores
 
-- **Por quê:** todas as cores vêm do tema do VS Code. O painel foi conferido num navegador com as cores dos temas claro e de alto contraste copiadas, mas ainda não dentro do VS Code com esses temas ligados.
-- **Como:** troque para "Light Modern" e para "High Contrast", passe por alguns exemplos e abra uma issue com imagens do que ficar difícil de ler.
+- **Por quê:** todas as cores vêm do tema do VS Code. Os temas escuro, claro e de alto contraste que vêm com o VS Code foram conferidos dentro dele com os exemplos em JavaScript. Os temas populares do Marketplace (Solarized, Monokai, One Dark, GitHub) não.
+- **Como:** instale um desses temas, passe por alguns exemplos em Java ou Python e abra uma issue com imagens do que ficar difícil de ler.
 
 ## Iniciante
 
