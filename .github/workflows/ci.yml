@@ -75,7 +75,7 @@ jobs:
           [ -f itest.log ] || exit 0
           # Cada describe do mocha começa na coluna 2 ("Java Debugger real"); a descoberta de formatos sempre pula.
           per=$(awk '/^  [A-Z]/ && !/DISCOVER/ {s=$0; sub(/^ +/, "", s); o[++k]=s} /DISCOVER/ {s=""}
-            s != "" && /^ +(✔|√) / {n[s]++} s != "" && /^ +- / {p[s]++}
+            s != "" && /^ +(✔|√|✓) / {n[s]++} s != "" && /^ +- / {p[s]++}
             END {for (i = 1; i <= k; i++) printf "%s: %d ok, %d pulados. ", o[i], n[o[i]], p[o[i]]}' itest.log)
           total=$(grep -oE '[0-9]+ (passing|failing|pending)' itest.log | paste -sd ',' -)
           echo "::notice title=Integração (${{ matrix.name }})::${total}. ${per}"
