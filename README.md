@@ -76,7 +76,7 @@ Code Scope talks to the debugger through the **Debug Adapter Protocol**, the pro
 | JavaScript and TypeScript | the one built into VS Code (Node, Chrome, Edge) | arrays, matrices, stack (`push`/`pop`), queue (`push`/`shift`), objects as dictionaries, `Map`, class instances, linked lists, trees | validated with the real debugger on Node; the browser uses the same adapter, not tested yet |
 | Python | Python Debugger (`ms-python.debugpy`) | `list`, `tuple`, `deque`, `dict`, matrices, stack (`append`/`pop()`), queue (`pop(0)`/`popleft()`), objects, linked lists, trees | validated with the real debugger |
 | C# | C# extension (`ms-dotnettools.csharp`) | arrays, `List`, `Stack`, `Queue`, `Dictionary`, objects, linked lists | validated with the real debugger |
-| C | C/C++ extension (`ms-vscode.cpptools`) with gdb | arrays, pointers to `struct`, linked lists | validated with the real debugger (gdb); C++ containers like `std::vector` are not drawn yet |
+| C | C/C++ extension (`ms-vscode.cpptools`) with gdb | arrays, pointers to `struct`, linked lists | validated with the real debugger (gdb) on Windows and Linux; on macOS the C/C++ extension uses lldb, not tested yet. C++ containers like `std::vector` are not drawn yet |
 | Others (Go, Rust, PHP...) | any VS Code debugger | collections the debugger marks as indexed, integers and simple values | generic mode: shows what the protocol guarantees and leaves out what it does not understand |
 
 The flow explanations (if, loops, break) understand the C family (Java, JavaScript, C#, C, Go) and Python. If the panel does not recognize something in your language, open an [issue](https://github.com/celoramos/Code-Scope/issues/new/choose) with the log (see below): that is how a new adapter starts.
@@ -235,7 +235,7 @@ language debugger -- "stopped" event --> trackerFactory
 | `npm test` | Unit tests for the model, adapters and collector, with responses recorded from the real debuggers |
 | `npm run test:integration` | Downloads an isolated VS Code into `.vscode-test/`, installs the Java Extension Pack, the Python Debugger and, when the tools are there, the C# and C/C++ extensions in it, and really debugs the Java, JavaScript, Python, C# and C samples. Your VS Code is not touched. Takes a few minutes the first time |
 
-CI runs both on every push and publishes the `.vsix` as an artifact.
+CI runs both on every push, on Windows, Linux and macOS, plus the integration test on the minimum VS Code (1.95), and publishes the `.vsix` as an artifact. Each integration job leaves a note on the run page with how many tests passed or were skipped per debugger.
 
 The Python tests need an interpreter. Point to one with the `CODE_SCOPE_PYTHON` variable or, without installing anything, unzip the *Windows embeddable package* from python.org into `.vscode-test/python` and rename the `python3XX._pth` file that comes with it. Without an interpreter, they are skipped with a warning.
 
