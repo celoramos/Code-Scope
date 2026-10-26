@@ -4,7 +4,7 @@
 
 Extensão do VS Code que mostra o código rodando de forma visual, para quem está aprendendo a programar. Gratuita e de código aberto ([MIT](LICENSE)).
 
-> **Beta.** A versão 0.6.0 é uma beta para as pessoas testarem e ajudarem a melhorar. Instale pela [página da release](https://github.com/celoramos/Code-Scope/releases/tag/v0.6.0) e, se algo parecer errado ou confuso, [abra uma issue](https://github.com/celoramos/Code-Scope/issues/new/choose): é a ajuda mais útil agora.
+> **Beta.** A versão 0.7.0 é uma beta para as pessoas testarem e ajudarem a melhorar. Instale pela [página da release](https://github.com/celoramos/Code-Scope/releases/tag/v0.7.0) e, se algo parecer errado ou confuso, [abra uma issue](https://github.com/celoramos/Code-Scope/issues/new/choose): é a ajuda mais útil agora.
 
 Tudo acontece dentro do VS Code: o painel fica na barra lateral, ao lado do seu código, e usa as cores do seu tema. Não abre navegador, não precisa de conta e não envia nada para a internet.
 
@@ -112,7 +112,7 @@ As explicações de fluxo (if, laços, break) entendem a família de C (Java, Ja
 
 ## Instalar
 
-A extensão ainda não está no Marketplace do VS Code. Baixe o `code-scope.vsix` da [release beta](https://github.com/celoramos/Code-Scope/releases/tag/v0.6.0) e instale:
+A extensão ainda não está no Marketplace do VS Code. Baixe o `code-scope.vsix` da [release beta](https://github.com/celoramos/Code-Scope/releases/tag/v0.7.0) e instale:
 
 ```bash
 code --install-extension code-scope.vsix

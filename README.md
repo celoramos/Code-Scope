@@ -4,7 +4,7 @@
 
 A VS Code extension that shows your code running, visually, for people learning to program. Free and open source ([MIT](LICENSE)).
 
-> **Beta.** Version 0.6.0 is a beta for people to try and help shape. Install it from the [release page](https://github.com/celoramos/Code-Scope/releases/tag/v0.6.0), and if something looks wrong or confusing, [open an issue](https://github.com/celoramos/Code-Scope/issues/new/choose): that is the most useful help right now.
+> **Beta.** Version 0.7.0 is a beta for people to try and help shape. Install it from the [release page](https://github.com/celoramos/Code-Scope/releases/tag/v0.7.0), and if something looks wrong or confusing, [open an issue](https://github.com/celoramos/Code-Scope/issues/new/choose): that is the most useful help right now.
 
 Everything happens inside VS Code: the panel sits in the sidebar, next to your code, and uses your theme's colors. It opens no browser, needs no account and sends nothing to the internet.
 
@@ -112,7 +112,7 @@ The flow explanations (if, loops, break) understand the C family (Java, JavaScri
 
 ## Install
 
-The extension is not on the VS Code Marketplace yet. Download `code-scope.vsix` from the [beta release](https://github.com/celoramos/Code-Scope/releases/tag/v0.6.0) and install it:
+The extension is not on the VS Code Marketplace yet. Download `code-scope.vsix` from the [beta release](https://github.com/celoramos/Code-Scope/releases/tag/v0.7.0) and install it:
 
 ```bash
 code --install-extension code-scope.vsix
