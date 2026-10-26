@@ -65,6 +65,15 @@
   --cs-ease: cubic-bezier(0.3, 0, 0.2, 1);
 }
 
+/*
+ * Alto contraste: o tema separa as coisas por borda, não por fundo. A mistura
+ * de 14% some sobre o preto (ou o branco), então a borda vira a do tema.
+ */
+body.vscode-high-contrast,
+body.vscode-high-contrast-light {
+  --cs-line: var(--vscode-contrastBorder, var(--cs-fg));
+}
+
 body {
   margin: 0;
   padding: var(--cs-space-3);
@@ -288,6 +297,13 @@ kbd {
 /* A próxima linha usa a mesma cor que o editor dá à linha parada no debug. */
 .code-line.is-next {
   background: var(--vscode-editor-stackFrameHighlightBackground, var(--cs-change-bg));
+}
+
+/* No alto contraste o fundo da linha parada pode não existir: a borda ativa do tema marca a próxima. */
+body.vscode-high-contrast .code-line.is-next,
+body.vscode-high-contrast-light .code-line.is-next {
+  outline: 1px dashed var(--vscode-contrastActiveBorder, var(--cs-focus));
+  outline-offset: -1px;
 }
 
 .code-num {
@@ -1797,6 +1813,11 @@ kbd {
 }
 
 /* ---------- Pilha de chamadas ---------- */
+
+/* A árvore de recursão vem logo depois da pilha e antes das variáveis: precisa do espaço embaixo. */
+.calls + .heap {
+  margin-bottom: var(--cs-space-3);
+}
 
 .calls {
   margin: 0 0 var(--cs-space-3);
