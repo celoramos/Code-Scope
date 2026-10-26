@@ -401,8 +401,12 @@ export function updateMatrix(block, arr, axes, changes, isNew) {
 
   const grid = /** @type {HTMLElement} */ (block.querySelector('.matrix'));
   grid.style.setProperty('--cols', String(cols));
+  // Cada linha num role="row" com display: contents: o leitor de tela lê uma tabela, e a grade CSS
+  // continua vendo as células como filhas diretas.
+  const headRow = matrixRow();
+  headRow.append(el('div', 'matrix-corner'));
   /** @type {HTMLElement[]} */
-  const parts = [el('div', 'matrix-corner')];
+  const parts = [headRow];
   for (let c = 0; c < cols; c++) {
     const head = el('div', 'matrix-col');
     head.setAttribute('role', 'columnheader');
@@ -410,7 +414,7 @@ export function updateMatrix(block, arr, axes, changes, isNew) {
     const idx = el('span', 'cell-index');
     idx.textContent = String(c);
     head.append(idx);
-    parts.push(head);
+    headRow.append(head);
   }
   /** @type {HTMLElement[][]} */
   const rowCells = [];
@@ -421,7 +425,9 @@ export function updateMatrix(block, arr, axes, changes, isNew) {
     const idx = el('span', 'cell-index');
     idx.textContent = String(r);
     head.append(idx);
-    parts.push(head);
+    const line = matrixRow();
+    line.append(head);
+    parts.push(line);
     /** @type {HTMLElement[]} */
     const cells = [];
     for (let c = 0; c < cols; c++) {
@@ -436,7 +442,7 @@ export function updateMatrix(block, arr, axes, changes, isNew) {
       if (c >= row.values.length) cell.classList.add('is-empty');
       if (axes.row?.index === r && axes.col?.index === c) cell.classList.add('is-cursor');
       cells.push(cell);
-      parts.push(cell);
+      line.append(cell);
     }
     rowCells.push(cells);
   });
@@ -452,6 +458,13 @@ export function updateMatrix(block, arr, axes, changes, isNew) {
   });
   first ??= /** @type {HTMLElement | null} */ (grid.querySelector('.is-cursor')) ?? undefined;
   first?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
+/** Uma linha da tabela da matriz, para o leitor de tela; na tela ela não existe. */
+function matrixRow() {
+  const row = el('div', 'matrix-line');
+  row.setAttribute('role', 'row');
+  return row;
 }
 
 /**

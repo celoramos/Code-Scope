@@ -296,6 +296,7 @@ kbd {
 
 /* A próxima linha usa a mesma cor que o editor dá à linha parada no debug. */
 .code-line.is-next {
+  --cs-muted: var(--cs-fg);
   background: var(--vscode-editor-stackFrameHighlightBackground, var(--cs-change-bg));
 }
 
@@ -640,7 +641,9 @@ body.vscode-high-contrast-light .code-line.is-next {
   font-variant-numeric: tabular-nums;
 }
 
+/* Sobre o fundo amarelo, o cinza do nome não chega a 4,5:1: o nome fica na cor do texto. */
 .var.is-changed {
+  --cs-muted: var(--cs-fg);
   background: var(--cs-change-bg);
   border-color: var(--cs-change);
 }
@@ -650,10 +653,11 @@ body.vscode-high-contrast-light .code-line.is-next {
   animation: cs-node-in var(--cs-move) var(--cs-ease);
 }
 
+/* Apagada pela cor, não por opacidade: com opacidade o texto cai abaixo de 4,5:1. */
 .var.is-gone {
   border-style: dashed;
   background: none;
-  opacity: 0.6;
+  color: var(--cs-muted);
 }
 
 .var.is-gone .var-name,
@@ -1121,6 +1125,10 @@ body.vscode-high-contrast-light .code-line.is-next {
   padding-bottom: var(--cs-space-1);
 }
 
+.matrix-line {
+  display: contents;
+}
+
 .matrix-col,
 .matrix-row {
   display: flex;
@@ -1578,10 +1586,16 @@ body.vscode-high-contrast-light .code-line.is-next {
   outline-offset: 1px;
 }
 
-/* Fora do intervalo que a busca ainda olha: continua lá, mas apagada. */
-.cell.is-outside {
-  opacity: 0.35;
-  transition: opacity var(--cs-move) var(--cs-ease);
+/*
+ * Fora do intervalo que a busca ainda olha: continua lá, mas apagada, com a
+ * mesma borda tracejada da variável que saiu de escopo. Apagada pela cor, não
+ * por opacidade, para o número continuar legível (4,5:1).
+ */
+.cell.is-outside .cell-value {
+  border-style: dashed;
+  background: none;
+  color: var(--cs-muted);
+  font-weight: 400;
 }
 
 .stats {
@@ -1800,6 +1814,7 @@ body.vscode-high-contrast-light .code-line.is-next {
 
 .map-table tr.is-changed .map-value,
 .map-table tr.is-new > * {
+  --cs-muted: var(--cs-fg);
   border-color: var(--cs-change);
   background: var(--cs-change-bg);
 }

@@ -130,6 +130,19 @@ describe('painel (main.js num DOM)', () => {
     assert.ok(replay('Matriz').doc.querySelector('#arrays [data-kind="matrix"]'));
   });
 
+  it('a matriz é uma tabela para o leitor de tela: linhas com cabeçalho e células', () => {
+    const table = replay('Matriz').doc.querySelector('.matrix[role="table"]') as HTMLElement;
+    const rows = [...table.children];
+    assert.ok(rows.every((r) => r.getAttribute('role') === 'row'), 'filho da tabela fora de uma linha');
+    const [head, ...body] = rows;
+    const cols = head.querySelectorAll('[role="columnheader"]').length;
+    assert.ok(cols > 0);
+    for (const r of body) {
+      assert.equal(r.querySelectorAll('[role="rowheader"]').length, 1);
+      assert.equal(r.querySelectorAll('[role="cell"]').length, cols);
+    }
+  });
+
   it('condição do laço aparece com os valores', () => {
     let seen = false;
     replay('BubbleSort', 'pt', (p) => {

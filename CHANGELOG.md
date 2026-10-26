@@ -11,6 +11,8 @@
 
 - Temas de alto contraste: as bordas dos cartões, caixas e tabelas usam a borda do tema (antes quase sumiam sobre o preto ou o branco), e a próxima linha ganha um contorno, já que esses temas não pintam o fundo dela.
 - A árvore de recursão encostava nas variáveis logo abaixo dela.
+- Leitor de tela: a matriz agora é lida como tabela, linha por linha (as células estavam fora de qualquer linha).
+- Contraste: texto cinza sobre o fundo amarelo de "mudou" e sobre a próxima linha, a variável que saiu de escopo e as posições fora do intervalo da busca ficavam abaixo de 4,5:1. As posições fora do intervalo agora ficam com borda tracejada e número cinza, em vez de transparentes.
 
 ## 0.6.0 (beta)
 
