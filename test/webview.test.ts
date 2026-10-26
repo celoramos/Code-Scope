@@ -16,6 +16,7 @@ const root = path.join(__dirname, '..');
 const { webview } = require('../esbuild.js') as { webview: esbuild.BuildOptions };
 // O script do painel empacotado na hora, com as opções do build: o teste nunca roda um dist velho.
 const mainJs = esbuild.buildSync({ ...webview, absWorkingDir: root, write: false }).outputFiles[0].text;
+const axeJs = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 
 /** Snapshots coletados dos exemplos em Java com o debugger real (só os snapshots, sem o caminho local). */
 function fixture(name: string): Snapshot[] {
@@ -83,6 +84,28 @@ describe('painel (main.js num DOM)', () => {
       replay(name, 'en');
     });
   }
+
+  it('leitor de tela: o axe-core não acha problema de ARIA nem de rótulo no começo, no meio e no fim dos exemplos', async function () {
+    this.timeout(60_000);
+    // Só as regras de estrutura (ARIA, rótulos, listas); contraste fica de fora, o jsdom não calcula CSS.
+    const runOnly = { type: 'tag' as const, values: ['cat.aria', 'cat.forms', 'cat.name-role-value', 'cat.structure'] };
+    const problems = new Set<string>();
+    for (const name of ['BubbleSort', 'Pilha', 'Fila', 'Matriz', 'ListaLigada', 'Fibonacci', 'Grafo', 'Dicionario', 'TrataErro', 'Texto', 'BuscaBinaria']) {
+      const panel = openPanel();
+      const win = panel.doc.defaultView as unknown as { eval(code: string): unknown; axe: typeof import('axe-core') };
+      win.eval(axeJs);
+      // Começo, meio e fim de cada exemplo: o axe leva centenas de ms por passo no jsdom.
+      const steps = fixture(name);
+      const check = new Set([1, Math.ceil(steps.length / 2), steps.length]);
+      for (const [i, s] of steps.entries()) {
+        panel.stop(s);
+        if (!check.has(i + 1)) continue;
+        const result = await win.axe.run(panel.doc.documentElement, { runOnly, resultTypes: ['violations'] });
+        for (const v of result.violations) for (const node of v.nodes) problems.add(`${name} passo ${i + 1}: ${v.id} em ${node.target.join(' ')}`);
+      }
+    }
+    assert.deepEqual([...problems], []);
+  });
 
   it('antes do debug mostra o estado vazio e, depois da primeira parada, a barra de passos', () => {
     const panel = openPanel();
