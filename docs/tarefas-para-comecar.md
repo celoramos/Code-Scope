@@ -21,12 +21,12 @@ Níveis: **sem código** (não precisa programar), **iniciante** (poucas linhas,
 
 ### 3. Usar o painel com leitor de tela
 
-- **Por quê:** o painel tem rótulos para leitores de tela, mas ninguém testou ainda com NVDA, JAWS ou VoiceOver.
+- **Por quê:** o painel tem rótulos para leitores de tela e passa numa verificação automática (axe-core), mas ninguém ouviu ainda com NVDA, JAWS ou VoiceOver. Uma ferramenta não diz se o que é lido faz sentido.
 - **Como:** avance pelo `samples/java/BubbleSort.java` e pelo `samples/java/ListaLigada.java` e conte, numa issue, o que é lido e o que falta.
 
 ### 4. Conferir tema claro e de alto contraste
 
-- **Por quê:** todas as cores vêm do tema do VS Code, e quase todos os testes foram em tema escuro.
+- **Por quê:** todas as cores vêm do tema do VS Code. O painel foi conferido num navegador com as cores dos temas claro e de alto contraste copiadas, mas ainda não dentro do VS Code com esses temas ligados.
 - **Como:** troque para "Light Modern" e para "High Contrast", passe por alguns exemplos e abra uma issue com imagens do que ficar difícil de ler.
 
 ## Iniciante

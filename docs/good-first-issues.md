@@ -21,12 +21,12 @@ Levels: **no code** (you do not need to program), **beginner** (a few lines, one
 
 ### 3. Try the panel with a screen reader
 
-- **Why:** the panel has labels for screen readers, but nobody has tested it with NVDA, JAWS or VoiceOver yet.
+- **Why:** the panel has labels for screen readers and passes an automated check (axe-core), but nobody has listened to it with NVDA, JAWS or VoiceOver yet. A tool cannot tell whether what is read aloud makes sense.
 - **How:** step through `samples/java/BubbleSort.java` and `samples/java/ListaLigada.java` and tell us, in an issue, what is read aloud and what is missing.
 
 ### 4. Check light and high contrast themes
 
-- **Why:** all colors come from the VS Code theme, and almost all testing was done in a dark theme.
+- **Why:** all colors come from the VS Code theme. The panel was checked in a browser with the colors of the light and high contrast themes copied in, but not yet inside VS Code with those themes on.
 - **How:** switch to "Light Modern" and to "High Contrast", go through a few samples and open an issue with screenshots of anything hard to read.
 
 ## Beginner
