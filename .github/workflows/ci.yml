@@ -26,9 +26,20 @@ jobs:
           path: code-scope.vsix
 
   integration:
-    name: Integração com os debuggers reais
-    # Windows é onde o teste foi validado e não precisa de servidor X para abrir o VS Code.
-    runs-on: windows-latest
+    name: Integração com os debuggers reais (${{ matrix.name }})
+    # Todas as linguagens nos três sistemas. O C precisa de gcc e gdb: o macOS não tem gdb,
+    # então lá o runTest.ts não instala a extensão C/C++ e os testes de C são pulados.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+          - name: Linux
+            os: ubuntu-latest
+          - name: macOS
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
@@ -48,34 +59,18 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '8.0.x'
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y gdb
       - run: npm ci
-      - run: npm run test:integration
+      # O VS Code precisa de uma tela; no Linux ela é virtual.
+      - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:integration
         env:
           CODE_SCOPE_PYTHON: ${{ steps.python.outputs.python-path }}
 
-  integration-other:
-    name: Integração em ${{ matrix.name }}
-    # Linux e macOS com os debuggers mais leves; no Windows, a versão mínima do engines.
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Linux
-            os: ubuntu-latest
-            vscode: stable
-            grep: JavaScript|Python
-            extensions: ms-python.debugpy
-          - name: macOS
-            os: macos-latest
-            vscode: stable
-            grep: JavaScript|Python
-            extensions: ms-python.debugpy
-          - name: VS Code 1.95
-            os: windows-latest
-            vscode: 1.95.0
-            grep: JavaScript
-            extensions: ''
-    runs-on: ${{ matrix.os }}
+  minimum:
+    name: Integração no VS Code 1.95
+    # A versão mínima do engines, com o debugger de JavaScript que vem com o VS Code.
+    runs-on: windows-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -83,15 +78,9 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-python@v7
-        id: python
-        with:
-          python-version: '3.12'
       - run: npm ci
-      # O VS Code precisa de uma tela; no Linux ela é virtual.
-      - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:integration
+      - run: npm run test:integration
         env:
-          CODE_SCOPE_PYTHON: ${{ steps.python.outputs.python-path }}
-          CODE_SCOPE_GREP: ${{ matrix.grep }}
-          CODE_SCOPE_EXTENSIONS: ${{ matrix.extensions }}
-          CODE_SCOPE_VSCODE: ${{ matrix.vscode }}
+          CODE_SCOPE_GREP: JavaScript
+          CODE_SCOPE_EXTENSIONS: ''
+          CODE_SCOPE_VSCODE: 1.95.0
