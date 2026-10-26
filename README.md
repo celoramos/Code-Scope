@@ -275,6 +275,10 @@ Code Scope is open source to help as many people as possible get into programmin
 
 The [good first issues](docs/good-first-issues.md) list says what to do, where to look and how to know you are done, from tasks that need no code to new language adapters. The [contributing guide](CONTRIBUTING.md) explains how to set up the environment, run the tests and where each part of the code lives. All participation follows the [code of conduct](CODE_OF_CONDUCT.md).
 
+## Author
+
+Code Scope was created and is maintained by [@celoramos](https://github.com/celoramos). Everyone who helped is on the [contributors page](https://github.com/celoramos/Code-Scope/graphs/contributors).
+
 ## License
 
 [MIT](LICENSE). You may use, study, modify and distribute it, including in classes and courses.

@@ -275,6 +275,10 @@ O Code Scope é open source para ajudar o máximo de pessoas a entrar na program
 
 A lista de [tarefas para começar](docs/tarefas-para-comecar.md) diz o que fazer, onde mexer e como saber que terminou, desde tarefas sem código até adaptadores de linguagens novas. O [guia de contribuição](CONTRIBUTING.pt-br.md) explica como preparar o ambiente, rodar os testes e onde fica cada parte do código. Toda participação segue o [código de conduta](CODE_OF_CONDUCT.md).
 
+## Autor
+
+O Code Scope foi criado e é mantido por [@celoramos](https://github.com/celoramos). Todo mundo que ajudou está na [página de contribuidores](https://github.com/celoramos/Code-Scope/graphs/contributors).
+
 ## Licença
 
 [MIT](LICENSE). Pode usar, estudar, modificar e distribuir, inclusive em aulas e cursos.
