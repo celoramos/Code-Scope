@@ -191,7 +191,7 @@
     "esbuild": "^0.25.0",
     "eslint": "^9.39.5",
     "jsdom": "^26.1.0",
-    "mocha": "^12.0.3",
+    "mocha": "^11.1.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.72.0"
