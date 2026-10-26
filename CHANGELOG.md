@@ -14,6 +14,9 @@
 - Leitor de tela: a matriz agora é lida como tabela, linha por linha (as células estavam fora de qualquer linha).
 - Contraste: texto cinza sobre o fundo amarelo de "mudou" e sobre a próxima linha, a variável que saiu de escopo e as posições fora do intervalo da busca ficavam abaixo de 4,5:1. As posições fora do intervalo agora ficam com borda tracejada e número cinza, em vez de transparentes.
 - Setas com nome comprido em posições vizinhas se cobriam ("inicio" e "encontradoEm" na busca binária). Agora a etiqueta que encostaria na outra desce uma linha.
+- Árvore de recursão: as chamadas que ficam no meio de duas outras (`fib(3)`, `fib(4)`) se amontoavam numa coluna, longe das linhas que as ligam. Agora cada uma fica na ponta da sua linha.
+- Alto contraste claro: o trecho de código na caixa da condição ficava branco sobre fundo claro. O VS Code dá cor própria ao `<code>` dos painéis; o painel agora usa as cores dele.
+- Seta na posição 0 com nome mais largo que a caixa ("inicio") saía pela borda esquerda.
 
 ## 0.6.0 (beta)
 

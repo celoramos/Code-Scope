@@ -531,9 +531,12 @@ export function updateArrows(block, arrows) {
   placed.sort((a, b) => a.x - b.x);
   for (const { p, x } of placed) {
     const half = p.offsetWidth / 2;
-    let row = ends.findIndex((end) => x - half >= end + 4);
+    // Na posição 0, um nome mais largo que a caixa passaria da borda: só a etiqueta anda para dentro.
+    const nudge = Math.max(0, half - x);
+    p.style.setProperty('--nudge', `${nudge}px`);
+    let row = ends.findIndex((end) => x - half + nudge >= end + 4);
     if (row < 0) row = ends.push(0) - 1;
-    ends[row] = x + half;
+    ends[row] = x + half + nudge;
     p.style.setProperty('--row', String(row));
   }
   layer.style.setProperty('--rows', String(ends.length));

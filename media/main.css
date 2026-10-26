@@ -316,6 +316,9 @@ body.vscode-high-contrast-light .code-line.is-next {
 }
 
 .code-text {
+  padding: 0;
+  background: none;
+  color: inherit;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -588,10 +591,15 @@ body.vscode-high-contrast-light .code-line.is-next {
   margin-top: var(--cs-space-1);
 }
 
+/*
+ * O VS Code põe nos webviews um estilo próprio para <code>, com as cores de texto pré-formatado
+ * do tema (no alto contraste claro, texto branco sobre azul-escuro). Aqui fundo e cor são do painel.
+ */
 .code {
   padding: 0 3px;
   border-radius: 3px;
   background: var(--cs-cell-bg);
+  color: var(--cs-fg);
   font-family: var(--cs-mono);
   font-size: 0.95em;
 }
@@ -1232,6 +1240,7 @@ body.vscode-high-contrast-light .code-line.is-next {
   font-size: var(--cs-small);
   line-height: 1.4;
   white-space: nowrap;
+  transform: translateX(var(--nudge, 0px));
 }
 
 /* ---------- Erro ---------- */
@@ -1734,12 +1743,23 @@ body.vscode-high-contrast-light .code-line.is-next {
 /* ---------- Árvore de recursão ---------- */
 
 .call-tree {
+  --row: 3.4em;
   grid-template-columns: repeat(var(--cols), minmax(3.6em, 1fr));
-  grid-template-rows: repeat(var(--rows), 3.4em);
+  grid-template-rows: repeat(var(--rows), var(--row));
 }
 
+/*
+ * O pai fica no meio dos filhos, então --x pode ser fracionário (1.5), e grid-column só aceita
+ * inteiro: o nó cairia na primeira coluna livre. A posição usa a mesma conta das linhas do SVG,
+ * medida na árvore inteira (com grid-column, a medida seria só a coluna do nó).
+ */
 .call-node {
+  position: absolute;
+  grid-area: auto;
+  top: calc(var(--y) * var(--row));
+  left: calc((var(--x) + 0.5) / var(--cols) * 100%);
   gap: 0;
+  transform: translateX(-50%);
 }
 
 .call-node-label {
