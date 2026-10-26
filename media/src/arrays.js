@@ -493,14 +493,12 @@ export function updateArrows(block, arrows) {
   const list = /** @type {HTMLElement} */ (block.querySelector('.cells'));
   layer.style.width = `${list.scrollWidth}px`;
 
-  /** @type {Map<number, number>} quantas setas já empilhadas por posição */
-  const stack = new Map();
   const keep = new Set();
+  /** @type {{ p: HTMLElement, x: number }[]} */
+  const placed = [];
   for (const arrow of arrows) {
     keep.add(arrow.name);
     const cell = cells[arrow.index];
-    const row = stack.get(arrow.index) ?? 0;
-    stack.set(arrow.index, row + 1);
 
     let p = /** @type {HTMLElement | null} */ (layer.querySelector(`[data-name="${CSS.escape(arrow.name)}"]`));
     const appearing = !p;
@@ -515,7 +513,7 @@ export function updateArrows(block, arrows) {
     }
     const x = cell.offsetLeft + cell.offsetWidth / 2;
     p.style.setProperty('--x', `${x}px`);
-    p.style.setProperty('--row', String(row));
+    placed.push({ p, x });
     if (appearing) {
       p.classList.add('no-move');
       void p.offsetWidth;
@@ -525,7 +523,20 @@ export function updateArrows(block, arrows) {
   for (const p of Array.from(layer.querySelectorAll('.pointer'))) {
     if (!keep.has(/** @type {HTMLElement} */ (p).dataset.name)) p.remove();
   }
-  layer.style.setProperty('--rows', String(Math.max(0, ...stack.values())));
+
+  // Etiqueta que encostaria na anterior desce uma linha: duas setas na mesma posição, e também
+  // um nome comprido ao lado de outro ("inicio" e "encontradoEm" em posições vizinhas).
+  /** @type {number[]} onde termina a última etiqueta de cada linha, em px */
+  const ends = [];
+  placed.sort((a, b) => a.x - b.x);
+  for (const { p, x } of placed) {
+    const half = p.offsetWidth / 2;
+    let row = ends.findIndex((end) => x - half >= end + 4);
+    if (row < 0) row = ends.push(0) - 1;
+    ends[row] = x + half;
+    p.style.setProperty('--row', String(row));
+  }
+  layer.style.setProperty('--rows', String(ends.length));
 
   // Leitores de tela: a caixa diz quem aponta para ela.
   cells.forEach((cell, i) => {

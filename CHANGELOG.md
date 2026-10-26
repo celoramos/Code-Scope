@@ -13,6 +13,7 @@
 - A árvore de recursão encostava nas variáveis logo abaixo dela.
 - Leitor de tela: a matriz agora é lida como tabela, linha por linha (as células estavam fora de qualquer linha).
 - Contraste: texto cinza sobre o fundo amarelo de "mudou" e sobre a próxima linha, a variável que saiu de escopo e as posições fora do intervalo da busca ficavam abaixo de 4,5:1. As posições fora do intervalo agora ficam com borda tracejada e número cinza, em vez de transparentes.
+- Setas com nome comprido em posições vizinhas se cobriam ("inicio" e "encontradoEm" na busca binária). Agora a etiqueta que encostaria na outra desce uma linha.
 
 ## 0.6.0 (beta)
 
