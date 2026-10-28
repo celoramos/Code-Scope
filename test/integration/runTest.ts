@@ -15,9 +15,11 @@ import {
 async function main() {
   const root = path.resolve(__dirname, '../..');
   const extensionsDir = path.join(root, '.vscode-test', 'extensions');
-  // CODE_SCOPE_VSCODE escolhe a versão (o CI testa a mínima do engines).
-  const vscodePath = await downloadAndUnzipVSCode(process.env.CODE_SCOPE_VSCODE ?? 'stable');
-  const [cli, ...cliArgs] = resolveCliArgsFromVSCodeExecutablePath(vscodePath);
+  // CODE_SCOPE_EXECUTABLE roda num fork já baixado (o CI testa o VSCodium, que instala do Open VSX);
+  // sem ele, CODE_SCOPE_VSCODE escolhe a versão do VS Code (o CI testa a mínima do engines).
+  const fork = process.env.CODE_SCOPE_EXECUTABLE;
+  const vscodePath = fork ?? (await downloadAndUnzipVSCode(process.env.CODE_SCOPE_VSCODE ?? 'stable'));
+  const [cli, ...cliArgs] = fork ? forkCli(fork) : resolveCliArgsFromVSCodeExecutablePath(vscodePath);
 
   // C# e C/C++ só entram quando há com o que compilar: um .NET e um gcc portáteis em
   // .vscode-test (ou os do sistema, no CI). Sem eles, esses testes são pulados.
@@ -56,6 +58,19 @@ async function main() {
       '--skip-release-notes',
     ],
   });
+}
+
+/**
+ * O CLI de um fork fica em bin/ ao lado do executável, com o nome do fork (codium, cursor...),
+ * e não em bin/code como o test-electron supõe. No macOS o executável está dentro do .app.
+ */
+function forkCli(executable: string): string[] {
+  const dir = process.platform === 'darwin'
+    ? path.join(executable, '..', '..', 'Resources', 'app', 'bin')
+    : path.join(path.dirname(executable), 'bin');
+  const names = fs.readdirSync(dir).filter((f) => (process.platform === 'win32' ? f.endsWith('.cmd') : !f.includes('.')));
+  if (names.length === 0) throw new Error(`nenhum CLI em ${dir}`);
+  return [path.join(dir, names[0])];
 }
 
 main().catch((err) => {

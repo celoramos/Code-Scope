@@ -1,5 +1,11 @@
 # Changelog
 
+## Não lançado
+
+### Novo
+
+- Cursor, Windsurf, VSCodium, Antigravity e outros editores feitos a partir do VS Code: o CI roda os testes de Java, JavaScript e Python no VSCodium, com os debuggers baixados do Open VSX, e cada tag `v*` publica o `.vsix` no Open VSX.
+
 ## 0.7.0 (beta)
 
 ### Mudou

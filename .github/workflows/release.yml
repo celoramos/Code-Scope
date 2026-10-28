@@ -1,0 +1,30 @@
+name: Publicação no Open VSX
+
+# Cursor, Windsurf, VSCodium, Antigravity e outros forks do VS Code não acessam o
+# Marketplace da Microsoft: instalam do Open VSX. Uma tag v* publica lá o mesmo .vsix.
+# Precisa do segredo OVSX_PAT, um token de open-vsx.org com acesso ao namespace "code-scope".
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  openvsx:
+    name: Open VSX
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run vsix
+      - run: npx --yes ovsx@1.2.0 publish code-scope.vsix
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: code-scope-vsix
+          path: code-scope.vsix

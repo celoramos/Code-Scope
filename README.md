@@ -128,6 +128,15 @@ npm run vsix
 code --install-extension code-scope.vsix
 ```
 
+### Cursor, Windsurf, VSCodium, Antigravity and other VS Code forks
+
+The same `.vsix` installs in editors built on VS Code. Use the editor's own command (`cursor`, `windsurf`, `codium`, `antigravity`) in place of `code`, or **Install from VSIX...** in its Extensions view. These editors install extensions from [Open VSX](https://open-vsx.org) instead of the Microsoft Marketplace. Code Scope goes to Open VSX starting with the next release; until then, use the `.vsix`.
+
+What changes by language:
+
+- Java, JavaScript and Python work as in VS Code. The Java Extension Pack and `ms-python.debugpy` are on Open VSX, and the JavaScript debugger ships with the editor. CI runs these tests in VSCodium on every push.
+- C# and C: Microsoft's C# and C/C++ debuggers only run inside Microsoft's VS Code. In a fork, use an open debugger: for C#, the **C#** extension by muhammad-sammy (netcoredbg, launch type `coreclr`); for C, **CodeLLDB** (launch type `lldb`). Code Scope listens to both launch types, but these two debuggers are not covered by the tests yet.
+
 ## Run from source
 
 ```bash

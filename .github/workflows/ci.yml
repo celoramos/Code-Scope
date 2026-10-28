@@ -82,6 +82,42 @@ jobs:
           grep -E 'testes pulados' itest.log | sort -u | sed 's/^/::warning::/' || true
           grep -E -A1 '^ +[0-9]+\) ' itest.log | grep -vE '^--$' | paste -d ' ' - - | head -10 | sed 's/^ */::error::/' || true
 
+  vscodium:
+    name: Integração no VSCodium (Open VSX)
+    # Forks do VS Code (VSCodium, Cursor, Windsurf, Antigravity) instalam extensões do Open VSX.
+    # O VSCodium é o fork aberto: se Java, Python e JavaScript passam nele, com os debuggers
+    # baixados do Open VSX, o mesmo .vsix serve nos outros.
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/setup-python@v7
+        id: python
+        with:
+          python-version: '3.12'
+      - name: Baixa o VSCodium mais recente
+        run: |
+          gh release download --repo VSCodium/vscodium --pattern 'VSCodium-linux-x64-*.tar.gz' --output codium.tar.gz
+          mkdir -p .vscode-test/vscodium
+          tar -xzf codium.tar.gz -C .vscode-test/vscodium
+          echo "CODE_SCOPE_EXECUTABLE=$PWD/.vscode-test/vscodium/codium" >> "$GITHUB_ENV"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: npm ci
+      - run: xvfb-run -a npm run test:integration
+        env:
+          CODE_SCOPE_PYTHON: ${{ steps.python.outputs.python-path }}
+          CODE_SCOPE_GREP: 'Java Debugger|JavaScript|Python'
+          CODE_SCOPE_EXTENSIONS: vscjava.vscode-java-pack,ms-python.debugpy
+
   minimum:
     name: Integração no VS Code 1.95
     # A versão mínima do engines, com o debugger de JavaScript que vem com o VS Code.
