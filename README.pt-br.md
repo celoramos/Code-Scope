@@ -50,19 +50,19 @@ O painel fala português e inglês e segue o idioma do seu VS Code: português q
 
 | Matriz | Lista |
 |---|---|
-| ![Matriz com a linha i e a coluna j marcadas](docs/matriz.png) | ![ArrayList recebendo um item no meio](docs/lista.png) |
+| ![Matriz com a linha i e a coluna j marcadas](docs/matriz.gif) | ![ArrayList recebendo um item no meio](docs/lista.gif) |
 
 | Árvore de recursão | Erro explicado |
 |---|---|
-| ![fib(4): todas as chamadas com o que devolveram](docs/recursao.png) | ![Índice fora do limite: a posição que não existe](docs/erro.png) |
+| ![fib(4): todas as chamadas com o que devolveram](docs/recursao.gif) | ![Índice fora do limite: a posição que não existe](docs/erro.gif) |
 
 | Busca binária | Grafo |
 |---|---|
-| ![A condição com os valores, a posição comparada e a metade descartada](docs/busca.png) | ![Busca em largura: visitados, atual e esperando](docs/grafo.png) |
+| ![A condição com os valores, a posição comparada e a metade descartada](docs/busca.gif) | ![Busca em largura: visitados, atual e esperando](docs/grafo.gif) |
 
 | Lista de objetos | Árvore binária |
 |---|---|
-| ![Cada aluno dentro da sua posição, com melhor apontando para um deles](docs/objetos.png) | ![Uma árvore binária de busca crescendo uma inserção por vez](docs/arvore.png) |
+| ![Cada aluno dentro da sua posição, com melhor apontando para um deles](docs/objetos.gif) | ![Uma árvore binária de busca crescendo uma inserção por vez](docs/arvore.gif) |
 
 *Capturas do painel feitas com dados de sessões reais dos debuggers (Java, JavaScript e Python), salvas com o próprio botão "Salvar imagem" do painel. As novas estão com o painel em inglês; em português, o painel mostra os mesmos textos traduzidos.*
 
