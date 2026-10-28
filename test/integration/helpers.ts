@@ -98,7 +98,10 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
   await new Promise((r) => setTimeout(r, 1500));
   visibleAtFirstStop = cs.panelVisible();
 
+  // CODE_SCOPE_STEP_DELAY (ms) segura cada passo na tela, para gravar o painel animando.
+  const delay = Number(process.env.CODE_SCOPE_STEP_DELAY ?? 0);
   for (let k = 0; k < run.steps && vscode.debug.activeDebugSession; k++) {
+    if (delay > 0) await new Promise((r) => setTimeout(r, delay));
     const n = cs.snapshots().length;
     await vscode.commands.executeCommand(`workbench.action.debug.${run.step ?? 'stepOver'}`);
     await waitFor(`o passo ${k + 1}`, () => cs.snapshots().length > n || !vscode.debug.activeDebugSession || undefined, 30_000);

@@ -20,3 +20,4 @@ CODE_OF_CONDUCT.md
 eslint.config.mjs
 media/src/**
 CONTRIBUTING.pt-br.md
+jetbrains/**

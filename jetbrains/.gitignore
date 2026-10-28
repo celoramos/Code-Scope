@@ -1,0 +1,6 @@
+build/
+.gradle/
+.intellijPlatform/
+.kotlin/
+# Gerado por bundle-panel.ts a cada build
+src/main/resources/codescope/

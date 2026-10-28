@@ -1,4 +1,3 @@
-import type * as vscode from 'vscode';
 import type { DapScope, DapStackFrame, DapVariable } from './dap';
 import type { ArrayVar, CallFrame, HeapObject, MapVar, Pointer, Scalar, Snapshot } from '../model/snapshot';
 import { alignHeap } from '../model/heapIdentity';
@@ -31,7 +30,11 @@ export interface Collected {
   };
 }
 
-export type Session = Pick<vscode.DebugSession, 'customRequest'>;
+/** O que o coletor usa de uma sessão de debug: as requisições do DAP. A do VS Code serve como está. */
+export interface Session {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  customRequest(command: string, args?: any): PromiseLike<any>;
+}
 
 export interface CollectOptions {
   /** Classes declaradas no arquivo parado: só objetos delas são desenhados. */

@@ -118,6 +118,30 @@ jobs:
           CODE_SCOPE_GREP: 'Java Debugger|JavaScript|Python'
           CODE_SCOPE_EXTENSIONS: vscjava.vscode-java-pack,ms-python.debugpy
 
+  jetbrains:
+    name: Plugin JetBrains (IntelliJ, PyCharm, Android Studio...)
+    # O plugin leva o painel e o núcleo em TypeScript dentro (jetbrains/bundle-panel.ts),
+    # então o Node entra junto. O Gradle baixa o IntelliJ IDEA da versão em gradle.properties.
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: ./gradlew buildPlugin verifyPluginStructure --console=plain
+        working-directory: jetbrains
+      - uses: actions/upload-artifact@v7
+        with:
+          name: code-scope-jetbrains
+          path: jetbrains/build/distributions/*.zip
+
   minimum:
     name: Integração no VS Code 1.95
     # A versão mínima do engines, com o debugger de JavaScript que vem com o VS Code.

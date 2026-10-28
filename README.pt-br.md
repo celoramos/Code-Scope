@@ -137,6 +137,22 @@ O que muda em cada linguagem:
 - Java, JavaScript e Python funcionam como no VS Code. O Extension Pack for Java e o `ms-python.debugpy` estão no Open VSX, e o debugger de JavaScript já vem com o editor. O CI roda esses testes no VSCodium a cada push.
 - C# e C: os debuggers de C# e C/C++ da Microsoft só rodam no VS Code da Microsoft. Num desses editores, use um debugger aberto: para C#, a extensão **C#** de muhammad-sammy (netcoredbg, tipo de launch `coreclr`); para C, o **CodeLLDB** (tipo de launch `lldb`). O Code Scope escuta os dois tipos, mas esses dois debuggers ainda não estão nos testes.
 
+### IntelliJ IDEA e Android Studio (beta)
+
+O Code Scope também roda como plugin das IDEs JetBrains, para **Java**. O painel abre à direita quando o debugger para; ande com F8 (Step Over) ou F7 (Step Into), como sempre.
+
+O plugin ainda não está no Marketplace da JetBrains. Gere a partir do repositório (precisa de Node.js e de um JDK 21):
+
+```bash
+npm install
+cd jetbrains
+./gradlew buildPlugin
+```
+
+Depois, na IDE: **Settings > Plugins > engrenagem > Install Plugin from Disk...** e escolha o `.zip` em `jetbrains/build/distributions`. O CI também gera o plugin a cada push (artefato `code-scope-jetbrains`).
+
+Precisa do IntelliJ IDEA 2026.2 ou mais novo (qualquer edição), ou de um Android Studio feito sobre ele. O plugin usa o código da extensão do VS Code: o debugger de Java da IDE responde as mesmas perguntas que o do VS Code, e o painel desenha a mesma coisa. PyCharm, WebStorm e as outras IDEs JetBrains sem Java ainda não estão cobertos.
+
 ## Rodar a partir do código
 
 ```bash

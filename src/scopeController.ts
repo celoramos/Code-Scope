@@ -1,19 +1,10 @@
 import * as vscode from 'vscode';
 import { readSettings, uiLanguage } from './config';
-import { collectSnapshot } from './debug/dapCollector';
-import { applyCollectionRoles, pickAdapter } from './debug/adapters';
-import { declaredClasses } from './debug/adapters/adapter';
-import { evaluateCondition } from './debug/conditionEval';
-import { readExceptionInfo, type ExceptionInfoBody } from './debug/exceptionFilters';
-import { parseClasses } from './model/classes';
-import { applyTextRoles } from './model/text';
-import { dropVariables, notYetDeclared } from './model/declared';
-import { parseCondition } from './model/condition';
+import { collectStep, toSource, type Source } from './core/collectStep';
 import { registerPauseOnErrors } from './debug/pauseOnErrors';
 import { registerStopTracker } from './debug/trackerFactory';
 import { makeFrame } from './model/frame';
 import { History } from './model/history';
-import type { Snapshot } from './model/snapshot';
 import type { FromWebview, ScopeViewProvider } from './webview/scopeViewProvider';
 import { readError } from './webview/strings';
 
@@ -83,39 +74,15 @@ export class ScopeController implements vscode.Disposable {
     const gen = ++this.generation;
     const started = Date.now();
     try {
-      const thread = threadId ?? (await firstThread(session));
-      if (thread === undefined) return;
-      // O mesmo arquivo serve para achar as classes do aluno e o texto da linha.
-      const sources = new Map<string, ReturnType<typeof readSource>>();
-      const sourceOf = (file: string) => {
-        if (!sources.has(file)) sources.set(file, readSource(file));
-        return sources.get(file) as ReturnType<typeof readSource>;
-      };
-      const collected = await collectSnapshot(session, thread, (file) => pickAdapter(session.type, file), readSettings().limits, {
-        userTypes: async (file) => {
-          const s = await sourceOf(file);
-          return s ? declaredClasses(s.text) : undefined;
-        },
+      const step = await collectStep(session, threadId, {
+        debugType: session.type,
+        limits: readSettings().limits,
+        readSource,
         previous: this.history.last(),
+        reason,
       });
-      if (!collected) return;
-      const snap = collected.snapshot;
-      const source = await sourceOf(snap.file);
-      snap.code = source?.lines[snap.line - 1]?.trim();
-      if (source) applyCollectionRoles(snap, source.text, collected.adapter);
-      if (source) applyTextRoles(snap, source.text);
-      // Em C, a variável declarada mais abaixo ainda guarda lixo: só entra quando a declaração rodar.
-      if (source && collected.adapter.id === 'c') {
-        const names = [...snap.arrays, ...snap.pointers, ...(snap.scalars ?? []), ...(snap.refs ?? []), ...(snap.maps ?? [])].map((v) => v.name);
-        dropVariables(snap, notYetDeclared(source.text, snap.line, names));
-      }
-      // Classes do arquivo: herança (polimorfismo) e se escrevem equals (identidade e igualdade).
-      const classes = source ? parseClasses(source.text) : {};
-      if (Object.keys(classes).length > 0) snap.classes = classes;
-      if (reason === 'exception') snap.exception = await readException(session, thread);
-      // A linha parada testa uma condição? Cada parte vira verdadeiro ou falso antes de rodar.
-      const parsed = snap.exception ? undefined : parseCondition(snap.code, collected.adapter.id === 'python' ? 'python' : 'c');
-      if (parsed) snap.condition = await evaluateCondition(session, collected.raw.frame.id, parsed, snap);
+      if (!step) return;
+      const collected = step.collected;
       if (gen !== this.generation) return;
       this.log.debug(`adaptador: ${collected.adapter.id} (sessão ${session.type}), coleta em ${Date.now() - started} ms`);
       this.log.debug('scopes', JSON.stringify(collected.raw.scopes));
@@ -178,29 +145,11 @@ export class ScopeController implements vscode.Disposable {
   }
 }
 
-async function firstThread(session: vscode.DebugSession): Promise<number | undefined> {
-  const { threads } = (await session.customRequest('threads')) as { threads: { id: number }[] };
-  return threads[0]?.id;
-}
-
-/**
- * Tipo e mensagem do erro que parou o programa. Todos os debuggers testados
- * respondem exceptionInfo; se algum não responder, fica só o aviso genérico.
- */
-async function readException(session: vscode.DebugSession, threadId: number): Promise<Snapshot['exception']> {
-  try {
-    return readExceptionInfo((await session.customRequest('exceptionInfo', { threadId })) as ExceptionInfoBody);
-  } catch {
-    return { type: '', message: '' };
-  }
-}
-
 /** Texto do arquivo; sem arquivo legível, o painel só mostra o número da linha. */
-async function readSource(file: string): Promise<{ text: string; lines: string[] } | undefined> {
+async function readSource(file: string): Promise<Source | undefined> {
   if (!file) return undefined;
   try {
-    const text = (await vscode.workspace.openTextDocument(vscode.Uri.file(file))).getText();
-    return { text, lines: text.split(/\r?\n/) };
+    return toSource((await vscode.workspace.openTextDocument(vscode.Uri.file(file))).getText());
   } catch {
     return undefined;
   }

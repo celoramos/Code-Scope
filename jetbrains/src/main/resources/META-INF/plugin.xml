@@ -1,0 +1,33 @@
+<idea-plugin>
+  <id>io.github.celoramos.codescope</id>
+  <name>Code Scope</name>
+  <vendor url="https://github.com/celoramos/Code-Scope">celoramos</vendor>
+  <description><![CDATA[
+    Draws your data structures while you debug: arrays, lists, stacks, queues, matrices,
+    pointers, objects, trees, graphs and recursion, step by step, with a plain-language
+    explanation of what each line changed.
+    <br><br>
+    Desenha as estruturas de dados enquanto você debuga: arrays, listas, pilhas, filas,
+    matrizes, ponteiros, objetos, árvores, grafos e recursão, passo a passo, com uma
+    explicação do que cada linha mudou.
+    <br><br>
+    Open source (MIT): <a href="https://github.com/celoramos/Code-Scope">github.com/celoramos/Code-Scope</a>
+  ]]></description>
+
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.xdebugger</depends>
+  <depends>com.intellij.java</depends>
+  <depends>com.intellij.modules.jcef</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <toolWindow id="Code Scope" anchor="right" icon="/icons/codeScope.svg"
+                factoryClass="io.github.celoramos.codescope.CodeScopeToolWindowFactory"/>
+    <notificationGroup id="Code Scope" displayType="BALLOON"/>
+    <postStartupActivity implementation="io.github.celoramos.codescope.SelfTest"/>
+  </extensions>
+
+  <projectListeners>
+    <listener class="io.github.celoramos.codescope.DebugListener"
+              topic="com.intellij.xdebugger.XDebuggerManagerListener"/>
+  </projectListeners>
+</idea-plugin>
