@@ -151,6 +151,6 @@ private fun diagnostics(project: Project): String {
     val session = XDebuggerManager.getInstance(project).currentSession
     val service = project.service<CodeScopeService>()
     return "sessão de debug: ${session?.let { if (it.isSuspended) "parada" else "rodando" } ?: "nenhuma"}; " +
-        "painel montado: ${service.hasPanel}; JCEF: ${com.intellij.ui.jcef.JBCefApp.isSupported()}; " +
+        "painel montado: ${service.hasPanel} (${service.panelState}); JCEF: ${com.intellij.ui.jcef.JBCefApp.isSupported()}; " +
         "erros do painel: ${service.panelErrors.joinToString(" | ").take(1500)}"
 }

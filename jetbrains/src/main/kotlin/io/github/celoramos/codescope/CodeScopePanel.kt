@@ -27,7 +27,11 @@ class CodeScopePanel(parent: Disposable, private val onRequest: (JsonObject) -> 
     private val gson = Gson()
     private val browser = JBCefBrowser()
     private val query = JBCefJSQuery.create(browser as JBCefBrowserBase)
-    private var loaded = false
+    /** A página terminou de carregar (o SelfTest usa no diagnóstico). */
+    @Volatile var loaded = false
+        private set
+    /** Requisições que o painel já fez à IDE: zero quer dizer que o script da página não rodou. */
+    val requests = java.util.concurrent.atomic.AtomicInteger()
     private val pending = mutableListOf<String>()
 
     val component: JComponent get() = browser.component
@@ -37,6 +41,7 @@ class CodeScopePanel(parent: Disposable, private val onRequest: (JsonObject) -> 
         Disposer.register(this, browser)
         Disposer.register(this, query)
         query.addHandler { payload ->
+            requests.incrementAndGet()
             // Responde fora da thread do navegador: ler o depurador pode levar um tempo.
             ApplicationManager.getApplication().executeOnPooledThread { answer(payload) }
             null

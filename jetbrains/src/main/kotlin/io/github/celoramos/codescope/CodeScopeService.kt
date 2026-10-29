@@ -26,6 +26,7 @@ class CodeScopeService(private val project: Project) : Disposable {
     private var panel: CodeScopePanel? = null
     /** O painel já foi montado nesta janela (o SelfTest usa no diagnóstico). */
     val hasPanel get() = panel != null
+    val panelState get() = panel?.let { "página carregada: ${it.loaded}; requisições do painel: ${it.requests.get()}" } ?: "sem painel"
     /** Erros que o painel mandou; o SelfTest põe no diagnóstico. */
     val panelErrors = java.util.concurrent.ConcurrentLinkedQueue<String>()
     /** O que acontece antes de o painel existir fica guardado para quando ele abrir. */
