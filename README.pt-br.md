@@ -275,7 +275,7 @@ Os testes de C# e de C precisam do .NET SDK, do gcc e do gdb no `PATH`. Sem inst
 
 ## Limites conhecidos
 
-- As chamadas de baixo na pilha mostram só as variáveis simples, sem arrays nem objetos. São lidas no máximo 12 chamadas.
+- As chamadas de baixo na pilha mostram as variáveis simples e os 8 primeiros itens de arrays e listas, mas não os objetos. São lidas no máximo 12 chamadas.
 - Só objetos de classes declaradas no arquivo que está sendo debugado são desenhados, no máximo 40 por passo. Objetos dentro de arrays aparecem só como texto.
 - O JavaScript não mostra a identidade dos objetos, então a pergunta vai para o próprio programa (`a === b`); entre passos, o objeto mantém a identidade pelos caminhos que levam a ele. Uma lista refeita do zero num passo só pode parecer feita de objetos novos.
 - Uma parte de condição que chama um método só é avaliada quando o método apenas lê (`len`, `.length`, `.size()`, `.equals`, `.get`...); senão, aparece "não dá para saber antes".
@@ -293,7 +293,7 @@ Os testes de C# e de C precisam do .NET SDK, do gcc e do gdb no `PATH`. Sem inst
 1. PyCharm e WebStorm: Python e JavaScript no plugin JetBrains
 2. Marketplace da JetBrains e do VS Code
 3. Coleções do C++ (`std::vector`, `std::map`) e os conceitos novos em C#
-4. Variáveis das chamadas de baixo com arrays e objetos, não só valores simples
+4. Objetos nas variáveis das chamadas de baixo
 5. JavaScript no navegador, testado com o debugger real
 6. Adaptador para Go
 

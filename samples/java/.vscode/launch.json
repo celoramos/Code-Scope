@@ -87,6 +87,12 @@
     },
     {
       "type": "java",
+      "name": "MergeSort",
+      "request": "launch",
+      "mainClass": "MergeSort"
+    },
+    {
+      "type": "java",
       "name": "Conjunto",
       "request": "launch",
       "mainClass": "Conjunto"

@@ -147,6 +147,13 @@ describe('Java Debugger real', () => {
     assert.ok(names.includes('inicio') && names.includes('fim'), `ponteiros: ${names.join(', ')}`);
   });
 
+  it('MergeSort: merge sort, cada chamada de baixo mostra a metade que recebeu', async () => {
+    const snaps = await debugSample('MergeSort', 27, 10, 'stepInto');
+    const deepest = snaps.reduce((a, s) => ((s.calls?.length ?? 0) > (a.calls?.length ?? 0) ? s : a), snaps[0]);
+    const halves = (deepest.calls ?? []).filter((c) => c.name === 'ordenar').map((c) => c.vars.find((x) => x.name === 'v')?.value);
+    assert.ok(halves.includes('[38, 27, 43, 3]') && halves.includes('[38, 27]'), `pedaços nas chamadas: ${JSON.stringify(halves)}`);
+  });
+
   it('Fatorial: recursão empilha uma chamada por nível, cada uma com o próprio n', async () => {
     const snaps = await debugSample('Fatorial', 12, 12, 'stepInto');
     const deepest = snaps.reduce((a, s) => ((s.calls?.length ?? 0) > (a.calls?.length ?? 0) ? s : a), snaps[0]);

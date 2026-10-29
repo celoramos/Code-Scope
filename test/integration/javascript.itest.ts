@@ -70,6 +70,13 @@ describe('JavaScript (js-debug) real', () => {
     assert.deepEqual(frame.error?.missing, { array: 'alunos', index: 2 });
   });
 
+  it('mergeSort.js: merge sort, cada chamada de baixo mostra a metade que recebeu', async () => {
+    const snaps = await debugScript('mergeSort', 22, 8, 'stepInto');
+    const deepest = snaps.reduce((a, s) => ((s.calls?.length ?? 0) > (a.calls?.length ?? 0) ? s : a), snaps[0]);
+    const halves = (deepest.calls ?? []).filter((c) => c.name === 'ordenar').map((c) => c.vars.find((x) => x.name === 'v')?.value);
+    assert.ok(halves.includes('[38, 27, 43, 3]') && halves.includes('[38, 27]'), `pedaços nas chamadas: ${JSON.stringify(halves)}`);
+  });
+
   it('fatorial.js: recursão empilha uma chamada por nível, cada uma com o próprio n', async () => {
     const snaps = await debugScript('fatorial', 11, 12, 'stepInto');
     const deepest = snaps.reduce((a, s) => ((s.calls?.length ?? 0) > (a.calls?.length ?? 0) ? s : a), snaps[0]);

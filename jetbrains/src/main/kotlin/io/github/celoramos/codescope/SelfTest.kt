@@ -99,7 +99,7 @@ class SelfTest : ProjectActivity {
                 }
                 // O programa acabou (depois de um erro, por exemplo): fica o que chegou até aqui.
                 if (snap == null && k > 0 && XDebuggerManager.getInstance(project).currentSession == null) break
-                snap ?: error("o passo $k não chegou ao painel")
+                snap ?: error("o passo $k não chegou ao painel. ${diagnostics(project)}")
                 if (k > 0) result.append(",\n")
                 result.append(snap)
                 if (k == steps) break
@@ -144,4 +144,13 @@ private fun checkSettings() {
     values.revealOnDebug = true
     values.pauseOnErrors = true
     configurable.disposeUIResources()
+}
+
+/** Por que um passo não chegou: houve sessão de debug, o painel montou, o JCEF funciona aqui, o painel reclamou de algo. */
+private fun diagnostics(project: Project): String {
+    val session = XDebuggerManager.getInstance(project).currentSession
+    val service = project.service<CodeScopeService>()
+    return "sessão de debug: ${session?.let { if (it.isSuspended) "parada" else "rodando" } ?: "nenhuma"}; " +
+        "painel montado: ${service.hasPanel}; JCEF: ${com.intellij.ui.jcef.JBCefApp.isSupported()}; " +
+        "erros do painel: ${service.panelErrors.joinToString(" | ").take(1500)}"
 }

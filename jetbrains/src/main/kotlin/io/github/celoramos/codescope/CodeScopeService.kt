@@ -24,6 +24,10 @@ import javax.swing.JComponent
 class CodeScopeService(private val project: Project) : Disposable {
     private val log = logger<CodeScopeService>()
     private var panel: CodeScopePanel? = null
+    /** O painel já foi montado nesta janela (o SelfTest usa no diagnóstico). */
+    val hasPanel get() = panel != null
+    /** Erros que o painel mandou; o SelfTest põe no diagnóstico. */
+    val panelErrors = java.util.concurrent.ConcurrentLinkedQueue<String>()
     /** O que acontece antes de o painel existir fica guardado para quando ele abrir. */
     private val early = mutableListOf<JsonObject>()
     @Volatile private var dap: JavaDap? = null
@@ -32,6 +36,8 @@ class CodeScopeService(private val project: Project) : Disposable {
     @Volatile var onSnapshot: ((String) -> Unit)? = null
 
     fun createPanel(parent: Disposable): JComponent {
+        // Sem o navegador embutido (desligado em algumas instalações), o painel não tem onde desenhar.
+        if (!com.intellij.ui.jcef.JBCefApp.isSupported()) return noBrowserMessage()
         val p = CodeScopePanel(parent, ::request)
         panel = p
         p.send(settingsEvent())
@@ -106,7 +112,12 @@ class CodeScopeService(private val project: Project) : Disposable {
         "log" -> {
             val text = req.get("text").asString
             if (text.startsWith("snapshot ")) onSnapshot?.invoke(text.removePrefix("snapshot "))
-            if (req.get("level").asString == "error") log.warn(req.get("text").asString) else log.debug(req.get("text").asString)
+            if (req.get("level").asString == "error") {
+                log.warn(text)
+                panelErrors.add(text)
+            } else {
+                log.debug(text)
+            }
             null
         }
         else -> null
@@ -132,3 +143,16 @@ class CodeScopeService(private val project: Project) : Disposable {
 }
 
 private fun <T> MutableList<T>.splice(): List<T> = toList().also { clear() }
+
+/** O que aparece no lugar do painel quando a IDE roda sem o navegador embutido (JCEF). */
+private fun noBrowserMessage(): JComponent {
+    val pt = java.util.Locale.getDefault().language == "pt"
+    val text = if (pt) {
+        "<html>O Code Scope desenha o painel no navegador embutido da IDE (JCEF), que está desligado aqui.<br><br>" +
+            "Ligue em Help &gt; Find Action &gt; <b>Choose Boot Java Runtime for the IDE</b>, escolhendo um runtime com JCEF, e reinicie a IDE.</html>"
+    } else {
+        "<html>Code Scope draws its panel in the IDE's built-in browser (JCEF), which is off here.<br><br>" +
+            "Turn it on in Help &gt; Find Action &gt; <b>Choose Boot Java Runtime for the IDE</b>, picking a runtime with JCEF, and restart the IDE.</html>"
+    }
+    return com.intellij.ui.components.JBLabel(text).apply { border = com.intellij.util.ui.JBUI.Borders.empty(12) }
+}

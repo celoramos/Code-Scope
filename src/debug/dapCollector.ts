@@ -254,7 +254,11 @@ async function readCalls(
         (r) => r.locals,
         () => [],
       );
-      vars = locals.filter((v) => !adapter.returnValue?.(v)).flatMap((v) => summarize(adapter, v)).slice(0, MAX_CALL_VARS);
+      vars = [];
+      for (const v of locals.filter((x) => !adapter.returnValue?.(x))) {
+        if (vars.length >= MAX_CALL_VARS) break;
+        vars.push(...(await summarizeCall(session, adapter, v)));
+      }
       const self = locals.find((v) => v.name === 'self' || v.name === 'this');
       const shape = self ? adapter.shape(self) : undefined;
       if (shape?.kind === 'object') owner = shape.type;
@@ -264,7 +268,25 @@ async function readCalls(
   return calls.reverse();
 }
 
-/** Variável de uma chamada de baixo como texto curto, sem abrir coleções. */
+/** Itens de um array mostrados numa chamada de baixo; o resto vira "…". */
+export const MAX_CALL_ITEMS = 8;
+
+/**
+ * Variável de uma chamada de baixo. Arrays e listas mostram os itens
+ * ("[38, 27, 43]"): na recursão sobre arrays (merge sort, busca binária
+ * recursiva), cada chamada guarda um pedaço diferente, e é isso que o aluno
+ * precisa ver na pilha. O resto fica como em summarize.
+ */
+async function summarizeCall(session: Session, adapter: LanguageAdapter, v: DapVariable): Promise<Scalar[]> {
+  const shape = adapter.shape(v);
+  if (shape.kind !== 'sequence') return summarize(adapter, v);
+  const read = await readSequence(session, adapter, v, v.name, shape, MAX_CALL_ITEMS, false).catch(() => undefined);
+  if (!read) return summarize(adapter, v);
+  const { values, length } = read.array;
+  return [{ name: v.name, value: `[${values.join(', ')}${length > values.length ? ', …' : ''}]` }];
+}
+
+/** Variável como texto curto, sem abrir coleções. */
 function summarize(adapter: LanguageAdapter, v: DapVariable): Scalar[] {
   const shape = adapter.shape(v);
   switch (shape.kind) {

@@ -275,7 +275,7 @@ The C# and C tests need the .NET SDK, gcc and gdb on the `PATH`. Without install
 
 ## Known limits
 
-- Earlier calls on the call stack show only their simple variables, not their arrays or objects. At most 12 calls are read.
+- Earlier calls on the call stack show their simple variables and the first 8 items of their arrays and lists, not their objects. At most 12 calls are read.
 - Only objects of classes declared in the file being debugged are drawn, at most 40 per step. Objects inside arrays show only as text.
 - JavaScript does not show object identity, so the program itself is asked (`a === b`); across steps, an object keeps its identity by the paths that lead to it. A list rebuilt from scratch in a single step can look like new objects.
 - A condition part that calls a method is only evaluated when the method just reads (`len`, `.length`, `.size()`, `.equals`, `.get`...); otherwise it shows "cannot tell beforehand".
@@ -293,7 +293,7 @@ The C# and C tests need the .NET SDK, gcc and gdb on the `PATH`. Without install
 1. PyCharm and WebStorm: Python and JavaScript in the JetBrains plugin
 2. JetBrains Marketplace and VS Code Marketplace
 3. C++ containers (`std::vector`, `std::map`) and the newer concepts in C#
-4. Variables of earlier calls with their arrays and objects, not only simple values
+4. Objects in the variables of earlier calls
 5. JavaScript in the browser, tested with the real debugger
 6. Adapter for Go
 

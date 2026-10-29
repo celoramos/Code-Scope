@@ -4,6 +4,8 @@
 
 ### Novo
 
+- Pilha de chamadas: arrays e listas das chamadas de baixo mostram os itens (`[38, 27, 43, 3]`), não só o tamanho. Na recursão sobre arrays dá para ver o pedaço que cada chamada recebeu. Exemplo novo de merge sort em Java, Python e JavaScript.
+- Plugin JetBrains: sem o navegador embutido (JCEF), o painel explica como ligar em vez de ficar vazio.
 - Conjuntos: `HashSet` (Java), `set` (Python) e `Set` (JavaScript) aparecem como conjunto, sem índice nas caixas. As frases dizem o que entrou e o que saiu, e um `add` de um valor que já estava explica que nada mudou porque conjunto não guarda repetidos. Exemplos novos: `Conjunto.java`, `conjunto.py`, `conjunto.js`.
 - Plugin JetBrains: configurações em Settings > Tools > Code Scope (velocidade das animações, modo iniciante, posições lidas, abrir o painel e parar em erros).
 - Tour de primeiro uso no VS Code (Help > Get Started): abrir um exemplo, pôr o breakpoint e apertar F10, e os modos de adivinhar e de apresentação.
