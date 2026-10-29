@@ -55,10 +55,14 @@ export function matrixAxesFor(matrix: ArrayVar, pointers: Pointer[], codes: (str
   return { row: arrow(rowName, rows.length), col: arrow(colName, cols) };
 }
 
-/** Ponteiros que apontam para uma caixa desenhada deste array. */
-export function arrowsFor(array: ArrayVar, pointers: Pointer[], valueNames: ReadonlySet<string> = VALUE_NAMES): Arrow[] {
+/**
+ * Ponteiros que apontam para uma caixa desenhada deste array. Com indexNames
+ * (o que o código usa como posição), só esses; sem, todo inteiro que caiba.
+ */
+export function arrowsFor(array: ArrayVar, pointers: Pointer[], valueNames: ReadonlySet<string> = VALUE_NAMES, indexNames?: readonly string[]): Arrow[] {
   return pointers
     .filter((p) => !valueNames.has(p.name.toLowerCase()))
+    .filter((p) => !indexNames || indexNames.includes(p.name))
     .filter((p) => Number.isInteger(p.value) && p.value >= 0 && p.value < array.values.length)
     .map((p) => ({ name: p.name, index: p.value }));
 }

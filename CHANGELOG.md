@@ -4,6 +4,7 @@
 
 ### Novo
 
+- Setas pelo código: só vira seta embaixo do array a variável que o código usa como posição (colchetes, `get(i)`, comparação com o tamanho, conta de outra posição). `soma = 2` não aponta mais para a posição 2.
 - Lista que ganha ou perde vários itens num passo (`addAll`, `extend`, `splice`, `del lista[1:3]`) anima o bloco inteiro e diz quais itens entraram ou saíram, em vez de só "redimensionada".
 - Pilha de chamadas: arrays e listas das chamadas de baixo mostram os itens (`[38, 27, 43, 3]`), não só o tamanho. Na recursão sobre arrays dá para ver o pedaço que cada chamada recebeu. Exemplos novos de merge sort e quick sort em Java, Python e JavaScript.
 - Plugin JetBrains: sem o navegador embutido (JCEF), o painel explica como ligar em vez de ficar vazio.

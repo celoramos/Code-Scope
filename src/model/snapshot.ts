@@ -93,6 +93,11 @@ export interface Snapshot {
   code?: string;
   arrays: ArrayVar[];
   pointers: Pointer[];
+  /**
+   * Variáveis que o código usa como posição (dentro de colchetes ou na conta de
+   * uma delas). Quando existe, só elas viram seta; sem o código-fonte, vale o valor.
+   */
+  indexNames?: string[];
   scalars?: Scalar[];
   /**
    * Variáveis de um bloco de fora escondidas por uma de dentro com o mesmo

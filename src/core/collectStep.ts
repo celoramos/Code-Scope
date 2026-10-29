@@ -4,6 +4,7 @@ import { declaredClasses } from '../debug/adapters/adapter';
 import { evaluateCondition } from '../debug/conditionEval';
 import { readExceptionInfo, type ExceptionInfoBody } from '../debug/exceptionFilters';
 import { parseClasses } from '../model/classes';
+import { indexNames } from '../model/indexNames';
 import { parseCondition } from '../model/condition';
 import { dropVariables, notYetDeclared } from '../model/declared';
 import type { Snapshot } from '../model/snapshot';
@@ -57,6 +58,7 @@ export async function collectStep(session: Session, threadId: number | undefined
   snap.code = source?.lines[snap.line - 1]?.trim();
   if (source) applyCollectionRoles(snap, source.text, collected.adapter);
   if (source) applyTextRoles(snap, source.text);
+  if (source) snap.indexNames = [...indexNames(source.text)].filter((n) => snap.pointers.some((p) => p.name === n));
   // Em C, a variável declarada mais abaixo ainda guarda lixo: só entra quando a declaração rodar.
   if (source && collected.adapter.id === 'c') {
     const names = [...snap.arrays, ...snap.pointers, ...(snap.scalars ?? []), ...(snap.refs ?? []), ...(snap.maps ?? [])].map((v) => v.name);

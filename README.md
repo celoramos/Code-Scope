@@ -283,10 +283,10 @@ The C# and C tests need the .NET SDK, gcc and gdb on the `PATH`. Without install
 - In generic mode, only collections the debugger marks as indexed, or whose size is written in the value, show up.
 - Matrices with three or more dimensions show the third level as text.
 - A list that gains or loses several items in one step is animated when they form one block (`addAll`, `extend`, `splice`); items added in different places show as resized.
-- Outside matrices, an integer becomes an arrow by its value: any integer that fits the indexes points to a box, unless its name is in `codeScope.valueNames`.
+- Outside matrices, an integer becomes an arrow when the code uses it as a position: inside brackets (`v[i]`), in `get(i)`, `insert(i, x)` and the like, compared with the length, or in the math of another position (`meio = (inicio + fim) / 2`). Names in `codeScope.valueNames` never become arrows. Without the source file, any integer that fits the indexes does.
 - Stacks and queues are recognized by variable name, reading the whole file: the methods used (`push`, `poll`, `popleft`...) are added up from every place. Two variables with the same name used in different ways in the same file can be classified wrong.
 - If you use F5 (continue) between breakpoints instead of F10, the panel shows the accumulated difference between the two stops, and the "ran" line is the previous breakpoint's.
-- The JetBrains plugin covers Java only and has no settings yet: it uses the defaults (beginner mode, up to 50 items, normal animation speed). Presentation mode is VS Code only. IntelliJ's F8 also stops on the `}` that closes an `if`, which VS Code skips, so the same program can take a few more steps there. After F7, the value a call returned does not show up in IntelliJ.
+- The JetBrains plugin covers Java only (settings in Settings > Tools > Code Scope). Presentation mode is VS Code only. IntelliJ's F8 also stops on the `}` that closes an `if`, which VS Code skips, so the same program can take a few more steps there. After F7, the value a call returned does not show up in IntelliJ.
 
 ## Roadmap
 

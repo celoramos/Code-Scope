@@ -87,7 +87,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
       // Pilha e fila não têm índice para o aluno: as pontas ganham etiquetas no painel.
       arrows[arr.name] = [];
     } else {
-      arrows[arr.name] = arrowsFor(arr, snapshot.pointers, options.valueNames);
+      arrows[arr.name] = arrowsFor(arr, snapshot.pointers, options.valueNames, snapshot.indexNames);
     }
   }
   const calls = callChanges(prev, snapshot);

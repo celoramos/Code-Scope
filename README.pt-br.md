@@ -283,10 +283,10 @@ Os testes de C# e de C precisam do .NET SDK, do gcc e do gdb no `PATH`. Sem inst
 - No modo genérico, só aparecem coleções que o debugger marca como indexadas ou cujo tamanho está escrito no valor.
 - Matrizes de três ou mais dimensões mostram o terceiro nível como texto.
 - Uma lista que ganha ou perde vários itens num passo é animada quando eles formam um bloco (`addAll`, `extend`, `splice`); itens que entram em lugares diferentes aparecem como redimensionamento.
-- Fora de matrizes, um inteiro vira seta pelo valor: qualquer inteiro que caiba nos índices aponta para uma caixa, a menos que o nome esteja em `codeScope.valueNames`.
+- Fora de matrizes, um inteiro vira seta quando o código usa ele como posição: dentro de colchetes (`v[i]`), em `get(i)`, `insert(i, x)` e parecidos, comparado com o tamanho, ou na conta de outra posição (`meio = (inicio + fim) / 2`). Nomes em `codeScope.valueNames` nunca viram seta. Sem o arquivo-fonte, vira seta todo inteiro que caiba nos índices.
 - Pilha e fila são reconhecidas pelo nome da variável, lendo o arquivo inteiro: os métodos usados (`push`, `poll`, `popleft`...) são somados de todos os lugares. Duas variáveis com o mesmo nome usadas de jeitos diferentes no mesmo arquivo podem ser classificadas errado.
 - Se você usar F5 (continue) entre breakpoints em vez de F10, o painel mostra a diferença acumulada entre as duas paradas e a linha "Executou" é a do breakpoint anterior.
-- O plugin JetBrains cobre só Java e ainda não tem configurações: usa os padrões (modo iniciante, até 50 itens, animação normal). O modo apresentação é só do VS Code. O F8 do IntelliJ também para no `}` que fecha um `if`, que o VS Code pula, então o mesmo programa pode levar alguns passos a mais lá. Depois do F7, o valor que uma chamada devolveu não aparece no IntelliJ.
+- O plugin JetBrains cobre só Java (configurações em Settings > Tools > Code Scope). O modo apresentação é só do VS Code. O F8 do IntelliJ também para no `}` que fecha um `if`, que o VS Code pula, então o mesmo programa pode levar alguns passos a mais lá. Depois do F7, o valor que uma chamada devolveu não aparece no IntelliJ.
 
 ## Roadmap
 

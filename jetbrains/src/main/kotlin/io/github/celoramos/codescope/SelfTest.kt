@@ -88,15 +88,19 @@ class SelfTest : ProjectActivity {
                     ProgramRunnerUtil.executeConfiguration(settings, DefaultDebugExecutor.getDebugExecutorInstance())
                 }
             }
-            launch()
+            // Trocar o SDK do módulo reindexa o projeto, e uma execução pedida durante a indexação
+            // não sai: espera de novo, lança e confere se a sessão de debug apareceu (até 3 vezes).
+            val debugging = { XDebuggerManager.getInstance(project).currentSession != null }
+            for (attempt in 1..3) {
+                DumbService.getInstance(project).waitForSmartMode()
+                launch()
+                val until = System.currentTimeMillis() + 60_000
+                while (!debugging() && snapshots.isEmpty() && System.currentTimeMillis() < until) Thread.sleep(500)
+                if (debugging() || snapshots.isNotEmpty()) break
+            }
             result.append("[\n")
             for (k in 0..steps) {
-                var snap = snapshots.poll(120, TimeUnit.SECONDS)
-                // A primeira execução às vezes não sai (a IDE ainda arrumando o projeto): uma segunda tentativa.
-                if (snap == null && k == 0 && XDebuggerManager.getInstance(project).currentSession == null) {
-                    launch()
-                    snap = snapshots.poll(180, TimeUnit.SECONDS)
-                }
+                val snap = snapshots.poll(180, TimeUnit.SECONDS)
                 // O programa acabou (depois de um erro, por exemplo): fica o que chegou até aqui.
                 if (snap == null && k > 0 && XDebuggerManager.getInstance(project).currentSession == null) break
                 snap ?: error("o passo $k não chegou ao painel. ${diagnostics(project)}")
