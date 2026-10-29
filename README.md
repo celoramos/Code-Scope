@@ -113,13 +113,13 @@ The flow explanations (if, loops, break) understand the C family (Java, JavaScri
 
 ## Install
 
-The extension is not on the VS Code Marketplace yet. Download `code-scope.vsix` from the [beta release](https://github.com/celoramos/Code-Scope/releases/tag/v0.7.0) and install it:
+Install [Code Scope from the VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope): search for **Code Scope** in the Extensions view, or run:
 
 ```bash
-code --install-extension code-scope.vsix
+code --install-extension code-scope.code-scope
 ```
 
-Or, in VS Code, open the Extensions view, click the **...** menu and choose **Install from VSIX...**.
+Each [release](https://github.com/celoramos/Code-Scope/releases) also has the `code-scope.vsix`. To install it, open the Extensions view, click the **...** menu and choose **Install from VSIX...**.
 
 To try the latest commit instead, take the `.vsix` from the latest CI run (the repository's **Actions** tab, artifact `code-scope-vsix`) or build your own:
 

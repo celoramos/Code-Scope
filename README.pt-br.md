@@ -113,13 +113,13 @@ As explicações de fluxo (if, laços, break) entendem a família de C (Java, Ja
 
 ## Instalar
 
-A extensão ainda não está no Marketplace do VS Code. Baixe o `code-scope.vsix` da [release beta](https://github.com/celoramos/Code-Scope/releases/tag/v0.7.0) e instale:
+Instale o [Code Scope pelo Marketplace do VS Code](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope): procure **Code Scope** na aba Extensões, ou rode:
 
 ```bash
-code --install-extension code-scope.vsix
+code --install-extension code-scope.code-scope
 ```
 
-Ou, no VS Code, abra a aba Extensões, clique no menu **...** e escolha **Install from VSIX...**.
+Cada [release](https://github.com/celoramos/Code-Scope/releases) também traz o `code-scope.vsix`. Para instalar por ele, abra a aba Extensões, clique no menu **...** e escolha **Install from VSIX...**.
 
 Para testar o commit mais recente, pegue o `.vsix` da última execução do CI (aba **Actions** do repositório, artefato `code-scope-vsix`) ou gere o seu:
 
