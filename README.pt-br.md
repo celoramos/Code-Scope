@@ -167,6 +167,8 @@ Durante o desenvolvimento, `npm run watch` recompila a cada alteração; recarre
 
 ## Testando com os exemplos
 
+Depois de instalar, o jeito mais rápido de começar é o comando **Code Scope: Abrir um exemplo** (ou o tour **Começando com o Code Scope**, em **Help > Get Started**): ele copia os exemplos de Java, JavaScript ou Python para uma pasta que você escolhe e abre essa pasta.
+
 Na janela do Extension Development Host:
 
 1. Abra um dos exemplos e coloque um breakpoint na linha indicada pelo comentário.

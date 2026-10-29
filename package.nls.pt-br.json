@@ -17,5 +17,16 @@
   "config.valueNames": "Nomes de variáveis inteiras que guardam um valor, não uma posição. Elas não viram seta embaixo dos arrays.",
   "config.revealOnDebug": "Abre o painel do Code Scope na primeira parada de cada sessão de debug.",
   "config.pauseOnErrors": "Pausa o programa nos erros que ninguém trata (exceções não tratadas), para o painel mostrar onde e por que ele quebrou.",
-  "command.present": "Modo apresentação (painel grande ao lado do código)"
+  "command.present": "Modo apresentação (painel grande ao lado do código)",
+  "command.openSample": "Abrir um exemplo",
+  "walkthrough.title": "Começando com o Code Scope",
+  "walkthrough.description": "Veja o código rodando: o painel desenha arrays, listas, pilhas, objetos e recursão enquanto você debuga.",
+  "walkthrough.sample.title": "Abra um exemplo",
+  "walkthrough.sample.description": "Comece com um programa pronto em Java, JavaScript ou Python. O exemplo é copiado para uma pasta que você escolhe, com tudo para debugar.\n[Abrir um exemplo](command:codeScope.openSample)\nJava precisa do [Extension Pack for Java](command:workbench.extensions.search?%22vscjava.vscode-java-pack%22) e de um JDK; Python, da [extensão Python](command:workbench.extensions.search?%22ms-python.python%22). JavaScript só precisa do Node.js 22 ou mais novo.",
+  "walkthrough.sample.alt": "O painel do Code Scope mostrando uma lista que ganha um item no meio.",
+  "walkthrough.step.title": "Ponha um breakpoint e aperte F10",
+  "walkthrough.step.description": "Abra o BubbleSort (bubbleSort.js, bubble_sort.py), clique à esquerda do número da linha que o comentário indica e comece a debugar com F5. Cada F10 roda uma linha: o painel anima o que mudou e explica em palavras simples.\n[Mostrar o painel](command:codeScope.show)",
+  "walkthrough.step.alt": "Bubble sort no painel: duas caixas trocam de lugar enquanto i e j andam embaixo do array.",
+  "walkthrough.more.title": "Adivinhe, apresente, salve",
+  "walkthrough.more.description": "**Adivinhar antes** pergunta quanto a variável vai valer antes de a linha rodar. O **modo apresentação** abre o painel grande ao lado do código, para a aula ou para gravar a tela. **Salvar imagem** transforma o passo num PNG para slides.\n[Modo apresentação](command:codeScope.present)"
 }

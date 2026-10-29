@@ -167,6 +167,8 @@ While developing, `npm run watch` rebuilds on every change; reload the test wind
 
 ## Trying the samples
 
+After installing, the quickest way in is **Code Scope: Open a sample** in the command palette (or the **Get started with Code Scope** walkthrough in **Help > Get Started**): it copies the Java, JavaScript or Python samples to a folder you pick and opens it.
+
 In the Extension Development Host window:
 
 1. Open one of the samples and set a breakpoint on the line its comment points to.

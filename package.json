@@ -86,6 +86,11 @@
         "command": "codeScope.present",
         "title": "%command.present%",
         "category": "Code Scope"
+      },
+      {
+        "command": "codeScope.openSample",
+        "title": "%command.openSample%",
+        "category": "Code Scope"
       }
     ],
     "configuration": {
@@ -170,7 +175,52 @@
           "description": "%config.pauseOnErrors%"
         }
       }
-    }
+    },
+    "walkthroughs": [
+      {
+        "id": "start",
+        "title": "%walkthrough.title%",
+        "description": "%walkthrough.description%",
+        "steps": [
+          {
+            "id": "sample",
+            "title": "%walkthrough.sample.title%",
+            "description": "%walkthrough.sample.description%",
+            "media": {
+              "image": "media/walkthrough/list.gif",
+              "altText": "%walkthrough.sample.alt%"
+            },
+            "completionEvents": [
+              "onCommand:codeScope.openSample"
+            ]
+          },
+          {
+            "id": "step",
+            "title": "%walkthrough.step.title%",
+            "description": "%walkthrough.step.description%",
+            "media": {
+              "image": "media/walkthrough/step.gif",
+              "altText": "%walkthrough.step.alt%"
+            },
+            "completionEvents": [
+              "onView:codeScope.panel"
+            ]
+          },
+          {
+            "id": "more",
+            "title": "%walkthrough.more.title%",
+            "description": "%walkthrough.more.description%",
+            "media": {
+              "image": "media/walkthrough/step.gif",
+              "altText": "%walkthrough.step.alt%"
+            },
+            "completionEvents": [
+              "onCommand:codeScope.present"
+            ]
+          }
+        ]
+      }
+    ]
   },
   "scripts": {
     "compile": "npm run check-types && node esbuild.js",

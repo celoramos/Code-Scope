@@ -4,7 +4,13 @@
 src/**
 test/**
 out-test/**
-samples/**
+# Os exemplos de Java, JavaScript e Python vão na extensão (comando "Abrir um exemplo").
+samples/c/**
+samples/csharp/**
+samples/exemplos.code-workspace
+samples/java/bin/**
+samples/**/*.class
+samples/**/__pycache__/**
 docs/**
 node_modules/**
 **/*.map

@@ -10,6 +10,7 @@ export function run(): Promise<void> {
   mocha.addFile(path.join(__dirname, 'java.itest.js'));
   mocha.addFile(path.join(__dirname, 'csharp.itest.js'));
   mocha.addFile(path.join(__dirname, 'c.itest.js'));
+  mocha.addFile(path.join(__dirname, 'samples.itest.js'));
   mocha.addFile(path.join(__dirname, 'discover.itest.js'));
   return new Promise((resolve, reject) => {
     mocha.run((failures) => (failures > 0 ? reject(new Error(`${failures} teste(s) falharam`)) : resolve()));

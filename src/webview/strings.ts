@@ -435,3 +435,28 @@ export function readError(language: Language, err: unknown): string {
     ? `Não consegui ler as variáveis deste passo: ${String(err)}`
     : `Could not read the variables for this step: ${String(err)}`;
 }
+
+/** Textos do comando "Abrir um exemplo". */
+export function sampleStrings(language: Language) {
+  return language === 'pt'
+    ? {
+        pickLanguage: 'Escolha a linguagem do exemplo',
+        pickFolder: 'Onde salvar os exemplos? Uma pasta code-scope-<linguagem> é criada aqui.',
+        saveHere: 'Salvar aqui',
+        debugger: {
+          java: 'precisa do Extension Pack for Java e de um JDK',
+          javascript: 'precisa do Node.js 22 ou mais novo',
+          python: 'precisa da extensão Python e do Python instalado',
+        } as Record<string, string>,
+      }
+    : {
+        pickLanguage: 'Pick the language of the sample',
+        pickFolder: 'Where should the samples go? A code-scope-<language> folder is created here.',
+        saveHere: 'Save here',
+        debugger: {
+          java: 'needs the Extension Pack for Java and a JDK',
+          javascript: 'needs Node.js 22 or newer',
+          python: 'needs the Python extension and Python installed',
+        } as Record<string, string>,
+      };
+}

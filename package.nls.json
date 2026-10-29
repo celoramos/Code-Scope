@@ -17,5 +17,16 @@
   "config.valueNames": "Names of integer variables that hold a value, not a position. They do not become arrows under the arrays.",
   "config.revealOnDebug": "Opens the Code Scope panel on the first stop of each debug session.",
   "config.pauseOnErrors": "Pauses the program on errors that nobody handles (uncaught exceptions), so the panel can show where and why it broke.",
-  "command.present": "Presentation mode (large panel next to the code)"
+  "command.present": "Presentation mode (large panel next to the code)",
+  "command.openSample": "Open a sample",
+  "walkthrough.title": "Get started with Code Scope",
+  "walkthrough.description": "See your code run: the panel draws arrays, lists, stacks, objects and recursion while you debug.",
+  "walkthrough.sample.title": "Open a sample",
+  "walkthrough.sample.description": "Start with a ready program in Java, JavaScript or Python. The sample is copied to a folder you pick, with everything needed to debug it.\n[Open a sample](command:codeScope.openSample)\nJava needs the [Extension Pack for Java](command:workbench.extensions.search?%22vscjava.vscode-java-pack%22) and a JDK; Python needs the [Python extension](command:workbench.extensions.search?%22ms-python.python%22). JavaScript only needs Node.js 22 or newer.",
+  "walkthrough.sample.alt": "The Code Scope panel showing a list that gains an item in the middle.",
+  "walkthrough.step.title": "Put a breakpoint and press F10",
+  "walkthrough.step.description": "Open BubbleSort (bubbleSort.js, bubble_sort.py), click left of the line number the comment points to, and start debugging with F5. Each F10 runs one line: the panel animates what changed and says it in plain words.\n[Show the panel](command:codeScope.show)",
+  "walkthrough.step.alt": "Bubble sort in the panel: two boxes swap places while i and j move under the array.",
+  "walkthrough.more.title": "Guess, present, save",
+  "walkthrough.more.description": "**Guess first** asks what a variable will hold before the line runs. **Presentation mode** opens a large panel next to the code, for class or a screen recording. **Save image** turns the step into a PNG for slides.\n[Presentation mode](command:codeScope.present)"
 }

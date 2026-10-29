@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import type { Snapshot } from './model/snapshot';
+import { registerSamples } from './samples';
 import { ScopeController } from './scopeController';
 import { ScopeViewProvider } from './webview/scopeViewProvider';
 
@@ -20,6 +21,7 @@ export function activate(context: vscode.ExtensionContext): CodeScopeApi {
       webviewOptions: { retainContextWhenHidden: true },
     }),
     controller,
+    registerSamples(context),
   );
   return {
     snapshots: () => controller.history.all(),
