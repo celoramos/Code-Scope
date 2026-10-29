@@ -130,6 +130,22 @@ describe('painel (main.js num DOM)', () => {
     assert.ok(seen.some((t) => t.includes('não guarda repetidos')), `explicações: ${JSON.stringify(seen)}`);
   });
 
+  it('lista que ganha um bloco de itens num passo: todos surgem juntos e a frase lista os itens', () => {
+    const panel = openPanel();
+    const step = (values: string[], line: number): Snapshot => ({
+      line,
+      file: 'Lista.java',
+      arrays: [{ name: 'lista', values, length: values.length, kind: 'list' }],
+      pointers: [],
+    });
+    panel.stop(step(['"a"'], 5));
+    panel.stop(step(['"a"', '"b"', '"c"'], 6));
+    const inserted = [...panel.doc.querySelectorAll('.array .cell.is-inserted .cell-value')].map((c) => c.textContent);
+    assert.deepEqual(inserted, ['"b"', '"c"']);
+    assert.ok(texts(panel.doc, '#explanation li').some((t) => t.includes('ganhou "b" e "c" no fim')), texts(panel.doc, '#explanation li').join(' | '));
+    assert.deepEqual(panel.errors, []);
+  });
+
   it('array: uma célula por posição, com os valores do programa', () => {
     const panel = replay('BubbleSort');
     const values = texts(panel.doc, '#arrays .cell-value');

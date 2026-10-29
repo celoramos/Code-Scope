@@ -253,6 +253,14 @@ function animateCells(cells, name, changes, mode = 'array', list) {
       cells[c.index].classList.add('is-changed', entry);
       if (entry === 'is-inserted') cells.slice(c.index + 1).forEach((cell) => slide(cell, -step));
       first ??= cells[c.index];
+    } else if (c.kind === 'insert-many' && c.index !== undefined && c.values) {
+      // O bloco inteiro surge junto, e os itens depois dele andam o tamanho do bloco.
+      const block = cells.slice(c.index, c.index + c.values.length);
+      block.forEach((cell) => cell.classList.add('is-changed', 'is-inserted'));
+      if (c.shifted) cells.slice(c.index + c.values.length).forEach((cell) => slide(cell, -step * block.length));
+      first ??= block[0];
+    } else if (c.kind === 'remove-many' && c.index !== undefined && c.values && list) {
+      for (const value of c.values) first ??= ghostOut(list, cells[c.index], value, mode);
     } else if (c.kind === 'set-add') {
       // Conjunto: o item novo aparece onde o debugger o pôs, sem empurrar ninguém.
       const cell = cells.find((x) => x.querySelector('.cell-value')?.textContent === c.value);

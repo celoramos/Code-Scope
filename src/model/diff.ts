@@ -14,6 +14,9 @@ export type Change =
   | { kind: 'insert'; array: string; index: number; value: string; shifted: boolean; structure: Structure }
   /** Lista perdeu um item; shifted diz se os itens seguintes voltaram uma posição. */
   | { kind: 'remove'; array: string; index: number; value: string; shifted: boolean; structure: Structure }
+  /** Lista ganhou ou perdeu um bloco de itens vizinhos num passo só (addAll, extend, splice, del a[1:3]). */
+  | { kind: 'insert-many'; array: string; index: number; values: string[]; shifted: boolean; structure: Structure }
+  | { kind: 'remove-many'; array: string; index: number; values: string[]; shifted: boolean; structure: Structure }
   /** Conjunto ganhou ou perdeu um item; num conjunto não há posição. */
   | { kind: 'set-add'; array: string; value: string }
   | { kind: 'set-remove'; array: string; value: string }
@@ -131,7 +134,8 @@ function matrixChanges(prev: ArrayVar, next: ArrayVar, older: ArrayVar | undefin
  */
 function listChange(prev: ArrayVar, next: ArrayVar): Change | undefined {
   const complete = prev.values.length === prev.length && next.values.length === next.length;
-  if (!complete || Math.abs(prev.length - next.length) !== 1) return undefined;
+  if (!complete || prev.length === next.length) return undefined;
+  if (Math.abs(prev.length - next.length) > 1) return blockChange(prev, next);
 
   const grew = next.length > prev.length;
   const [longer, shorter] = grew ? [next.values, prev.values] : [prev.values, next.values];
@@ -163,6 +167,27 @@ function setChanges(prev: ArrayVar, next: ArrayVar): Change[] {
     ...next.values.filter((v) => !before.has(v)).map((value): Change => ({ kind: 'set-add', array: next.name, value })),
     ...prev.values.filter((v) => !after.has(v)).map((value): Change => ({ kind: 'set-remove', array: next.name, value })),
   ];
+}
+
+/**
+ * Vários itens de uma vez: se formam um bloco contíguo (o começo e o fim da
+ * lista não mudaram), é um insert-many ou remove-many nesse lugar. Sem um bloco
+ * assim, quem chamou trata como redimensionamento.
+ */
+function blockChange(prev: ArrayVar, next: ArrayVar): Change | undefined {
+  const grew = next.length > prev.length;
+  const [longer, shorter] = grew ? [next.values, prev.values] : [prev.values, next.values];
+  let start = 0;
+  while (start < shorter.length && longer[start] === shorter[start]) start++;
+  let tail = 0;
+  while (tail < shorter.length - start && longer[longer.length - 1 - tail] === shorter[shorter.length - 1 - tail]) tail++;
+  if (start + tail !== shorter.length) return undefined;
+  const values = longer.slice(start, longer.length - tail);
+  const shifted = tail > 0;
+  const structure = next.kind ?? 'list';
+  return grew
+    ? { kind: 'insert-many', array: next.name, index: start, values, shifted, structure }
+    : { kind: 'remove-many', array: next.name, index: start, values, shifted, structure };
 }
 
 function pointerChanges(prev: Snapshot, next: Snapshot): Change[] {

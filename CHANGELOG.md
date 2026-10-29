@@ -4,6 +4,7 @@
 
 ### Novo
 
+- Lista que ganha ou perde vários itens num passo (`addAll`, `extend`, `splice`, `del lista[1:3]`) anima o bloco inteiro e diz quais itens entraram ou saíram, em vez de só "redimensionada".
 - Pilha de chamadas: arrays e listas das chamadas de baixo mostram os itens (`[38, 27, 43, 3]`), não só o tamanho. Na recursão sobre arrays dá para ver o pedaço que cada chamada recebeu. Exemplos novos de merge sort e quick sort em Java, Python e JavaScript.
 - Plugin JetBrains: sem o navegador embutido (JCEF), o painel explica como ligar em vez de ficar vazio.
 - Conjuntos: `HashSet` (Java), `set` (Python) e `Set` (JavaScript) aparecem como conjunto, sem índice nas caixas. As frases dizem o que entrou e o que saiu, e um `add` de um valor que já estava explica que nada mudou porque conjunto não guarda repetidos. Exemplos novos: `Conjunto.java`, `conjunto.py`, `conjunto.js`.

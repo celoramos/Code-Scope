@@ -50,6 +50,10 @@ function sentence(c: Change, m: Messages): string {
       if (c.structure === 'stack' && !c.shifted) return m.popped(c.array, c.value);
       if (c.structure === 'queue' && c.index === 0) return m.dequeued(c.array, c.value);
       return c.shifted ? m.removedShifting(c.array, c.value, c.index) : m.removedFromEnd(c.array, c.value, c.index);
+    case 'insert-many':
+      return c.shifted ? m.insertedManyShifting(c.array, c.values, c.index) : m.insertedManyAtEnd(c.array, c.values, c.index);
+    case 'remove-many':
+      return c.shifted ? m.removedManyShifting(c.array, c.values, c.index) : m.removedManyFromEnd(c.array, c.values);
     case 'set-add':
       return m.setAdded(c.array, c.value);
     case 'set-remove':

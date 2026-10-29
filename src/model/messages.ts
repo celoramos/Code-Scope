@@ -41,6 +41,11 @@ export interface Messages {
   dequeued(array: string, value: string): string;
   removedShifting(array: string, value: string, index: number): string;
   removedFromEnd(array: string, value: string, index: number): string;
+  /** Bloco de itens de uma vez (addAll, extend, splice). */
+  insertedManyAtEnd(array: string, values: string[], index: number): string;
+  insertedManyShifting(array: string, values: string[], index: number): string;
+  removedManyFromEnd(array: string, values: string[]): string;
+  removedManyShifting(array: string, values: string[], index: number): string;
 
   variableCreated(name: string, value: string | number): string;
   variableGone(name: string): string;
@@ -153,6 +158,13 @@ function count(n: number, one: string, many: string): string {
 const ptNoun = { list: 'lista', stack: 'pilha', queue: 'fila' };
 const ptPositions = (n: number) => count(n, 'posição', 'posições');
 const ptItems = (n: number) => count(n, 'item', 'itens');
+/** "a, b e c"; listas longas cortam no quinto item. */
+const ptList = (vs: string[]) => joinList(vs, 'e', 'mais');
+const enList = (vs: string[]) => joinList(vs, 'and', 'more');
+function joinList(vs: string[], and: string, more: string): string {
+  if (vs.length > 5) return `${vs.slice(0, 4).join(', ')} ${and} ${vs.length - 4} ${more}`;
+  return vs.length < 2 ? vs.join('') : `${vs.slice(0, -1).join(', ')} ${and} ${vs[vs.length - 1]}`;
+}
 const ptSize = (rows: number, cols: number) => `${count(rows, 'linha', 'linhas')} e ${count(cols, 'coluna', 'colunas')}`;
 
 const pt: Messages = {
@@ -187,6 +199,12 @@ const pt: Messages = {
   dequeued: (arr, v) => `${v} saiu da frente da fila ${arr}. Na fila, sai sempre quem chegou primeiro.`,
   removedShifting: (arr, v, i) => `${v} saiu de ${arr} (posição ${i}). Os itens seguintes voltaram uma posição.`,
   removedFromEnd: (arr, v, i) => `${v} saiu do fim de ${arr} (posição ${i}).`,
+  insertedManyAtEnd: (arr, vs, i) => `${arr} ganhou ${ptList(vs)} no fim, a partir da posição ${i}.`,
+  insertedManyShifting: (arr, vs, i) =>
+    `${arr} ganhou ${ptList(vs)} a partir da posição ${i}. Os itens que estavam dali em diante andaram ${ptPositions(vs.length)}.`,
+  removedManyFromEnd: (arr, vs) => `${ptList(vs)} saíram do fim de ${arr}.`,
+  removedManyShifting: (arr, vs, i) =>
+    `${ptList(vs)} saíram de ${arr} a partir da posição ${i}. Os itens seguintes voltaram ${ptPositions(vs.length)}.`,
 
   variableCreated: (name, v) => `${name} foi criada valendo ${v}.`,
   variableGone: (name) => `${name} saiu de escopo.`,
@@ -357,6 +375,12 @@ const en: Messages = {
   popped: (arr, v) => `${v} left the top of ${arr}. In a stack, the last one in is always the first one out.`,
   dequeued: (arr, v) => `${v} left the front of the queue ${arr}. In a queue, whoever arrived first always leaves first.`,
   removedShifting: (arr, v, i) => `${v} left ${arr} (position ${i}). The items after it moved back one position.`,
+  insertedManyAtEnd: (arr, vs, i) => `${arr} got ${enList(vs)} at the end, from position ${i} on.`,
+  insertedManyShifting: (arr, vs, i) =>
+    `${arr} got ${enList(vs)} from position ${i} on. The items from there on moved up ${enPositions(vs.length)}.`,
+  removedManyFromEnd: (arr, vs) => `${enList(vs)} left the end of ${arr}.`,
+  removedManyShifting: (arr, vs, i) =>
+    `${enList(vs)} left ${arr} from position ${i} on. The items after them moved back ${enPositions(vs.length)}.`,
   removedFromEnd: (arr, v, i) => `${v} left the end of ${arr} (position ${i}).`,
 
   variableCreated: (name, v) => `${name} was created with the value ${v}.`,

@@ -92,9 +92,19 @@ describe('diff', () => {
     assert.deepEqual(diff(list(['a', 'b', 'c']), list(['b', 'c'])), [
       { kind: 'remove', array: 'lista', index: 0, value: 'a', shifted: true, structure: 'list' },
     ]);
-    // Dois itens de uma vez não têm uma posição única que explique: vira redimensionamento.
+    // Vários itens de uma vez, num bloco só: addAll no fim, splice no meio, del a[1:3].
     assert.deepEqual(diff(list(['a']), list(['a', 'b', 'c'])), [
-      { kind: 'array-resized', array: 'lista', from: 1, to: 3 },
+      { kind: 'insert-many', array: 'lista', index: 1, values: ['b', 'c'], shifted: false, structure: 'list' },
+    ]);
+    assert.deepEqual(diff(list(['a', 'd']), list(['a', 'b', 'c', 'd'])), [
+      { kind: 'insert-many', array: 'lista', index: 1, values: ['b', 'c'], shifted: true, structure: 'list' },
+    ]);
+    assert.deepEqual(diff(list(['a', 'b', 'c', 'd']), list(['a', 'd'])), [
+      { kind: 'remove-many', array: 'lista', index: 1, values: ['b', 'c'], shifted: true, structure: 'list' },
+    ]);
+    // Itens espalhados não formam um bloco: continua redimensionamento.
+    assert.deepEqual(diff(list(['a', 'c']), list(['x', 'a', 'y', 'c'])), [
+      { kind: 'array-resized', array: 'lista', from: 2, to: 4 },
     ]);
   });
 

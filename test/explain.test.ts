@@ -12,6 +12,22 @@ describe('explain', () => {
     assert.deepEqual(explain([], true), ['Primeiro passo. Ainda não há arrays nas variáveis locais.']);
   });
 
+  it('bloco de itens de uma vez: no fim, no meio e saindo', () => {
+    const base = { array: 'lista', structure: 'list' as const };
+    assert.deepEqual(explain([{ kind: 'insert-many', ...base, index: 1, values: ['"b"', '"c"'], shifted: false }]), [
+      'lista ganhou "b" e "c" no fim, a partir da posição 1.',
+    ]);
+    assert.deepEqual(explain([{ kind: 'insert-many', ...base, index: 1, values: ['1', '2', '3'], shifted: true }], false, [], 'en'), [
+      'lista got 1, 2 and 3 from position 1 on. The items from there on moved up 3 positions.',
+    ]);
+    assert.deepEqual(explain([{ kind: 'remove-many', ...base, index: 1, values: ['b', 'c'], shifted: true }]), [
+      'b e c saíram de lista a partir da posição 1. Os itens seguintes voltaram 2 posições.',
+    ]);
+    assert.deepEqual(explain([{ kind: 'remove-many', ...base, index: 4, values: ['1', '2', '3', '4', '5', '6'], shifted: false }]), [
+      '1, 2, 3, 4 e 2 mais saíram do fim de lista.',
+    ]);
+  });
+
   it('posição alterada', () => {
     assert.deepEqual(explain([{ kind: 'set', array: 'arr', index: 2, from: '5', to: '3' }]), [
       'arr[2] mudou de 5 para 3.',

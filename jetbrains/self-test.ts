@@ -28,7 +28,9 @@ function view(s: Snapshot) {
     line: s.line,
     code: s.code,
     arrays: s.arrays.map((a) => ({ name: a.name, kind: a.kind, values: a.values, rows: a.rows?.map((r) => r.values) })),
-    pointers: s.pointers.map((p) => `${p.name}=${p.value}`).sort(),
+    // "⎯►fib()" é o valor que a chamada devolveu, que o Java Debugger do VS Code mostra depois do
+    // F7 e o IntelliJ não (limite conhecido do plugin, no README): fica fora da comparação.
+    pointers: s.pointers.filter((p) => !p.name.startsWith('⎯►')).map((p) => `${p.name}=${p.value}`).sort(),
     scalars: (s.scalars ?? []).map((v) => `${v.name}=${v.value}`).sort(),
     maps: (s.maps ?? []).map((m) => ({ name: m.name, entries: m.entries })),
     calls: s.calls?.map((c) => c.name),

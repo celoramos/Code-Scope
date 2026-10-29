@@ -6,7 +6,7 @@
  * @typedef {{ name: string, value: string }} Scalar
  * @typedef {{ name: string, index: number }} Arrow
  * @typedef {{ row?: Arrow, col?: Arrow }} Axes
- * @typedef {{ kind: string, array?: string, map?: string, key?: string, from?: string | number, to?: string | number, index?: number, a?: number, b?: number, name?: string, value?: string }} Change
+ * @typedef {{ kind: string, array?: string, map?: string, key?: string, from?: string | number, to?: string | number, index?: number, a?: number, b?: number, name?: string, value?: string, values?: string[], shifted?: boolean }} Change
  * @typedef {{ line: number, code?: string }} LineRef
  * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[], calls?: CallFrame[], maps?: MapVar[], condition?: Condition, refs?: { name: string, ref: string | null }[] },
  *             executed?: LineRef, changes: Change[], arrows: Record<string, Arrow[]>, axes: Record<string, Axes>,
