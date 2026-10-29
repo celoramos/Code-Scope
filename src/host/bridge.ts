@@ -6,6 +6,8 @@
 
 /** Requisições que o painel faz para a IDE. */
 export type HostRequest =
+  /** O script do painel começou a rodar: a IDE pode mandar os eventos. */
+  | { kind: 'ready' }
   /** Uma requisição do Debug Adapter Protocol, respondida pela IDE a partir do depurador dela. */
   | { kind: 'dap'; command: string; args?: unknown }
   /** Texto do arquivo-fonte. */

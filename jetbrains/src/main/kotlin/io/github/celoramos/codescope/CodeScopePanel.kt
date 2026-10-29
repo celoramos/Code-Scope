@@ -46,12 +46,11 @@ class CodeScopePanel(parent: Disposable, private val onRequest: (JsonObject) -> 
             ApplicationManager.getApplication().executeOnPooledThread { answer(payload) }
             null
         }
+        // O painel avisa que está pronto pela ponte (que já vem no HTML). O fim do carregamento
+        // é só um reforço: no Linux sem tela (o CI) ele nem sempre chega.
         browser.jbCefClient.addLoadHandler(object : CefLoadHandlerAdapter() {
             override fun onLoadEnd(cefBrowser: CefBrowser, frame: CefFrame, httpStatusCode: Int) {
-                if (!frame.isMain) return
-                run(bridgeScript())
-                loaded = true
-                pending.splice().forEach(::run)
+                if (frame.isMain) markReady()
             }
         }, browser.cefBrowser)
         ApplicationManager.getApplication().messageBus.connect(this)
@@ -65,11 +64,21 @@ class CodeScopePanel(parent: Disposable, private val onRequest: (JsonObject) -> 
         if (loaded) run(js) else pending.add(js)
     }
 
+    /** O script do painel está rodando: manda o que esperava (na thread da interface, como send). */
+    private fun markReady() {
+        ApplicationManager.getApplication().invokeLater {
+            if (loaded) return@invokeLater
+            loaded = true
+            pending.splice().forEach(::run)
+        }
+    }
+
     private fun answer(payload: String) {
         val message = JsonParser.parseString(payload).asJsonObject
         val id = message.get("id").asInt
         val js = try {
             val request = JsonParser.parseString(message.get("request").asString).asJsonObject
+            if (request.get("kind")?.asString == "ready") markReady()
             val result = onRequest(request)
             "window.__codeScopeResolve($id, true, ${gson.toJson(gson.toJson(result))})"
         } catch (e: Throwable) {
@@ -81,7 +90,7 @@ class CodeScopePanel(parent: Disposable, private val onRequest: (JsonObject) -> 
 
     private fun run(js: String) = browser.cefBrowser.executeJavaScript(js, browser.cefBrowser.url, 0)
 
-    /** Liga window.__codeScopeSend ao JBCefJSQuery, com respostas por id. */
+    /** Liga window.__codeScopeSend ao JBCefJSQuery, com respostas por id. Vai no <head>, antes do painel. */
     private fun bridgeScript() = """
         window.__csPending = {}; window.__csNext = 1;
         window.__codeScopeSend = function (request, ok, fail) {
@@ -95,13 +104,13 @@ class CodeScopePanel(parent: Disposable, private val onRequest: (JsonObject) -> 
           delete window.__csPending[id];
           if (p) ok ? p[0](text) : p[1](0, text);
         };
-        ${Theme.script()}
     """.trimIndent()
 
     private fun html(): String {
         val language = if (Locale.getDefault().language == "pt") "pt" else "en"
         val text = javaClass.getResourceAsStream("/codescope/panel-$language.html")!!.bufferedReader().readText()
-        return text.replace("style=\"/*theme*/\"", "style=\"${Theme.inlineStyle()}\"")
+        return text.replace("<head>", "<head>\n<script>${bridgeScript()}</script>")
+            .replace("style=\"/*theme*/\"", "style=\"${Theme.inlineStyle()}\"")
             .replace("<body", "<body class=\"${Theme.bodyClass()}\"")
     }
 

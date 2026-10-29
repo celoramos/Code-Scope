@@ -89,6 +89,8 @@ function receive(event: HostEvent) {
 }
 
 (window as unknown as { codeScope: unknown }).codeScope = { receive };
+// A IDE espera este aviso para mandar os eventos guardados (início da sessão, paradas).
+void request({ kind: 'ready' }).catch(() => {});
 
 onPanelMessage((msg) => {
   switch (msg.type) {
