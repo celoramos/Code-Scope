@@ -86,6 +86,8 @@ class SelfTest : ProjectActivity {
                     launch()
                     snap = snapshots.poll(180, TimeUnit.SECONDS)
                 }
+                // O programa acabou (depois de um erro, por exemplo): fica o que chegou até aqui.
+                if (snap == null && k > 0 && XDebuggerManager.getInstance(project).currentSession == null) break
                 snap ?: error("o passo $k não chegou ao painel")
                 if (k > 0) result.append(",\n")
                 result.append(snap)
