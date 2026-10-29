@@ -27,6 +27,8 @@ intellijPlatform {
     pluginConfiguration {
         ideaVersion { sinceBuild = "262" }
     }
+    // Token do Marketplace da JetBrains; o release.yml passa pelo segredo JETBRAINS_TOKEN.
+    publishing { token = providers.environmentVariable("JETBRAINS_TOKEN") }
     buildSearchableOptions = false
     // Sem formulários do GUI Designer: nada para instrumentar.
     instrumentCode = false

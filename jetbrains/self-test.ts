@@ -16,7 +16,11 @@ if (raw.startsWith('ERRO')) {
   process.exit(1);
 }
 const ide: Snapshot[] = JSON.parse(raw);
-const code: Snapshot[] = JSON.parse(fs.readFileSync(path.join(root, 'out-test', `${name}.json`), 'utf8')).snapshots;
+// Referência do VS Code: o teste de integração mais recente (out-test) ou, sem ele (no CI), os snapshots versionados.
+const dump = path.join(root, 'out-test', `${name}.json`);
+const code: Snapshot[] = fs.existsSync(dump) && !process.env.CODE_SCOPE_FIXTURES
+  ? JSON.parse(fs.readFileSync(dump, 'utf8')).snapshots
+  : JSON.parse(fs.readFileSync(path.join(root, 'test', 'fixtures', 'panel', `${name}.json`), 'utf8'));
 
 // O que o painel desenha; ids de objeto e caminhos de arquivo mudam de um debugger para o outro.
 function view(s: Snapshot) {

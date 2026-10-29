@@ -5,6 +5,8 @@ name: Release
 # - publica o .vsix no Open VSX, de onde Cursor, Windsurf, VSCodium e Antigravity instalam.
 #   Precisa do segredo OVSX_PAT, um token de open-vsx.org com acesso ao namespace "code-scope";
 #   sem ele, esse passo é pulado.
+# - publica no Marketplace do VS Code (segredo VSCE_PAT) e no da JetBrains (segredo JETBRAINS_TOKEN),
+#   também só quando o segredo existe.
 on:
   push:
     tags: ['v*']
@@ -18,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OVSX_PAT: ${{ secrets.OVSX_PAT }}
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      JETBRAINS_TOKEN: ${{ secrets.JETBRAINS_TOKEN }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7
@@ -42,3 +46,12 @@ jobs:
       - name: Publica no Open VSX
         if: env.OVSX_PAT != ''
         run: npx --yes ovsx@1.2.0 publish code-scope.vsix
+      # Marketplace do VS Code: token do Azure DevOps com escopo Marketplace (Manage) para o publisher "code-scope".
+      - name: Publica no Marketplace do VS Code
+        if: env.VSCE_PAT != ''
+        run: npx vsce publish --packagePath code-scope.vsix
+      # Marketplace da JetBrains: a primeira versão sobe pelo site; daqui em diante, pelo token.
+      - name: Publica no Marketplace da JetBrains
+        if: env.JETBRAINS_TOKEN != ''
+        run: ./gradlew publishPlugin --console=plain
+        working-directory: jetbrains
