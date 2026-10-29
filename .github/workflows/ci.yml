@@ -142,16 +142,22 @@ jobs:
       - name: Autoteste no IntelliJ (comparado com o VS Code)
         working-directory: jetbrains
         run: |
+          # Resultado de cada exemplo vira anotação na página do run (o log só abre com login).
+          compare() {
+            out=$(cd .. && npx tsx jetbrains/self-test.ts "$1" 2>&1) && { echo "::notice title=$1::$(echo "$out" | tail -1)"; return 0; }
+            echo "$out" | head -15 | cut -c1-400 | sed "s/^/::error title=$1::/"
+            return 1
+          }
           # A tela de configurações monta e salva o que muda.
           timeout 600 xvfb-run -a ./gradlew runIde -PselfTest=Settings:0:0 --console=plain > build/runIde-Settings.log 2>&1 || true
           grep -q '"ok":true' build/self-test/Settings.json || { cat build/self-test/Settings.json; exit 1; }
           for t in BubbleSort:6:12 Dicionario:7:18 Pilha:6:7 Matriz:9:5; do
             timeout 900 xvfb-run -a ./gradlew runIde -PselfTest=$t --console=plain > "build/runIde-${t%%:*}.log" 2>&1 || true
-            (cd .. && npx tsx jetbrains/self-test.ts "${t%%:*}")
+            compare "${t%%:*}"
           done
           # Recursão: F7 entra em cada chamada de fib, e a árvore de chamadas tem de sair igual.
           timeout 900 xvfb-run -a ./gradlew runIde -PselfTest=Fibonacci:11:24 -PstepInto=true --console=plain > build/runIde-Fibonacci.log 2>&1 || true
-          (cd .. && npx tsx jetbrains/self-test.ts Fibonacci)
+          compare Fibonacci
       # O log do job só abre com login no GitHub; anotações qualquer um vê na página do run.
       - if: failure()
         name: Linhas importantes do log do IntelliJ
