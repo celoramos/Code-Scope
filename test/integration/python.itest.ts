@@ -96,6 +96,14 @@ describe('Python (debugpy) real', function () {
     assert.deepEqual(frame.error?.missing, { array: 'notas', index: 3 });
   });
 
+  it('quick_sort.py: quick sort, as trocas da partição são reconhecidas', async () => {
+    const snaps = await debugScript('quick_sort', 17, 22, 'stepInto');
+    const swaps = allChanges(snaps).filter((c) => c.kind === 'swap' && c.array === 'v');
+    assert.ok(swaps.length >= 2, `trocas em v: ${JSON.stringify(swaps)}`);
+    const v = snaps.at(-1)!.arrays.find((a) => a.name === 'v');
+    assert.ok(v && v.values.slice(0, 3).join() === '2,4,5', `v no fim: ${JSON.stringify(v?.values)}`);
+  });
+
   it('merge_sort.py: merge sort, cada chamada de baixo mostra a metade que recebeu', async () => {
     const snaps = await debugScript('merge_sort', 25, 8, 'stepInto');
     const deepest = snaps.reduce((a, s) => ((s.calls?.length ?? 0) > (a.calls?.length ?? 0) ? s : a), snaps[0]);

@@ -147,6 +147,14 @@ describe('Java Debugger real', () => {
     assert.ok(names.includes('inicio') && names.includes('fim'), `ponteiros: ${names.join(', ')}`);
   });
 
+  it('QuickSort: quick sort, as trocas da partição são reconhecidas', async () => {
+    const snaps = await debugSample('QuickSort', 24, 30, 'stepInto');
+    const swaps = allChanges(snaps).filter((c) => c.kind === 'swap' && c.array === 'v');
+    assert.ok(swaps.length >= 2, `trocas em v: ${JSON.stringify(swaps)}`);
+    const v = snaps.at(-1)!.arrays.find((a) => a.name === 'v');
+    assert.ok(v && v.values.slice(0, 3).join() === '2,4,5', `v no fim: ${JSON.stringify(v?.values)}`);
+  });
+
   it('MergeSort: merge sort, cada chamada de baixo mostra a metade que recebeu', async () => {
     const snaps = await debugSample('MergeSort', 27, 10, 'stepInto');
     const deepest = snaps.reduce((a, s) => ((s.calls?.length ?? 0) > (a.calls?.length ?? 0) ? s : a), snaps[0]);

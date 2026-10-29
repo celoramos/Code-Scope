@@ -87,6 +87,12 @@
     },
     {
       "type": "java",
+      "name": "QuickSort",
+      "request": "launch",
+      "mainClass": "QuickSort"
+    },
+    {
+      "type": "java",
       "name": "MergeSort",
       "request": "launch",
       "mainClass": "MergeSort"
