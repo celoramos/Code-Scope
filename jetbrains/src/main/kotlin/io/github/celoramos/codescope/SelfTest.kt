@@ -92,6 +92,11 @@ class SelfTest : ProjectActivity {
                     val entry = model.contentEntries.firstOrNull() ?: model.addContentEntry(root)
                     if (entry.sourceFolders.isEmpty()) entry.addSourceFolder(root, false)
                     model.sdk = jdk
+                    // As classes vão para out/, compiladas pelo javac abaixo.
+                    model.getModuleExtension(com.intellij.openapi.roots.CompilerModuleExtension::class.java).apply {
+                        inheritCompilerOutputPath(false)
+                        setCompilerOutputPath("file://$dir/out")
+                    }
                 }
                 val file = LocalFileSystem.getInstance().refreshAndFindFileByPath("$dir/$name.java")!!
                 XDebuggerUtil.getInstance().toggleLineBreakpoint(project, file, line - 1)
@@ -99,8 +104,12 @@ class SelfTest : ProjectActivity {
                 (settings.configuration as ApplicationConfiguration).apply {
                     mainClassName = name
                     setModule(module)
+                    // Sem o build da IDE antes de rodar: no CI ele falha de vez em quando e o programa
+                    // "não começa". O javac abaixo compila os exemplos do mesmo jeito toda vez.
+                    beforeRunTasks = emptyList()
                 }
             }
+            compileSamples(dir)
             val launch = {
                 ApplicationManager.getApplication().invokeAndWait {
                     ProgramRunnerUtil.executeConfiguration(settings, DefaultDebugExecutor.getDebugExecutorInstance())
@@ -179,4 +188,16 @@ private fun diagnostics(project: Project): String {
         "painel montado: ${service.hasPanel} (${service.panelState}); JCEF: ${com.intellij.ui.jcef.JBCefApp.isSupported()}; " +
         "erros do painel: ${service.panelErrors.joinToString(" | ").take(1500)}; " +
         "execuções: ${executions.joinToString(", ")}; console: ${console.filter { it.isNotBlank() }.joinToString(" / ").take(1500)}"
+}
+
+/** javac -g de todos os exemplos para out/, com o JDK do teste. */
+private fun compileSamples(dir: String) {
+    val home = System.getProperty("codescope.jdk")
+    val javac = File(home, if (System.getProperty("os.name").startsWith("Windows")) "bin/javac.exe" else "bin/javac")
+    val sources = File(dir).listFiles { f -> f.extension == "java" }!!.map { it.absolutePath }
+    val process = ProcessBuilder(listOf(javac.absolutePath, "-g", "-encoding", "UTF-8", "-d", "$dir/out") + sources)
+        .redirectErrorStream(true).start()
+    val output = process.inputStream.bufferedReader().readText()
+    check(process.waitFor() == 0) { "javac falhou: ${output.take(1500)}" }
+    LocalFileSystem.getInstance().refreshAndFindFileByPath("$dir/out")
 }
