@@ -35,6 +35,17 @@ class SelfTest : ProjectActivity {
     override suspend fun execute(project: Project) {
         val spec = System.getProperty("codescope.selfTest") ?: return
         val (name, line, steps, out) = spec.split(":", limit = 4)
+        // -PselfTest=Settings:0:0 monta Settings > Tools > Code Scope, muda os valores pela tela,
+        // aplica, confere o que ficou salvo e escreve {"ok":true} (ou ERRO) na saída.
+        if (name == "Settings") {
+            val app = ApplicationManager.getApplication()
+            app.invokeLater {
+                val result = runCatching { checkSettings() }
+                File(out).writeText(result.fold({ "{\"ok\":true}\n" }, { "ERRO: ${it.stackTraceToString()}" }))
+                app.exit(true, true, false)
+            }
+            return
+        }
         Thread { run(project, name, line.toInt(), steps.toInt(), File(out)) }.start()
     }
 
@@ -95,7 +106,9 @@ class SelfTest : ProjectActivity {
                 // codescope.stepDelay (ms) segura cada passo na tela, para gravar o painel animando.
                 Thread.sleep(System.getProperty("codescope.stepDelay")?.toLong() ?: 0)
                 val session = XDebuggerManager.getInstance(project).currentSession ?: break
-                ApplicationManager.getApplication().invokeAndWait { session.stepOver(false) }
+                // codescope.stepInto=true usa o F7 (entra nas funções), como os exemplos de recursão pedem.
+                val into = System.getProperty("codescope.stepInto") == "true"
+                ApplicationManager.getApplication().invokeAndWait { if (into) session.stepInto() else session.stepOver(false) }
             }
             result.append("\n]\n")
             out.writeText(result.toString())
@@ -105,4 +118,30 @@ class SelfTest : ProjectActivity {
             ApplicationManager.getApplication().invokeLater { ApplicationManager.getApplication().exit(true, true, false) }
         }
     }
+}
+
+/** A tela de configurações monta, e o que muda nela fica salvo ao aplicar; depois volta aos padrões. */
+private fun checkSettings() {
+    val values = CodeScopeSettings.current
+    val configurable = CodeScopeConfigurable()
+    val component = configurable.createComponent()
+    check(component.componentCount > 0) { "tela de configurações vazia" }
+    check(!configurable.isModified) { "tela nova já aparece modificada" }
+    val boxes = mutableListOf<javax.swing.JCheckBox>()
+    fun collect(c: java.awt.Container) {
+        for (child in c.components) {
+            if (child is javax.swing.JCheckBox) boxes.add(child)
+            if (child is java.awt.Container) collect(child)
+        }
+    }
+    collect(component)
+    check(boxes.size == 3) { "esperava 3 caixas de marcar, achei ${boxes.size}" }
+    boxes.forEach { it.isSelected = !it.isSelected }
+    check(configurable.isModified) { "mudar a caixa não marcou a tela como modificada" }
+    configurable.apply()
+    check(!values.beginnerMode && !values.revealOnDebug && !values.pauseOnErrors) { "aplicar não salvou as caixas" }
+    values.beginnerMode = true
+    values.revealOnDebug = true
+    values.pauseOnErrors = true
+    configurable.disposeUIResources()
 }

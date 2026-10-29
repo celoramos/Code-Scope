@@ -81,6 +81,7 @@ function receive(event: HostEvent) {
     case 'settings':
       if (event.maxElements) maxElements = Math.min(Math.max(Math.round(event.maxElements), 1), 500);
       if (event.animationSpeed) animationSpeed = readAnimationSpeed(event.animationSpeed);
+      if (event.beginnerMode !== undefined) frameOptions.beginnerMode = event.beginnerMode;
       postToPanel({ type: 'settings', animationSpeed });
       showCurrent();
       break;

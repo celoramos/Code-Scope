@@ -34,9 +34,18 @@ class CodeScopeService(private val project: Project) : Disposable {
     fun createPanel(parent: Disposable): JComponent {
         val p = CodeScopePanel(parent, ::request)
         panel = p
+        p.send(settingsEvent())
         early.splice().forEach(p::send)
         return p.component
     }
+
+    private fun settingsEvent(): JsonObject {
+        val s = CodeScopeSettings.current
+        return obj("type" to "settings", "animationSpeed" to s.animationSpeed, "maxElements" to s.maxElements, "beginnerMode" to s.beginnerMode)
+    }
+
+    /** Configurações mudaram em Settings > Tools > Code Scope. */
+    fun sendSettings() = send(settingsEvent())
 
     private fun send(event: JsonObject) {
         ApplicationManager.getApplication().invokeLater {
@@ -70,7 +79,7 @@ class CodeScopeService(private val project: Project) : Disposable {
 
     /** Abre o painel na primeira parada, sem tirar o foco do editor (o F8 continua andando). */
     private fun revealOnFirstStop() {
-        if (revealed) return
+        if (revealed || !CodeScopeSettings.current.revealOnDebug) return
         revealed = true
         ApplicationManager.getApplication().invokeLater {
             ToolWindowManager.getInstance(project).getToolWindow("Code Scope")?.show(null)

@@ -44,7 +44,7 @@ val bundlePanel by tasks.registering(Exec::class) {
 }
 tasks.processResources { dependsOn(bundlePanel) }
 
-// Teste de ponta a ponta: ./gradlew runIde -PselfTest=BubbleSort:6:12 abre uma cópia de
+// Teste de ponta a ponta: ./gradlew runIde -PselfTest=BubbleSort:6:12 (com -PstepInto=true, F7) abre uma cópia de
 // samples/java no IntelliJ, debuga e grava os snapshots em build/self-test/<Classe>.json.
 tasks.runIde {
     val spec = providers.gradleProperty("selfTest")
@@ -60,7 +60,10 @@ tasks.runIde {
         }
         jvmArgs("-Xmx1200m", "-Dcodescope.selfTest=${spec.get()}:$outPath", "-Dcodescope.jdk=${System.getProperty("java.home")}",
             "-Didea.trust.all.projects=true", "-Djb.consents.confirmation.enabled=false", "-Didea.initially.ask.config=never",
-            "-Dcodescope.stepDelay=${providers.gradleProperty("stepDelay").getOrElse("0")}")
+            // Numa IDE recém-instalada (o CI), sem estes a primeira abertura para em diálogos de privacidade e dicas.
+            "-Djb.privacy.policy.text=<!--999.999-->", "-Dide.show.tips.on.startup.default.value=false",
+            "-Dcodescope.stepDelay=${providers.gradleProperty("stepDelay").getOrElse("0")}",
+            "-Dcodescope.stepInto=${providers.gradleProperty("stepInto").getOrElse("false")}")
         args(work.absolutePath)
     }
 }

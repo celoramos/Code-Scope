@@ -142,9 +142,24 @@ jobs:
       - name: Autoteste no IntelliJ (comparado com o VS Code)
         working-directory: jetbrains
         run: |
+          # A tela de configurações monta e salva o que muda.
+          timeout 600 xvfb-run -a ./gradlew runIde -PselfTest=Settings:0:0 --console=plain > build/runIde-Settings.log 2>&1 || true
+          grep -q '"ok":true' build/self-test/Settings.json || { cat build/self-test/Settings.json; exit 1; }
           for t in BubbleSort:6:12 Dicionario:7:18 Pilha:6:7 Matriz:9:5; do
             timeout 900 xvfb-run -a ./gradlew runIde -PselfTest=$t --console=plain > "build/runIde-${t%%:*}.log" 2>&1 || true
             (cd .. && npx tsx jetbrains/self-test.ts "${t%%:*}")
+          done
+          # Recursão: F7 entra em cada chamada de fib, e a árvore de chamadas tem de sair igual.
+          timeout 900 xvfb-run -a ./gradlew runIde -PselfTest=Fibonacci:11:24 -PstepInto=true --console=plain > build/runIde-Fibonacci.log 2>&1 || true
+          (cd .. && npx tsx jetbrains/self-test.ts Fibonacci)
+      # O log do job só abre com login no GitHub; anotações qualquer um vê na página do run.
+      - if: failure()
+        name: Linhas importantes do log do IntelliJ
+        working-directory: jetbrains
+        run: |
+          ls build/self-test 2>/dev/null | sed 's/^/::notice title=self-test::/' || true
+          for f in build/runIde-*.log $(find build -name idea.log 2>/dev/null); do
+            grep -iE "error|exception|licen|codescope|dialog|consent|privacy" "$f" | grep -v ActionUpdater | tail -12 | cut -c1-300 | sed "s|^|::warning title=$(basename "$f")::|" || true
           done
       - if: failure()
         uses: actions/upload-artifact@v7

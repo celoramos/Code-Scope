@@ -17,7 +17,7 @@ class DebugListener(private val project: Project) : XDebuggerManagerListener {
         val service = project.service<CodeScopeService>()
         val session = debugProcess.session
         service.sessionStarted()
-        val restore = PauseOnErrors.enable(project)
+        val restore = if (CodeScopeSettings.current.pauseOnErrors) PauseOnErrors.enable(project) else ({})
         session.addSessionListener(object : XDebugSessionListener {
             override fun sessionPaused() = service.paused(session)
             override fun sessionStopped() {

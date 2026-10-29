@@ -23,6 +23,8 @@
     <toolWindow id="Code Scope" anchor="right" icon="/icons/codeScope.svg"
                 factoryClass="io.github.celoramos.codescope.CodeScopeToolWindowFactory"/>
     <notificationGroup id="Code Scope" displayType="BALLOON"/>
+    <applicationConfigurable parentId="tools" instance="io.github.celoramos.codescope.CodeScopeConfigurable"
+                             id="io.github.celoramos.codescope" displayName="Code Scope"/>
     <postStartupActivity implementation="io.github.celoramos.codescope.SelfTest"/>
   </extensions>
 
