@@ -151,7 +151,7 @@ jobs:
           # A tela de configurações monta e salva o que muda.
           timeout 600 xvfb-run -a ./gradlew runIde -PselfTest=Settings:0:0 --console=plain > build/runIde-Settings.log 2>&1 || true
           grep -q '"ok":true' build/self-test/Settings.json || { cat build/self-test/Settings.json; exit 1; }
-          for t in BubbleSort:6:12 Dicionario:7:18 Pilha:6:7 Matriz:9:5; do
+          for t in Pilha:6:7 BubbleSort:6:12 Dicionario:7:18 Matriz:9:5; do
             timeout 900 xvfb-run -a ./gradlew runIde -PselfTest=$t --console=plain > "build/runIde-${t%%:*}.log" 2>&1 || true
             compare "${t%%:*}"
           done

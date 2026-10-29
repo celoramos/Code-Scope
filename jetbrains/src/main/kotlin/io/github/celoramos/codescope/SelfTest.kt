@@ -54,6 +54,24 @@ class SelfTest : ProjectActivity {
         try {
             val snapshots = LinkedBlockingQueue<String>()
             project.service<CodeScopeService>().onSnapshot = { snapshots.add(it) }
+            // Para o diagnóstico: cada execução que começou, como terminou e o que o programa escreveu.
+            project.messageBus.connect().subscribe(com.intellij.execution.ExecutionManager.EXECUTION_TOPIC, object : com.intellij.execution.ExecutionListener {
+                override fun processStarted(executorId: String, env: com.intellij.execution.runners.ExecutionEnvironment, handler: com.intellij.execution.process.ProcessHandler) {
+                    executions.add("começou (${env.runProfile.name})")
+                    handler.addProcessListener(object : com.intellij.execution.process.ProcessListener {
+                        override fun onTextAvailable(event: com.intellij.execution.process.ProcessEvent, outputType: com.intellij.openapi.util.Key<*>) {
+                            console.add(event.text.trim())
+                            while (console.size > 15) console.poll()
+                        }
+                    })
+                }
+                override fun processNotStarted(executorId: String, env: com.intellij.execution.runners.ExecutionEnvironment) {
+                    executions.add("não começou (${env.runProfile.name})")
+                }
+                override fun processTerminated(executorId: String, env: com.intellij.execution.runners.ExecutionEnvironment, handler: com.intellij.execution.process.ProcessHandler, exitCode: Int) {
+                    executions.add("terminou com $exitCode")
+                }
+            })
             val dir = project.basePath!!
             // Com a IDE ainda indexando, a configuração de execução pode sair sem SDK.
             DumbService.getInstance(project).waitForSmartMode()
@@ -151,10 +169,14 @@ private fun checkSettings() {
 }
 
 /** Por que um passo não chegou: houve sessão de debug, o painel montou, o JCEF funciona aqui, o painel reclamou de algo. */
+private val executions = java.util.concurrent.ConcurrentLinkedQueue<String>()
+private val console = java.util.concurrent.ConcurrentLinkedQueue<String>()
+
 private fun diagnostics(project: Project): String {
     val session = XDebuggerManager.getInstance(project).currentSession
     val service = project.service<CodeScopeService>()
     return "sessão de debug: ${session?.let { if (it.isSuspended) "parada" else "rodando" } ?: "nenhuma"}; " +
         "painel montado: ${service.hasPanel} (${service.panelState}); JCEF: ${com.intellij.ui.jcef.JBCefApp.isSupported()}; " +
-        "erros do painel: ${service.panelErrors.joinToString(" | ").take(1500)}"
+        "erros do painel: ${service.panelErrors.joinToString(" | ").take(1500)}; " +
+        "execuções: ${executions.joinToString(", ")}; console: ${console.filter { it.isNotBlank() }.joinToString(" / ").take(1500)}"
 }
