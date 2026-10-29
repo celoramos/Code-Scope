@@ -1,6 +1,6 @@
 # Changelog
 
-## Não lançado
+## 0.8.0
 
 ### Novo
 
