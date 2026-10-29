@@ -46,7 +46,10 @@ Se mudou algo visual, teste no VS Code com um tema claro e um escuro, e com anim
 |---|---|
 | `src/debug` | Conversa com o debugger pelo Debug Adapter Protocol. Em `adapters/` fica um arquivo por linguagem (`java.ts`, `javascript.ts`, `python.ts`), o modo genérico (`generic.ts`), a interface comum (`adapter.ts`) e o registro que escolhe o adaptador (`index.ts`). `dapCollector.ts` monta o passo; `heapCollector.ts` lê os objetos; `conditionEval.ts` pergunta ao programa o valor de cada parte de uma condição; `pauseOnErrors.ts` liga a pausa nas exceções não tratadas. |
 | `src/model` | O modelo neutro de linguagem: `Snapshot`, diff entre passos, histórico, setas, textos explicativos, e um módulo por conceito: `calls.ts` e `callTree.ts` (pilha e árvore de chamadas), `heap.ts` e `heapIdentity.ts` (objetos, listas ligadas, árvores), `graph.ts`, `classes.ts` (herança), `errors.ts` (erros e try/catch), `condition.ts`, `focus.ts` (comparações e intervalo de busca), `scope.ts`, `text.ts`, `numbers.ts`, `predict.ts` (modo de adivinhar), `trace.ts` (teste de mesa). Não importa nada do VS Code. |
+| `src/core` | `collectStep.ts`: uma parada do debugger virando `Snapshot`, usado pela extensão do VS Code e pelo plugin JetBrains. |
+| `src/host` | `standalone.ts`: o painel, o modelo e o coletor empacotados para o plugin JetBrains, falando com a IDE por `bridge.ts`. |
 | `src/webview` | O provider do painel e o protocolo de mensagens entre extensão e painel. |
+| `jetbrains` | O plugin do IntelliJ em Kotlin. `JavaDap.kt` lê a JVM pela JDI e responde `threads`, `stackTrace`, `scopes`, `variables`, `evaluate` e `exceptionInfo` no formato do Java Debugger do VS Code, então `src/debug/adapters/java.ts` funciona sem mudar. `bundle-panel.ts` gera o HTML do painel que o plugin carrega. Gere com `./gradlew buildPlugin`; teste com `./gradlew runIde`. |
 | `media` | HTML, CSS e JS do painel, sem framework. |
 | `samples` | Exemplos por linguagem, cada pasta com o seu `launch.json`, e `exemplos.code-workspace` que abre todas juntas. |
 | `test` | Testes unitários (`*.test.ts`) e de integração (`test/integration`). |

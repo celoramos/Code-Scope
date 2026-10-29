@@ -1,30 +1,44 @@
-name: Publicação no Open VSX
+name: Release
 
-# Cursor, Windsurf, VSCodium, Antigravity e outros forks do VS Code não acessam o
-# Marketplace da Microsoft: instalam do Open VSX. Uma tag v* publica lá o mesmo .vsix.
-# Precisa do segredo OVSX_PAT, um token de open-vsx.org com acesso ao namespace "code-scope".
+# Uma tag v* (git tag v0.8.0 && git push --tags) gera os pacotes e:
+# - anexa o .vsix e o .zip do plugin JetBrains à release da tag no GitHub (cria a release se não existir);
+# - publica o .vsix no Open VSX, de onde Cursor, Windsurf, VSCodium e Antigravity instalam.
+#   Precisa do segredo OVSX_PAT, um token de open-vsx.org com acesso ao namespace "code-scope";
+#   sem ele, esse passo é pulado.
 on:
   push:
     tags: ['v*']
-  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  openvsx:
-    name: Open VSX
+  release:
+    name: Pacotes da release
     runs-on: ubuntu-latest
+    env:
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
       - run: npm ci
       - run: npm test
       - run: npm run vsix
-      - run: npx --yes ovsx@1.2.0 publish code-scope.vsix
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
-      - uses: actions/upload-artifact@v7
-        with:
-          name: code-scope-vsix
-          path: code-scope.vsix
+      - run: ./gradlew buildPlugin --console=plain
+        working-directory: jetbrains
+      - name: Anexa os pacotes à release do GitHub
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          gh release view "$tag" > /dev/null 2>&1 || gh release create "$tag" --title "$tag" --notes "Veja o CHANGELOG.md." --prerelease
+          gh release upload "$tag" code-scope.vsix jetbrains/build/distributions/*.zip --clobber
+      - name: Publica no Open VSX
+        if: env.OVSX_PAT != ''
+        run: npx --yes ovsx@1.2.0 publish code-scope.vsix

@@ -5,7 +5,8 @@
 ### Novo
 
 - Cursor, Windsurf, VSCodium, Antigravity e outros editores feitos a partir do VS Code: o CI roda os testes de Java, JavaScript e Python no VSCodium, com os debuggers baixados do Open VSX, e cada tag `v*` publica o `.vsix` no Open VSX.
-- IntelliJ IDEA e Android Studio (beta): plugin JetBrains para Java em `jetbrains/`. O painel e o coletor são os mesmos da extensão, rodando no navegador embutido da IDE; o depurador de Java da IDE responde as requisições do DAP. Testado no IntelliJ IDEA 2026.2 com os exemplos de Java, comparando passo a passo com o VS Code (`jetbrains/self-test.ts`).
+- IntelliJ IDEA e Android Studio (beta): plugin JetBrains para Java em `jetbrains/`. O painel e o coletor são os mesmos da extensão, rodando no navegador embutido da IDE; o depurador de Java da IDE responde as requisições do DAP. Como no VS Code, o programa para no erro que ninguém tratou e o painel explica o erro. Testado no IntelliJ IDEA 2026.2 com os exemplos de Java, comparando passo a passo com o VS Code (`jetbrains/self-test.ts`).
+- Release: uma tag `v*` anexa o `.vsix` e o `.zip` do plugin JetBrains à release do GitHub e publica no Open VSX (quando o segredo `OVSX_PAT` existe).
 
 ## 0.7.0 (beta)
 

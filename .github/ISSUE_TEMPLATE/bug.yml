@@ -8,6 +8,17 @@ body:
         Obrigado por avisar. Não se preocupe em acertar todos os detalhes: conte o que você viu, do jeito que conseguir.
 
         Thank you for reporting. Do not worry about getting every detail right: tell us what you saw, as best you can. English or Portuguese, either is fine.
+  - type: dropdown
+    id: editor
+    attributes:
+      label: Editor
+      options:
+        - VS Code
+        - Cursor, Windsurf, VSCodium, Antigravity
+        - IntelliJ IDEA, Android Studio
+        - Outro / Other
+    validations:
+      required: true
   - type: textarea
     id: o-que-aconteceu
     attributes:
@@ -25,10 +36,10 @@ body:
     id: log
     attributes:
       label: Log do Code Scope (opcional) / Code Scope log (optional)
-      description: Em View, Output, escolha "Code Scope", mude o nível para Debug, repita o passo e cole o que aparecer. / In View, Output, pick "Code Scope", set the level to Debug, repeat the step and paste what shows up.
+      description: VS Code e parecidos, em View, Output, escolha "Code Scope", mude o nível para Debug, repita o passo e cole o que aparecer. IntelliJ, em Help, Show Log, as linhas com "codescope". / VS Code and its forks, in View, Output, pick "Code Scope", set the level to Debug, repeat the step and paste what shows up. IntelliJ, in Help, Show Log, the lines with "codescope".
       render: text
   - type: input
     id: versoes
     attributes:
       label: Versões e linguagem / Versions and language
-      description: Por exemplo / For example "VS Code 1.143, Code Scope 0.5.0, Python 3.12 + debugpy".
+      description: Por exemplo / For example "VS Code 1.143, Code Scope 0.7.0, Python 3.12 + debugpy" ou / or "IntelliJ IDEA 2026.2, Java 21".

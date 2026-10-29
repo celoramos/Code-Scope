@@ -47,7 +47,10 @@ If you changed something visual, check it in VS Code with a light theme and a da
 |---|---|
 | `src/debug` | Talks to the debugger through the Debug Adapter Protocol. `adapters/` has one file per language (`java.ts`, `javascript.ts`, `python.ts`), the generic mode (`generic.ts`), the shared interface (`adapter.ts`) and the registry that picks the adapter (`index.ts`). `dapCollector.ts` builds each step; `heapCollector.ts` reads objects; `conditionEval.ts` asks the program for the value of each part of a condition; `pauseOnErrors.ts` turns on pausing on uncaught exceptions. |
 | `src/model` | The language-neutral model: `Snapshot`, step diff, history, arrows, explanation texts, and one module per concept: `calls.ts` and `callTree.ts` (call stack and call tree), `heap.ts` and `heapIdentity.ts` (objects, linked lists, trees), `graph.ts`, `classes.ts` (inheritance), `errors.ts` (errors and try/catch), `condition.ts`, `focus.ts` (comparisons and search range), `scope.ts`, `text.ts`, `numbers.ts`, `predict.ts` (guess mode), `trace.ts` (trace table). It imports nothing from VS Code. |
+| `src/core` | `collectStep.ts`: one debugger stop turned into a `Snapshot`, shared by the VS Code extension and the JetBrains plugin. |
+| `src/host` | `standalone.ts`: the panel, model and collector bundled for the JetBrains plugin, talking to the IDE through `bridge.ts`. |
 | `src/webview` | The panel provider, the message protocol between extension and panel, and the panel texts (`strings.ts`). |
+| `jetbrains` | The IntelliJ plugin in Kotlin. `JavaDap.kt` reads the JVM through JDI and answers `threads`, `stackTrace`, `scopes`, `variables`, `evaluate` and `exceptionInfo` in the format of VS Code's Java Debugger, so `src/debug/adapters/java.ts` works unchanged. `bundle-panel.ts` builds the panel HTML the plugin loads. Build with `./gradlew buildPlugin`; try it with `./gradlew runIde`. |
 | `media` | The panel's HTML, CSS and JS, no framework. |
 | `samples` | Samples per language, each folder with its `launch.json`, and `exemplos.code-workspace`, which opens them all. |
 | `test` | Unit tests (`*.test.ts`) and integration tests (`test/integration`). |

@@ -119,7 +119,7 @@ jobs:
           CODE_SCOPE_EXTENSIONS: vscjava.vscode-java-pack,ms-python.debugpy
 
   jetbrains:
-    name: Plugin JetBrains (IntelliJ, PyCharm, Android Studio...)
+    name: Plugin JetBrains (IntelliJ IDEA, Android Studio)
     # O plugin leva o painel e o núcleo em TypeScript dentro (jetbrains/bundle-panel.ts),
     # então o Node entra junto. O Gradle baixa o IntelliJ IDEA da versão em gradle.properties.
     runs-on: ubuntu-latest

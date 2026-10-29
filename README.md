@@ -2,11 +2,11 @@
 
 **English** | [Português](README.pt-br.md)
 
-A VS Code extension that shows your code running, visually, for people learning to program. Free and open source ([MIT](LICENSE)).
+A VS Code extension, also for Cursor, Windsurf, VSCodium and Antigravity, and a plugin for IntelliJ IDEA (beta, Java), that shows your code running, visually, for people learning to program. Free and open source ([MIT](LICENSE)).
 
 > **Beta.** Version 0.7.0 is a beta for people to try and help shape. Install it from the [release page](https://github.com/celoramos/Code-Scope/releases/tag/v0.7.0), and if something looks wrong or confusing, [open an issue](https://github.com/celoramos/Code-Scope/issues/new/choose): that is the most useful help right now.
 
-Everything happens inside VS Code: the panel sits in the sidebar, next to your code, and uses your theme's colors. It opens no browser, needs no account and sends nothing to the internet.
+Everything happens inside your editor: the panel sits in the sidebar, next to your code, and uses your theme's colors. It opens no browser, needs no account and sends nothing to the internet.
 
 While you debug, a side panel draws your program: arrays, matrices, lists, stacks, queues, dictionaries, objects, linked lists, trees and the call stack. Think of it as someone drawing your program on a whiteboard. It works with Java, JavaScript, TypeScript, Python, C# and C, and with any other language that has a debugger in VS Code (see [Languages](#languages)). On every F10 the panel animates what changed and explains what happened:
 
@@ -248,7 +248,10 @@ language debugger -- "stopped" event --> trackerFactory
 |---|---|
 | `src/debug` | Speaks the Debug Adapter Protocol. `adapters/` has one adapter per language plus the generic mode; it is the only part that knows each debugger's format. |
 | `src/model` | `Snapshot`, step diff, history, arrows, matrix row and column, explanation text. Does not depend on VS Code, DAP or the language. |
+| `src/core` | One debugger stop turned into a `Snapshot` (`collectStep.ts`), with no dependency on the editor. |
+| `src/host` | The panel, model and collector bundled for an editor that is not VS Code: the JetBrains plugin runs this inside the IDE's built-in browser. |
 | `src/webview` | The panel's `WebviewViewProvider` and the message protocol. |
+| `jetbrains` | The IntelliJ plugin (Kotlin). `JavaDap.kt` answers the collector's Debug Adapter Protocol requests from the IDE's Java debugger, in the same format as VS Code's Java Debugger. |
 | `media` | The panel's HTML, CSS and JS. Colors, fonts and borders come from the VS Code theme. |
 | `samples` | Samples in Java, JavaScript and Python, with a ready `launch.json`. |
 | `test` | Unit tests (mocha) and integration tests with real debuggers. |
@@ -259,8 +262,9 @@ language debugger -- "stopped" event --> trackerFactory
 |---|---|
 | `npm test` | Unit tests for the model, adapters and collector, with responses recorded from the real debuggers |
 | `npm run test:integration` | Downloads an isolated VS Code into `.vscode-test/`, installs the Java Extension Pack, the Python Debugger and, when the tools are there, the C# and C/C++ extensions in it, and really debugs the Java, JavaScript, Python, C# and C samples. Your VS Code is not touched. Takes a few minutes the first time |
+| `npx tsx jetbrains/self-test.ts <Sample>` | After `./gradlew runIde -PselfTest=<Sample>:<line>:<steps>` in `jetbrains/`, which opens a real IntelliJ, debugs `samples/java/<Sample>.java` and records what the panel drew: compares it, step by step, with what VS Code drew for the same sample |
 
-CI runs both on every push, on Windows, Linux and macOS, plus the integration test on the minimum VS Code (1.95), and publishes the `.vsix` as an artifact. Each integration job leaves a note on the run page with how many tests passed or were skipped per debugger.
+CI runs both on every push, on Windows, Linux and macOS, plus the integration test on the minimum VS Code (1.95) and on the latest VSCodium (debuggers from Open VSX), builds the JetBrains plugin, and publishes the `.vsix` and the plugin `.zip` as artifacts. Each integration job leaves a note on the run page with how many tests passed or were skipped per debugger.
 
 The Python tests need an interpreter. Point to one with the `CODE_SCOPE_PYTHON` variable or, without installing anything, unzip the *Windows embeddable package* from python.org into `.vscode-test/python` and rename the `python3XX._pth` file that comes with it. Without an interpreter, they are skipped with a warning.
 
@@ -279,14 +283,17 @@ The C# and C tests need the .NET SDK, gcc and gdb on the `PATH`. Without install
 - Outside matrices, an integer becomes an arrow by its value: any integer that fits the indexes points to a box, unless its name is in `codeScope.valueNames`.
 - Stacks and queues are recognized by variable name, reading the whole file: the methods used (`push`, `poll`, `popleft`...) are added up from every place. Two variables with the same name used in different ways in the same file can be classified wrong.
 - If you use F5 (continue) between breakpoints instead of F10, the panel shows the accumulated difference between the two stops, and the "ran" line is the previous breakpoint's.
+- The JetBrains plugin covers Java only and has no settings yet: it uses the defaults (beginner mode, up to 50 items, normal animation speed). Presentation mode is VS Code only. IntelliJ's F8 also stops on the `}` that closes an `if`, which VS Code skips, so the same program can take a few more steps there.
 
 ## Roadmap
 
-1. C++ containers (`std::vector`, `std::map`) and the newer concepts in C#
-2. Variables of earlier calls with their arrays and objects, not only simple values
-3. `HashSet` and Python `set`
-4. JavaScript in the browser, tested with the real debugger
-5. Adapter for Go
+1. PyCharm and WebStorm: Python and JavaScript in the JetBrains plugin
+2. JetBrains Marketplace and VS Code Marketplace
+3. C++ containers (`std::vector`, `std::map`) and the newer concepts in C#
+4. Variables of earlier calls with their arrays and objects, not only simple values
+5. `HashSet` and Python `set`
+6. JavaScript in the browser, tested with the real debugger
+7. Adapter for Go
 
 ## Contributing
 
