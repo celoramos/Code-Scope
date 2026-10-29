@@ -17,6 +17,7 @@ import { asInteger, methodsCalledOn, numericIndex, type CollectionRole, type Lan
 const LISTS = new Set(['list', 'deque']);
 const MAPS = new Set(['dict', 'defaultdict', 'OrderedDict', 'Counter']);
 const ARRAYS = new Set(['tuple', 'array']);
+const SETS = new Set(['set', 'frozenset']);
 const SCALARS = new Set(['str', 'bool', 'float', 'NoneType', 'complex']);
 /** Objeto de uma classe: "<__main__.No object at 0x00000146F06538C0>"; o endereço é a identidade. */
 const PY_OBJECT = /^<([\w.]+) object at (0x[0-9a-fA-F]+)>$/;
@@ -48,6 +49,11 @@ export const pythonAdapter: LanguageAdapter = {
       if (/^(deque\()?\[\]\)?$/.test(v.value)) return { kind: 'empty-list' };
       return { kind: 'sequence', length: v.indexedVariables || undefined, collection: 'list' };
     }
+    // set: value "{1, 3}", filhos com o hash no nome, mais "len()" e as "special variables".
+    if (v.type && SETS.has(v.type)) {
+      if (/^(set\(\)|frozenset\(\))$/.test(v.value)) return { kind: 'empty-list', collection: 'set' };
+      return { kind: 'sequence', collection: 'set' };
+    }
     if (v.type && ARRAYS.has(v.type)) return { kind: 'sequence', length: v.indexedVariables || undefined, collection: 'array' };
     if (v.type === 'int') {
       const n = asInteger(v.value);
@@ -73,6 +79,7 @@ export const pythonAdapter: LanguageAdapter = {
   mapEntry: (child) =>
     /^(special|function|class) variables$/.test(child.name) || child.name === 'len()' ? undefined : { key: child.name, value: child.value },
 
+  setItem: (c) => !/^(special|function|class) variables$/.test(c.name) && c.name !== 'len()',
   elementIndex: numericIndex,
   formatElement: (v) => v.value,
   collectionRole: pythonRole,

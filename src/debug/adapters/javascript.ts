@@ -46,6 +46,11 @@ export const javascriptAdapter: LanguageAdapter = {
     if (isClassInstance(v)) return { kind: 'object', type: v.type ?? '' };
     // Objeto literal ({sol: 1}) e Map são os dicionários do JavaScript.
     if (v.variablesReference > 0 && v.type === 'Object' && v.value.startsWith('{')) return { kind: 'map' };
+    // Set: "Set(2) {size: 2, 3, 1}"; os itens vêm como "0", "1"..., ao lado de "size" e "[[Prototype]]".
+    if (v.type === 'Set') {
+      const n = Number(/^Set\((\d+)\)/.exec(v.value)?.[1] ?? 0);
+      return n === 0 || v.variablesReference <= 0 ? { kind: 'empty-list', collection: 'set' } : { kind: 'sequence', length: n, collection: 'set' };
+    }
     if (v.variablesReference > 0 && v.type === 'Map') return { kind: 'map', length: Number(/^Map\((\d+)\)/.exec(v.value)?.[1] ?? 0) };
     if (v.variablesReference > 0) return { kind: 'skip' };
     if (v.type === 'number') {
@@ -57,6 +62,7 @@ export const javascriptAdapter: LanguageAdapter = {
     return { kind: 'skip' };
   },
 
+  setItem: (c) => numericIndex(c.name) !== undefined,
   elementIndex: numericIndex,
   formatElement: (v) => v.value,
   collectionRole: javascriptRole,

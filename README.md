@@ -14,6 +14,7 @@ While you debug, a side panel draws your program: arrays, matrices, lists, stack
 - a swap shows the two boxes crossing over, even when the code uses a `temp` variable and takes two steps;
 - `i`, `j`, `inicio` and `fim` become colored arrows that slide under the boxes;
 - in a list, a new item appears and the ones after it make room; an item that leaves goes away and its neighbors close the gap;
+- in a set (`HashSet`, Python `set`, JavaScript `Set`), boxes have no index, and adding a value that is already there says so: a set keeps no duplicates;
 - in a stack, a pushed item drops onto the top of the tower and a popped one rises and fades, with the "top" label following along;
 - in a queue, items enter from the right of the conveyor belt and the one in front leaves on the left;
 - in a matrix, the row and column the code reads are highlighted and the cell where they cross gets an outline;
@@ -293,9 +294,8 @@ The C# and C tests need the .NET SDK, gcc and gdb on the `PATH`. Without install
 2. JetBrains Marketplace and VS Code Marketplace
 3. C++ containers (`std::vector`, `std::map`) and the newer concepts in C#
 4. Variables of earlier calls with their arrays and objects, not only simple values
-5. `HashSet` and Python `set`
-6. JavaScript in the browser, tested with the real debugger
-7. Adapter for Go
+5. JavaScript in the browser, tested with the real debugger
+6. Adapter for Go
 
 ## Contributing
 

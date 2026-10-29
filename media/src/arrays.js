@@ -148,16 +148,18 @@ function laneEnd(side) {
  */
 export function updateBlock(block, arr) {
   const meta = /** @type {HTMLElement} */ (block.querySelector('.array-meta'));
-  const collection = arr.kind === 'list' || arr.kind === 'stack' || arr.kind === 'queue' || arr.kind === 'text';
+  const collection = arr.kind === 'list' || arr.kind === 'stack' || arr.kind === 'queue' || arr.kind === 'text' || arr.kind === 'set';
   const unit = arr.kind === 'text' ? [t('letter'), t('letters')] : collection ? [t('item'), t('items')] : [t('position'), t('positions')];
   const count =
     arr.values.length < arr.length
       ? t('partial', arr.values.length, arr.length, unit[1])
       : `${arr.length} ${arr.length === 1 ? unit[0] : unit[1]}`;
   const noun = collection ? t(arr.kind ?? '') : undefined;
-  const empty = arr.kind === 'text' ? t('emptyText') : t('emptyCollection', noun ?? '');
+  const empty = arr.kind === 'text' ? t('emptyText') : arr.kind === 'set' ? t('emptySet') : t('emptyCollection', noun ?? '');
   meta.textContent = noun ? (arr.length === 0 ? empty : t('collectionCount', noun, count)) : count;
   block.classList.toggle('is-list', arr.kind === 'list');
+  // Conjunto não tem posição: as caixas ficam sem o número em cima.
+  block.classList.toggle('is-set', arr.kind === 'set');
   if (arr.kind === 'stack') {
     // A torre reserva altura e nunca encolhe: a base fica parada e os itens entram e saem por cima.
     const reserve = Math.max(4, arr.values.length, Number(block.dataset.reserve ?? 0));
@@ -174,7 +176,7 @@ export function updateBlock(block, arr) {
     const v = /** @type {HTMLElement} */ (cell.querySelector('.cell-value'));
     v.textContent = value;
     v.title = value;
-    cell.dataset.label = `${arr.name}[${i}] = ${value}`;
+    cell.dataset.label = arr.kind === 'set' ? t('setItemLabel', arr.name, value) : `${arr.name}[${i}] = ${value}`;
     cell.setAttribute('aria-label', cell.dataset.label);
   });
 }
@@ -251,6 +253,15 @@ function animateCells(cells, name, changes, mode = 'array', list) {
       cells[c.index].classList.add('is-changed', entry);
       if (entry === 'is-inserted') cells.slice(c.index + 1).forEach((cell) => slide(cell, -step));
       first ??= cells[c.index];
+    } else if (c.kind === 'set-add') {
+      // Conjunto: o item novo aparece onde o debugger o pôs, sem empurrar ninguém.
+      const cell = cells.find((x) => x.querySelector('.cell-value')?.textContent === c.value);
+      if (cell) {
+        cell.classList.add('is-changed', 'is-inserted');
+        first ??= cell;
+      }
+    } else if (c.kind === 'set-remove' && list) {
+      first ??= ghostOut(list, undefined, c.value ?? '', mode);
     } else if (c.kind === 'remove' && c.index !== undefined && list) {
       // O item que saiu continua um instante na tela, indo embora; os outros fecham o espaço junto.
       first ??= ghostOut(list, cells[c.index], c.value ?? '', mode);

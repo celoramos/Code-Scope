@@ -92,7 +92,7 @@ export async function collectSnapshot(
     switch (shape.kind) {
       case 'empty-list':
         // Lista recém-criada: aparece vazia, para o aluno ver ela nascer antes do primeiro add.
-        if (arrays.length < limits.maxArrays) arrays.push({ name: v.name, values: [], length: 0, kind: 'list' });
+        if (arrays.length < limits.maxArrays) arrays.push({ name: v.name, values: [], length: 0, kind: shape.collection ?? 'list' });
         break;
       case 'sequence': {
         if (arrays.length >= limits.maxArrays) break;
@@ -299,7 +299,9 @@ async function readSequence(
   objects?: (c: DapVariable) => Promise<string | undefined>,
 ): Promise<{ array: ArrayVar; children: DapVariable[] }> {
   let children: DapVariable[];
-  if (shape.length === undefined) {
+  if (shape.collection === 'set' && adapter.setItem) {
+    children = (await variables(session, v.variablesReference)).filter((c) => adapter.setItem?.(c)).map((c, i) => ({ ...c, name: String(i) }));
+  } else if (shape.length === undefined) {
     children = await variables(session, v.variablesReference);
   } else {
     try {
@@ -358,6 +360,7 @@ async function readSequence(
   const array: ArrayVar = { name, values, length };
   if (refs.some((r) => r !== null)) array.refs = refs;
   if (shape.collection === 'list') array.kind = 'list';
+  else if (shape.collection === 'set') array.kind = 'set';
 
   const rowShapes = byIndex.slice(0, count).map((c) => (c ? adapter.shape(c) : undefined));
   const isMatrix = count > 0 && rowShapes.every((s) => s?.kind === 'sequence');

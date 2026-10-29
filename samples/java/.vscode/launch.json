@@ -87,6 +87,12 @@
     },
     {
       "type": "java",
+      "name": "Conjunto",
+      "request": "launch",
+      "mainClass": "Conjunto"
+    },
+    {
+      "type": "java",
       "name": "Dicionario",
       "request": "launch",
       "mainClass": "Dicionario"

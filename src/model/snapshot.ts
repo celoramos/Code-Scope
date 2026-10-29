@@ -17,8 +17,9 @@ export interface ArrayVar {
    * Sem valor, é array. "list" para coleções que crescem e encolhem (ArrayList).
    * "stack" e "queue" têm uma ordem combinada: na pilha, values[0] é o fundo e
    * o último é o topo; na fila, values[0] é a frente, quem sai primeiro.
+   * "set" é um conjunto: sem posições e sem repetidos, na ordem em que o debugger mostra.
    */
-  kind?: 'array' | 'list' | 'stack' | 'queue' | 'text';
+  kind?: 'array' | 'list' | 'stack' | 'queue' | 'text' | 'set';
   /**
    * Linhas de uma matriz (array de arrays). Cada linha se chama "nome[i]".
    * Quando existe, values guarda só um resumo de cada linha.

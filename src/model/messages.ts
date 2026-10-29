@@ -21,6 +21,13 @@ export interface Messages {
   swapTwoSteps(array: string, a: number, b: number): string;
 
   collectionCreated(kind: CollectionKind, array: string, length: number): string;
+  /** Conjunto: sem posição e sem repetidos. */
+  setCreated(array: string, length: number): string;
+  describeSet(array: string, length: number): string;
+  setAdded(array: string, value: string): string;
+  setRemoved(array: string, value: string): string;
+  /** add de um valor que já estava: o conjunto não muda. */
+  setAlreadyHad(array: string, value: string): string;
   matrixCreated(array: string, rows: number, cols: number): string;
   arrayCreated(array: string, length: number): string;
   arrayRemoved(array: string): string;
@@ -160,6 +167,11 @@ const pt: Messages = {
 
   collectionCreated: (kind, arr, n) =>
     `A ${ptNoun[kind]} ${arr} foi criada ${n === 0 ? 'vazia' : `com ${ptItems(n)}`}.`,
+  setCreated: (arr, n) => `O conjunto ${arr} foi criado ${n === 0 ? 'vazio' : `com ${ptItems(n)}`}.`,
+  describeSet: (arr, n) => (n === 0 ? `${arr} é um conjunto vazio` : `${arr} é um conjunto com ${ptItems(n)}`),
+  setAdded: (arr, v) => `${v} entrou no conjunto ${arr}.`,
+  setRemoved: (arr, v) => `${v} saiu do conjunto ${arr}.`,
+  setAlreadyHad: (arr, v) => `${v} já estava em ${arr}, então nada mudou: um conjunto não guarda repetidos.`,
   matrixCreated: (arr, rows, cols) => `A matriz ${arr} foi criada com ${ptSize(rows, cols)}.`,
   arrayCreated: (arr, n) => `O array ${arr} foi criado com ${ptPositions(n)}.`,
   arrayRemoved: (arr) => `O array ${arr} saiu de escopo.`,
@@ -327,6 +339,11 @@ const en: Messages = {
     `${arr}[${a}] and ${arr}[${b}] finished swapping places. The swap took two steps and used a helper variable.`,
 
   collectionCreated: (kind, arr, n) => `The ${kind} ${arr} was created ${n === 0 ? 'empty' : `with ${enItems(n)}`}.`,
+  setCreated: (arr, n) => `The set ${arr} was created ${n === 0 ? 'empty' : `with ${enItems(n)}`}.`,
+  describeSet: (arr, n) => (n === 0 ? `${arr} is an empty set` : `${arr} is a set with ${enItems(n)}`),
+  setAdded: (arr, v) => `${v} went into the set ${arr}.`,
+  setRemoved: (arr, v) => `${v} left the set ${arr}.`,
+  setAlreadyHad: (arr, v) => `${v} was already in ${arr}, so nothing changed: a set keeps no duplicates.`,
   matrixCreated: (arr, rows, cols) => `The matrix ${arr} was created with ${enSize(rows, cols)}.`,
   arrayCreated: (arr, n) => `The array ${arr} was created with ${enPositions(n)}.`,
   arrayRemoved: (arr) => `The array ${arr} went out of scope.`,

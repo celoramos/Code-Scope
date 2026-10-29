@@ -90,7 +90,7 @@ describe('painel (main.js num DOM)', () => {
     // Só as regras de estrutura (ARIA, rótulos, listas); contraste fica de fora, o jsdom não calcula CSS.
     const runOnly = { type: 'tag' as const, values: ['cat.aria', 'cat.forms', 'cat.name-role-value', 'cat.structure'] };
     const problems = new Set<string>();
-    for (const name of ['BubbleSort', 'Pilha', 'Fila', 'Matriz', 'ListaLigada', 'Fibonacci', 'Grafo', 'Dicionario', 'TrataErro', 'Texto', 'BuscaBinaria']) {
+    for (const name of ['BubbleSort', 'Pilha', 'Fila', 'Matriz', 'ListaLigada', 'Fibonacci', 'Grafo', 'Dicionario', 'TrataErro', 'Texto', 'BuscaBinaria', 'Conjunto']) {
       const panel = openPanel();
       const win = panel.doc.defaultView as unknown as { eval(code: string): unknown; axe: typeof import('axe-core') };
       win.eval(axeJs);
@@ -115,6 +115,19 @@ describe('painel (main.js num DOM)', () => {
     assert.equal(visible(panel.doc, 'empty'), false);
     assert.equal(visible(panel.doc, 'toolbar'), true);
     assert.equal(panel.doc.getElementById('file')?.textContent, 'BubbleSort.java');
+  });
+
+  it('conjunto: caixas sem posição, "conjunto" no título e o add repetido explicado', () => {
+    const panel = replay('Conjunto');
+    const block = panel.doc.querySelector('.array.is-set');
+    assert.ok(block, 'o conjunto não foi desenhado como conjunto');
+    assert.match(block.querySelector('.array-meta')?.textContent ?? '', /^conjunto, 3 itens$/);
+    assert.deepEqual([...block.querySelectorAll('.cell-value')].map((c) => c.textContent).sort(), ['1', '2', '3']);
+    assert.match(block.querySelector('.cell')?.getAttribute('aria-label') ?? '', /^vistos contém /);
+    // Algum passo do exemplo adiciona um número que já estava.
+    const seen: string[] = [];
+    replay('Conjunto', 'pt', (p) => seen.push(texts(p.doc, '#explanation li').join(' ')));
+    assert.ok(seen.some((t) => t.includes('não guarda repetidos')), `explicações: ${JSON.stringify(seen)}`);
   });
 
   it('array: uma célula por posição, com os valores do programa', () => {

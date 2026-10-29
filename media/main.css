@@ -838,6 +838,11 @@ body.vscode-high-contrast-light .code-line.is-next {
   }
 }
 
+/* Conjunto: sem posições, então sem o número em cima de cada caixa. */
+.array.is-set .cell-index {
+  visibility: hidden;
+}
+
 /* Lista cresce: uma vaga tracejada no fim diz que cabe mais um. */
 .array.is-list .cells::after {
   content: '';

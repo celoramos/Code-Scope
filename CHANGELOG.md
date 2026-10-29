@@ -4,6 +4,8 @@
 
 ### Novo
 
+- Conjuntos: `HashSet` (Java), `set` (Python) e `Set` (JavaScript) aparecem como conjunto, sem índice nas caixas. As frases dizem o que entrou e o que saiu, e um `add` de um valor que já estava explica que nada mudou porque conjunto não guarda repetidos. Exemplos novos: `Conjunto.java`, `conjunto.py`, `conjunto.js`.
+- Plugin JetBrains: configurações em Settings > Tools > Code Scope (velocidade das animações, modo iniciante, posições lidas, abrir o painel e parar em erros).
 - Tour de primeiro uso no VS Code (Help > Get Started): abrir um exemplo, pôr o breakpoint e apertar F10, e os modos de adivinhar e de apresentação.
 - Comando "Code Scope: Abrir um exemplo": copia os exemplos de Java, JavaScript ou Python, com o launch.json, para uma pasta que você escolhe e abre essa pasta. Os exemplos agora vão dentro da extensão.
 - Cursor, Windsurf, VSCodium, Antigravity e outros editores feitos a partir do VS Code: o CI roda os testes de Java, JavaScript e Python no VSCodium, com os debuggers baixados do Open VSX, e cada tag `v*` publica o `.vsix` no Open VSX.

@@ -30,6 +30,7 @@ function sentence(c: Change, m: Messages): string {
       return c.steps === 2 ? m.swapTwoSteps(c.array, c.a, c.b) : m.swap(c.array, c.a, c.b);
     case 'array-added':
       if (c.structure === 'text') return m.textCreated(c.array, c.length);
+      if (c.structure === 'set') return m.setCreated(c.array, c.length);
       if (c.structure === 'list' || c.structure === 'stack' || c.structure === 'queue') {
         return m.collectionCreated(c.structure, c.array, c.length);
       }
@@ -49,6 +50,10 @@ function sentence(c: Change, m: Messages): string {
       if (c.structure === 'stack' && !c.shifted) return m.popped(c.array, c.value);
       if (c.structure === 'queue' && c.index === 0) return m.dequeued(c.array, c.value);
       return c.shifted ? m.removedShifting(c.array, c.value, c.index) : m.removedFromEnd(c.array, c.value, c.index);
+    case 'set-add':
+      return m.setAdded(c.array, c.value);
+    case 'set-remove':
+      return m.setRemoved(c.array, c.value);
     case 'scalar':
       if (c.from === undefined) return m.variableCreated(c.name, String(c.to));
       if (c.to === undefined) return m.variableGone(c.name);
@@ -80,6 +85,7 @@ function keyText(key: string): string {
 /** "numeros tem 5 posições", "lista é uma lista vazia", "grade tem 2 linhas e 3 colunas". */
 function describe(c: Extract<Change, { kind: 'array-added' }>, m: Messages): string {
   if (c.structure === 'matrix') return m.describeMatrix(c.array, c.length, c.cols ?? 0);
+  if (c.structure === 'set') return m.describeSet(c.array, c.length);
   if (c.structure === 'list' || c.structure === 'stack' || c.structure === 'queue') {
     return m.describeCollection(c.structure, c.array, c.length);
   }

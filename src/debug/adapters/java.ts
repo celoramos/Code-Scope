@@ -92,6 +92,11 @@ export function objectShape(v: DapVariable): { type: string; id: string } | unde
   return { type: simpleClassName(v.type ?? m[1]), id: `@${m[2]}` };
 }
 
+/** HashSet, LinkedHashSet, TreeSet: "HashSet@13 size=2", com os itens numerados como numa lista. */
+export function isSetType(v: DapVariable): boolean {
+  return /Set$/.test(simpleClassName(v.type ?? /^([\w.$]+)@/.exec(v.value)?.[1] ?? ''));
+}
+
 /** "Referencias$Conta" e "java.util.Random" viram "Conta" e "Random". */
 export function simpleClassName(type: string): string {
   return type.replace(/<.*$/, '').split(/[.$]/).pop() ?? type;
@@ -188,10 +193,11 @@ export const javaAdapter: LanguageAdapter = {
     // Mapa antes de coleção: o HashMap também chega com indexedVariables.
     const map = mapShape(v);
     if (map) return map;
-    if (isEmptyList(v)) return { kind: 'empty-list' };
+    if (isEmptyList(v)) return isSetType(v) ? { kind: 'empty-list', collection: 'set' } : { kind: 'empty-list' };
     if (isArrayVariable(v)) {
       const id = arrayId(v);
-      return { kind: 'sequence', length: arrayLength(v) ?? 0, collection: isListVariable(v) ? 'list' : 'array', ...(id ? { id } : {}) };
+      const collection = !isListVariable(v) ? 'array' : isSetType(v) ? 'set' : 'list';
+      return { kind: 'sequence', length: arrayLength(v) ?? 0, collection, ...(id ? { id } : {}) };
     }
     const n = integralValue(v);
     if (n !== undefined) return { kind: 'integer', value: n };

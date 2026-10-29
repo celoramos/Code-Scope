@@ -49,6 +49,9 @@ export interface PanelStrings {
     | 'positions'
     | 'partial'
     | 'list'
+    | 'set'
+    | 'emptySet'
+    | 'setItemLabel'
     | 'stack'
     | 'queue'
     | 'emptyCollection'
@@ -190,6 +193,9 @@ const pt: PanelStrings = {
     positions: 'posições',
     partial: '{0} de {1} {2}',
     list: 'lista',
+    set: 'conjunto',
+    emptySet: 'conjunto vazio',
+    setItemLabel: '{0} contém {1}',
     stack: 'pilha',
     queue: 'fila',
     emptyCollection: '{0} vazia',
@@ -330,6 +336,9 @@ const en: PanelStrings = {
     positions: 'positions',
     partial: '{0} of {1} {2}',
     list: 'list',
+    set: 'set',
+    emptySet: 'empty set',
+    setItemLabel: '{0} contains {1}',
     stack: 'stack',
     queue: 'queue',
     emptyCollection: 'empty {0}',

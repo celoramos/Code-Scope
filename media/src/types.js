@@ -1,7 +1,7 @@
 // @ts-check
 // Formas dos dados que a extensão manda ao painel (ver src/model/frame.ts).
 /**
- * @typedef {{ name: string, values: string[], length: number, kind?: 'array' | 'list' | 'stack' | 'queue' | 'text', rows?: ArrayVar[], id?: string }} ArrayVar
+ * @typedef {{ name: string, values: string[], length: number, kind?: 'array' | 'list' | 'stack' | 'queue' | 'text' | 'set', rows?: ArrayVar[], id?: string }} ArrayVar
  * @typedef {{ name: string, value: number }} Pointer
  * @typedef {{ name: string, value: string }} Scalar
  * @typedef {{ name: string, index: number }} Arrow

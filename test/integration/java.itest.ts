@@ -1,4 +1,5 @@
 import { buildCallTree } from '../../src/model/callTree';
+import { setNotes } from '../../src/model/sets';
 import { explainHeap } from '../../src/model/heap';
 import { numberNotes } from '../../src/model/numbers';
 import { samenessNotes } from '../../src/model/sameness';
@@ -49,6 +50,18 @@ describe('Java Debugger real', () => {
       snaps.some((s) => s.pointers.some((p) => p.name === 'j')),
       'a variável j nunca apareceu como ponteiro',
     );
+  });
+
+  it('Conjunto: HashSet desenhado sem posições, e o add repetido explicado', async () => {
+    const snaps = await debugSample('Conjunto', 8, 18);
+    const last = snaps.at(-1)!;
+    const vistos = last.arrays.find((a) => a.name === 'vistos');
+    assert.equal(vistos?.kind, 'set', `arrays: ${JSON.stringify(last.arrays)}`);
+    assert.deepEqual([...vistos.values].sort(), ['1', '2', '3']);
+    const changes = allChanges(snaps);
+    assert.ok(changes.some((c) => c.kind === 'set-add'), 'nenhum item entrou no conjunto');
+    const notes = snaps.flatMap((s, k) => setNotes(snaps[k - 1], s, 'pt'));
+    assert.ok(notes.some((n) => n.includes('já estava em vistos')), `Java: o add repetido não foi explicado: ${JSON.stringify(notes)}`);
   });
 
   it('Matriz: lê as linhas, acha linha e coluna no código e vê a célula mudar', async () => {

@@ -1,4 +1,5 @@
 import { buildCallTree } from '../../src/model/callTree';
+import { setNotes } from '../../src/model/sets';
 import { explainHeap } from '../../src/model/heap';
 import { numberNotes } from '../../src/model/numbers';
 import { samenessNotes } from '../../src/model/sameness';
@@ -141,6 +142,18 @@ describe('JavaScript (js-debug) real', () => {
     const changes = allChanges(snaps);
     assert.ok(changes.some((c) => c.kind === 'map-put' && c.from === undefined), 'nenhuma chave nova reconhecida');
     assert.ok(changes.some((c) => c.kind === 'map-put' && c.from === '1' && c.value === '2'), `trocas: ${JSON.stringify(changes.filter((c) => c.kind === 'map-put'))}`);
+  });
+
+  it('JavaScript conjunto: Set desenhado sem posições, e o add repetido explicado', async () => {
+    const snaps = await debugScript('conjunto', 4, 18);
+    const last = snaps.at(-1)!;
+    const vistos = last.arrays.find((a) => a.name === 'vistos');
+    assert.equal(vistos?.kind, 'set', `arrays: ${JSON.stringify(last.arrays)}`);
+    assert.deepEqual([...vistos.values].sort(), ['1', '2', '3']);
+    const changes = allChanges(snaps);
+    assert.ok(changes.some((c) => c.kind === 'set-add'), 'nenhum item entrou no conjunto');
+    const notes = snaps.flatMap((s, k) => setNotes(snaps[k - 1], s, 'pt'));
+    assert.ok(notes.some((n) => n.includes('já estava em vistos')), `JavaScript: o add repetido não foi explicado: ${JSON.stringify(notes)}`);
   });
 
   it('JavaScript condição: o debugger responde cada parte antes da linha rodar', async () => {

@@ -14,6 +14,7 @@ Enquanto você debuga, um painel lateral desenha o seu programa: arrays, matrize
 - uma troca aparece como as duas caixas se cruzando, mesmo quando o código usa uma variável `temp` e leva dois passos;
 - `i`, `j`, `inicio` e `fim` viram setas coloridas que deslizam embaixo das caixas;
 - numa lista, o item novo surge e os seguintes abrem espaço; o que sai vai embora e os vizinhos fecham o buraco;
+- num conjunto (`HashSet`, `set` do Python, `Set` do JavaScript), as caixas não têm índice, e adicionar um valor que já estava é explicado: conjunto não guarda repetidos;
 - numa pilha, o item empilhado cai no topo da torre e o desempilhado sobe e some, com a etiqueta "topo" acompanhando;
 - numa fila, o item entra pela direita da esteira e quem está na frente sai pela esquerda;
 - numa matriz, a linha e a coluna lidas pelo código ficam marcadas e a célula onde elas se cruzam ganha contorno;
@@ -293,9 +294,8 @@ Os testes de C# e de C precisam do .NET SDK, do gcc e do gdb no `PATH`. Sem inst
 2. Marketplace da JetBrains e do VS Code
 3. Coleções do C++ (`std::vector`, `std::map`) e os conceitos novos em C#
 4. Variáveis das chamadas de baixo com arrays e objetos, não só valores simples
-5. `HashSet` e `set` do Python
-6. JavaScript no navegador, testado com o debugger real
-7. Adaptador para Go
+5. JavaScript no navegador, testado com o debugger real
+6. Adaptador para Go
 
 ## Contribuindo
 

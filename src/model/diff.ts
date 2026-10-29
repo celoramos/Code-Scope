@@ -1,6 +1,6 @@
 import type { ArrayVar, Snapshot } from './snapshot';
 
-export type Structure = 'array' | 'list' | 'stack' | 'queue' | 'matrix' | 'text';
+export type Structure = 'array' | 'list' | 'stack' | 'queue' | 'matrix' | 'text' | 'set';
 
 /*
  * Em matrizes, "array" é o nome da linha ("grade[1]"), então as mudanças de
@@ -14,6 +14,9 @@ export type Change =
   | { kind: 'insert'; array: string; index: number; value: string; shifted: boolean; structure: Structure }
   /** Lista perdeu um item; shifted diz se os itens seguintes voltaram uma posição. */
   | { kind: 'remove'; array: string; index: number; value: string; shifted: boolean; structure: Structure }
+  /** Conjunto ganhou ou perdeu um item; num conjunto não há posição. */
+  | { kind: 'set-add'; array: string; value: string }
+  | { kind: 'set-remove'; array: string; value: string }
   | { kind: 'array-added'; array: string; length: number; structure: Structure; cols?: number }
   | { kind: 'array-removed'; array: string }
   | { kind: 'array-resized'; array: string; from: number; to: number; structure?: Structure }
@@ -40,6 +43,8 @@ export function diff(prev: Snapshot | undefined, next: Snapshot, older?: Snapsho
     const p = before.get(arr.name);
     if (!p) {
       changes.push(added(arr));
+    } else if (arr.kind === 'set' && p.kind === 'set') {
+      changes.push(...setChanges(p, arr));
     } else if (p.rows && arr.rows) {
       changes.push(...matrixChanges(p, arr, oldest?.get(arr.name)));
     } else if (p.length !== arr.length) {
@@ -144,6 +149,20 @@ function listChange(prev: ArrayVar, next: ArrayVar): Change | undefined {
     }
   }
   return undefined;
+}
+
+/**
+ * Conjunto: o que entrou e o que saiu, pela presença do valor. A ordem que o
+ * debugger mostra pode mudar sem nada entrar ou sair (o Python e o HashSet
+ * guardam pela conta do hash), e isso não é mudança para o aluno.
+ */
+function setChanges(prev: ArrayVar, next: ArrayVar): Change[] {
+  const before = new Set(prev.values);
+  const after = new Set(next.values);
+  return [
+    ...next.values.filter((v) => !before.has(v)).map((value): Change => ({ kind: 'set-add', array: next.name, value })),
+    ...prev.values.filter((v) => !after.has(v)).map((value): Change => ({ kind: 'set-remove', array: next.name, value })),
+  ];
 }
 
 function pointerChanges(prev: Snapshot, next: Snapshot): Change[] {

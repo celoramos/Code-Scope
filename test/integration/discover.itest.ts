@@ -77,6 +77,9 @@ function findOnPath(cmd: string): string | undefined {
 
 // Os exemplos da rodada atual; os anteriores já viraram adaptador e teste.
 const SCENARIOS: Scenario[] = [
+  py('conjunto', 4, over(8)),
+  js('conjunto', 4, over(8)),
+  java('Conjunto', 8, over(8)),
   cs('BubbleSort', 9, over(8)),
   cs('Pilha', 8, over(5)),
   cs('Dicionario', 9, over(8)),

@@ -14,7 +14,7 @@ export type VariableShape =
    * Coleção indexada a ser expandida. "list" cresce e encolhe; "array" tem tamanho
    * fixo. Sem length, o tamanho é contado pelas posições que o debugger devolver.
    */
-  | { kind: 'sequence'; length?: number; collection: 'array' | 'list'; id?: string; role?: CollectionRole }
+  | { kind: 'sequence'; length?: number; collection: 'array' | 'list' | 'set'; id?: string; role?: CollectionRole }
   /**
    * Instância de uma classe. id é a identidade na memória quando o debugger
    * mostra uma ("@12" no Java, "0x..." no Python); sem ela, o coletor compara
@@ -26,7 +26,7 @@ export type VariableShape =
   /** Dicionário: HashMap, dict, objeto literal ou Map do JavaScript. */
   | { kind: 'map'; length?: number; id?: string }
   /** Coleção vazia que o debugger não deixa expandir, mas que o aluno precisa ver nascer. */
-  | { kind: 'empty-list' }
+  | { kind: 'empty-list'; collection?: 'set' }
   /** Inteiro que pode servir de índice (i, j, inicio...). */
   | { kind: 'integer'; value: number }
   /** Qualquer outro valor simples: texto, booleano, número com vírgula, caractere. */
@@ -96,6 +96,11 @@ export interface LanguageAdapter {
    * programa ("Raw View").
    */
   normalize?(vars: DapVariable[]): DapVariable[];
+  /**
+   * Filho de um conjunto que é item (o resto é "len()", "[[Prototype]]"...),
+   * para debuggers que não numeram os itens: a ordem em que vêm vira a posição.
+   */
+  setItem?(child: DapVariable): boolean;
 }
 
 export interface MapEntry {
