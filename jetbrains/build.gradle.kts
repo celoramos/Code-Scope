@@ -62,6 +62,8 @@ tasks.runIde {
             "-Didea.trust.all.projects=true", "-Djb.consents.confirmation.enabled=false", "-Didea.initially.ask.config=never",
             // Numa IDE recém-instalada (o CI), sem estes a primeira abertura para em diálogos de privacidade e dicas.
             "-Djb.privacy.policy.text=<!--999.999-->", "-Dide.show.tips.on.startup.default.value=false",
+            // Linux sem tela (CI): o JCEF fora de processo, com sandbox e GPU, não chega a rodar o script da página.
+            "-Dide.browser.jcef.out-of-process.enabled=false", "-Dide.browser.jcef.sandbox.enable=false", "-Dide.browser.jcef.gpu.disable=true",
             "-Dcodescope.stepDelay=${providers.gradleProperty("stepDelay").getOrElse("0")}",
             "-Dcodescope.stepInto=${providers.gradleProperty("stepInto").getOrElse("false")}")
         args(work.absolutePath)
