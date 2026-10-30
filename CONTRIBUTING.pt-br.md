@@ -24,6 +24,8 @@ npm install
 
 Abra a pasta no VS Code e aperte **F5**. Uma segunda janela do VS Code abre com a extensão carregada e os exemplos de Java, JavaScript e Python abertos. Para debugar Java, instale o Extension Pack for Java (`vscjava.vscode-java-pack`); para Python, a extensão Python (`ms-python.python`).
 
+Durante o desenvolvimento, `npm run watch` recompila a cada alteração; recarregue a janela de teste com `Ctrl+R`.
+
 ## Verificando sua mudança
 
 Rode antes de abrir o pull request:
@@ -36,7 +38,13 @@ npm run test:integration   # debuga os exemplos de Java, JavaScript e Python com
 
 Para rodar só parte dos testes de integração, use `CODE_SCOPE_GREP` com um pedaço do nome ou uma expressão regular (`CODE_SCOPE_GREP=JavaScript npm run test:integration`, `CODE_SCOPE_GREP="JavaScript|Python"`). `CODE_SCOPE_EXTENSIONS` troca a lista de extensões instaladas no VS Code de teste (separadas por vírgula; vazia não instala nenhuma), e `CODE_SCOPE_VSCODE` escolhe a versão dele (padrão `stable`).
 
-O teste de integração baixa um VS Code isolado em `.vscode-test/` na primeira vez e leva alguns minutos. Os testes de Python precisam de um interpretador; o README (seção Testes) explica como usar um Python portátil, sem instalar nada. Ele não mexe no seu VS Code. O CI roda os três a cada pull request.
+O teste de integração baixa um VS Code isolado em `.vscode-test/` na primeira vez e leva alguns minutos. Ele não mexe no seu VS Code. O CI roda os três a cada pull request.
+
+Os testes de Python precisam de um interpretador. Aponte um com a variável `CODE_SCOPE_PYTHON` ou, sem instalar nada, descompacte o *Windows embeddable package* do python.org em `.vscode-test/python` e renomeie o arquivo `python3XX._pth` que vem nele. Sem interpretador, eles são pulados com um aviso.
+
+Os testes de C# e de C precisam do .NET SDK, do gcc e do gdb no `PATH`. Sem instalar nada, eles também podem ficar em `.vscode-test/dotnet` (o script oficial `dotnet-install` com `-InstallDir`) e em `.vscode-test/w64devkit` (o pacote do w64devkit descompactado ali): o teste acrescenta os dois ao `PATH` do VS Code de teste. Sem eles, esses testes são pulados.
+
+Para conferir o plugin JetBrains, `./gradlew runIde -PselfTest=<Exemplo>:<linha>:<passos>` em `jetbrains/` abre um IntelliJ de verdade, debuga `samples/java/<Exemplo>.java` e grava o que o painel desenhou. Depois, `npx tsx jetbrains/self-test.ts <Exemplo>` compara, passo a passo, com o que o VS Code desenhou no mesmo exemplo.
 
 Se mudou algo visual, teste no VS Code com um tema claro e um escuro, e com animações desligadas (`codeScope.animationSpeed: desligada`).
 
@@ -62,7 +70,6 @@ A regra mais importante da arquitetura: **nada do formato do debugger sai de `sr
 
 1. Crie o arquivo na pasta da linguagem em `samples/`, com um comentário indicando onde pôr o breakpoint.
 2. No Java, adicione uma configuração com o mesmo nome em `samples/java/.vscode/launch.json`. Em JavaScript e Python a configuração "Arquivo aberto" já serve.
-3. Inclua o exemplo na tabela dos dois READMEs (`README.md` e `README.pt-br.md`).
 
 ### Melhorar um texto explicativo
 

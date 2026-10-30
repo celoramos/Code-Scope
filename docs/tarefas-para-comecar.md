@@ -40,7 +40,7 @@ Níveis: **sem código** (não precisa programar), **iniciante** (poucas linhas,
 - **Issue:** [#6](https://github.com/celoramos/Code-Scope/issues/6)
 - **Por quê:** cada algoritmo clássico é uma aula nova que o painel pode dar.
 - **Onde:** `samples/java`, `samples/javascript`, `samples/python`. Siga o `BubbleSort.java` e o `bubbleSort.js`. No Java, acrescente a configuração em `samples/java/.vscode/launch.json`.
-- **Pronto quando:** o exemplo roda com F5, o comentário diz onde pôr o breakpoint, e a tabela de exemplos dos dois READMEs mostra ele.
+- **Pronto quando:** o exemplo roda com F5 e o comentário diz onde pôr o breakpoint.
 
 ### 6. Mais exemplos: ordenação por inserção, soma de matriz, calculadora com pilha
 

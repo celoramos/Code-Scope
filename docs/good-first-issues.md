@@ -40,7 +40,7 @@ Levels: **no code** (you do not need to program), **beginner** (a few lines, one
 - **Issue:** [#6](https://github.com/celoramos/Code-Scope/issues/6)
 - **Why:** each classic algorithm is a new lesson the panel can teach.
 - **Where:** `samples/java`, `samples/javascript`, `samples/python`. Follow `BubbleSort.java` and `bubbleSort.js`. In Java, add the configuration to `samples/java/.vscode/launch.json`.
-- **Done when:** the sample runs with F5, the comment says where to put the breakpoint, and the samples table in both READMEs lists it.
+- **Done when:** the sample runs with F5 and the comment says where to put the breakpoint.
 
 ### 6. More samples: insertion sort, matrix sum, stack calculator
 
