@@ -8,7 +8,9 @@ Funciona com Java, JavaScript, TypeScript, Python, C# e C, e num modo genérico 
 
 > **Beta.** O Code Scope está no [Marketplace do VS Code](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope) e ainda é uma beta para as pessoas testarem e ajudarem a melhorar. Se algo parecer errado ou confuso, [abra uma issue](https://github.com/celoramos/Code-Scope/issues/new/choose): é a ajuda mais útil agora.
 
-![Code Scope rodando o BubbleSort passo a passo](docs/demo.gif)
+<p align="center">
+  <img src="docs/demo.gif" alt="Code Scope rodando o BubbleSort passo a passo" width="320">
+</p>
 
 ## O que aparece no painel
 
@@ -19,52 +21,48 @@ Um array é uma fileira de caixas. A caixa alterada pisca e fica marcada, e uma 
 Numa lista, o item novo surge e os seguintes abrem espaço; o que sai vai embora e os vizinhos fecham o buraco. Numa matriz, a linha e a coluna lidas pelo código ficam marcadas e a célula onde elas se cruzam ganha contorno. Num conjunto (`HashSet`, `set` do Python, `Set` do JavaScript), as caixas não têm índice, e adicionar um valor que já estava é explicado: conjunto não guarda repetidos.
 
 | Matriz | Lista |
-|---|---|
-| ![Matriz com a linha i e a coluna j marcadas](docs/matriz.gif) | ![ArrayList recebendo um item no meio](docs/lista.gif) |
+|:---:|:---:|
+| <img src="docs/matriz.gif" alt="Matriz com a linha i e a coluna j marcadas" width="320"> | <img src="docs/lista.gif" alt="ArrayList recebendo um item no meio" width="320"> |
 
 ### Pilhas e filas
 
 O painel reconhece o papel de uma coleção pelo jeito como o código usa ela. A pilha é uma torre: o item empilhado cai no topo e o desempilhado sobe e some, com a etiqueta "topo" acompanhando. A fila é uma esteira: o item entra pela direita e quem está na frente sai pela esquerda.
 
 | Pilha | Fila |
-|---|---|
-| ![Pilha de pratos: push e pop pelo topo](docs/pilha.gif) | ![Fila do banco: entra pelo fim, sai pela frente](docs/fila.gif) |
+|:---:|:---:|
+| <img src="docs/pilha.gif" alt="Pilha de pratos: push e pop pelo topo" width="320"> | <img src="docs/fila.gif" alt="Fila do banco: entra pelo fim, sai pela frente" width="320"> |
 
-### Condições, buscas e ordenações
+### Condições, buscas e erros
 
 Antes de um `if` ou de um laço rodar, a condição é quebrada em partes. Cada parte é marcada como verdadeira ou falsa, com os valores no lugar dos nomes (`ordenado[meio] == alvo (17 == 25)`), e as partes que o curto-circuito pula ficam apagadas. Depois que a linha roda, o texto diz por qual caminho o programa foi: "a condição da linha 8 foi falsa: o programa pulou o bloco do if".
 
 Em buscas e ordenações, as posições comparadas ganham contorno, o pedaço do array que a busca já descartou fica apagado, e o painel conta comparações e trocas. Embaixo do contador, uma tabela põe a contagem do programa ao lado de log n, n, n log n e n², para o tamanho dele e para 1000 posições, onde um laço dentro de outro já faz um milhão de comparações.
 
-![A condição com os valores, a posição comparada e a metade descartada](docs/busca.gif)
+Quando o programa quebra, o painel para no erro e explica em palavras simples, com uma dica de onde olhar e a mensagem original embaixo. Um índice fora do limite aparece como a posição que não existe, tracejada, depois do array. Dentro de um `catch`, o painel explica qual linha deu erro e que o resto do `try` não rodou.
 
-### Funções e recursão
+| Busca binária | Erro explicado |
+|:---:|:---:|
+| <img src="docs/busca.gif" alt="A condição com os valores, a posição comparada e a metade descartada" width="320"> | <img src="docs/erro.gif" alt="Índice fora do limite: a posição que não existe" width="320"> |
+
+### Funções, recursão e objetos
 
 Quando uma função chama outra, ou a si mesma, a pilha de chamadas mostra um cartão por chamada, cada um com as próprias variáveis. A chamada que termina sai dizendo o que devolveu. Quando a recursão se divide em duas, como `fib(n - 1) + fib(n - 2)`, uma árvore de recursão mostra todas as chamadas, o valor que cada uma devolveu e quantas vezes a mesma conta foi refeita.
 
-![fib(4): todas as chamadas com o que devolveram](docs/recursao.gif)
+Objetos das classes que você escreveu viram cartões com as variáveis que apontam para eles. Dois nomes no mesmo cartão são duas variáveis no mesmo objeto, não uma cópia. Uma lista de objetos mostra cada objeto dentro da sua posição (`turma[1]` com nome e nota). Quando roda o método de uma subclasse, o painel diz por que foi aquela versão (polimorfismo).
 
-### Objetos, listas ligadas e árvores
+| Árvore de recursão | Lista de objetos |
+|:---:|:---:|
+| <img src="docs/recursao.gif" alt="fib(4): todas as chamadas com o que devolveram" width="320"> | <img src="docs/objetos.gif" alt="Cada aluno dentro da sua posição, com melhor apontando para um deles" width="320"> |
 
-Objetos das classes que você escreveu viram cartões com as variáveis que apontam para eles. Dois nomes no mesmo cartão são duas variáveis no mesmo objeto, não uma cópia. Uma lista de objetos mostra cada objeto dentro da sua posição (`turma[1]` com nome e nota). Lista ligada aparece como nós e setas, árvore binária como árvore.
-
-Quando roda o método de uma subclasse, o painel diz por que foi aquela versão (polimorfismo).
-
-| Lista de objetos | Árvore binária |
-|---|---|
-| ![Cada aluno dentro da sua posição, com melhor apontando para um deles](docs/objetos.gif) | ![Uma árvore binária de busca crescendo uma inserção por vez](docs/arvore.gif) |
-
-### Dicionários e grafos
+### Dicionários, árvores e grafos
 
 Dicionários (`HashMap`, `dict`, objetos e `Map` do JavaScript) viram uma tabela de chave e valor: a chave nova entra deslizando e o valor trocado pisca. Um dicionário de listas que apontam para as próprias chaves vira grafo, com os visitados, o nó atual e a fila de uma busca em largura.
 
-![Busca em largura: visitados, atual e esperando](docs/grafo.gif)
+Lista ligada aparece como nós e setas, árvore binária como árvore.
 
-### Erros
-
-Quando o programa quebra, o painel para no erro e explica em palavras simples, com uma dica de onde olhar e a mensagem original embaixo. Um índice fora do limite aparece como a posição que não existe, tracejada, depois do array. Dentro de um `catch`, o painel explica qual linha deu erro e que o resto do `try` não rodou.
-
-![Índice fora do limite: a posição que não existe](docs/erro.gif)
+| Árvore binária | Grafo |
+|:---:|:---:|
+| <img src="docs/arvore.gif" alt="Uma árvore binária de busca crescendo uma inserção por vez" width="320"> | <img src="docs/grafo.gif" alt="Busca em largura: visitados, atual e esperando" width="320"> |
 
 ### Pegadinhas clássicas
 

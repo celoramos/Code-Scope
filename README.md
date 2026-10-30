@@ -8,7 +8,9 @@ It works with Java, JavaScript, TypeScript, Python, C# and C, and in a generic m
 
 > **Beta.** Code Scope is on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope) and is still a beta for people to try and help shape. If something looks wrong or confusing, [open an issue](https://github.com/celoramos/Code-Scope/issues/new/choose): that is the most useful help right now.
 
-![Code Scope stepping through BubbleSort](docs/demo.gif)
+<p align="center">
+  <img src="docs/demo.gif" alt="Code Scope stepping through BubbleSort" width="320">
+</p>
 
 ## What the panel shows
 
@@ -19,52 +21,48 @@ An array is a row of boxes. The box that changed flashes and stays highlighted, 
 In a list, a new item appears and the ones after it make room; an item that leaves goes away and its neighbors close the gap. In a matrix, the row and column the code reads are highlighted and the cell where they cross gets an outline. In a set (`HashSet`, Python `set`, JavaScript `Set`), boxes have no index, and adding a value that is already there is explained: a set keeps no duplicates.
 
 | Matrix | List |
-|---|---|
-| ![Matrix with row i and column j highlighted](docs/matriz.gif) | ![ArrayList receiving an item in the middle](docs/lista.gif) |
+|:---:|:---:|
+| <img src="docs/matriz.gif" alt="Matrix with row i and column j highlighted" width="320"> | <img src="docs/lista.gif" alt="ArrayList receiving an item in the middle" width="320"> |
 
 ### Stacks and queues
 
 The panel recognizes the role of a collection by how the code uses it. A stack is a tower: a pushed item drops onto the top and a popped one rises and fades, with the "top" label following along. A queue is a conveyor belt: items enter from the right and the one in front leaves on the left.
 
 | Stack | Queue |
-|---|---|
-| ![Stack of plates: push and pop at the top](docs/pilha.gif) | ![Bank line: enter at the back, leave at the front](docs/fila.gif) |
+|:---:|:---:|
+| <img src="docs/pilha.gif" alt="Stack of plates: push and pop at the top" width="320"> | <img src="docs/fila.gif" alt="Bank line: enter at the back, leave at the front" width="320"> |
 
-### Conditions, searches and sorts
+### Conditions, searches and errors
 
 Before an `if` or a loop runs, its condition is split into parts. Each part is marked true or false, with the values in place of the names (`ordenado[meio] == alvo (17 == 25)`), and parts that short-circuit skips are greyed out. After the line runs, the text says which path the program took: "the condition on line 8 was false: the program skipped the if block".
 
 In searches and sorts, the positions being compared get an outline, the part of the array a search has already discarded fades out, and the panel counts comparisons and swaps. Under the counter, a table puts the program's count next to log n, n, n log n and n², for its own size and for 1000 positions, where a loop inside a loop already makes a million comparisons.
 
-![The condition with its values, the compared position and the discarded half](docs/busca.gif)
+When the program crashes, the panel stops at the error and explains it in plain words, with a hint of where to look and the original message below. An index out of range shows the position that does not exist, dashed, next to the array. Inside a `catch`, the panel explains which line raised the error and that the rest of the `try` did not run.
 
-### Functions and recursion
+| Binary search | Error explained |
+|:---:|:---:|
+| <img src="docs/busca.gif" alt="The condition with its values, the compared position and the discarded half" width="320"> | <img src="docs/erro.gif" alt="Index out of range: the position that does not exist" width="320"> |
+
+### Functions, recursion and objects
 
 When a function calls another one, or itself, the call stack shows one card per call, each with its own variables. The call that finishes leaves saying what it returned. When recursion splits in two, like `fib(n - 1) + fib(n - 2)`, a recursion tree shows every call, the value each one returned and how many times the same work was redone.
 
-![fib(4): every call with what it returned](docs/recursao.gif)
+Objects of the classes you wrote become cards labeled with the variables that point to them. Two names on one card are two variables on the same object, not a copy. A list of objects shows each object inside its position (`turma[1]` with its name and grade). When a subclass method runs, the panel says why it was that version (polymorphism).
 
-### Objects, linked lists and trees
+| Recursion tree | List of objects |
+|:---:|:---:|
+| <img src="docs/recursao.gif" alt="fib(4): every call with what it returned" width="320"> | <img src="docs/objetos.gif" alt="Each student inside its position, with melhor pointing to one" width="320"> |
 
-Objects of the classes you wrote become cards labeled with the variables that point to them. Two names on one card are two variables on the same object, not a copy. A list of objects shows each object inside its position (`turma[1]` with its name and grade). Linked lists are drawn as nodes and arrows, binary trees as trees.
-
-When a subclass method runs, the panel says why it was that version (polymorphism).
-
-| List of objects | Binary tree |
-|---|---|
-| ![Each student inside its position, with melhor pointing to one](docs/objetos.gif) | ![A binary search tree growing one insertion at a time](docs/arvore.gif) |
-
-### Dictionaries and graphs
+### Dictionaries, trees and graphs
 
 Dictionaries (`HashMap`, `dict`, JavaScript objects and `Map`) become a key and value table: a new key slides in and a replaced value flashes. A dictionary of lists that point to its own keys becomes a graph, with the visited nodes, the current one and the queue of a breadth-first search.
 
-![Breadth-first search: visited, current and waiting nodes](docs/grafo.gif)
+Linked lists are drawn as nodes and arrows, binary trees as trees.
 
-### Errors
-
-When the program crashes, the panel stops at the error and explains it in plain words, with a hint of where to look and the original message below. An index out of range shows the position that does not exist, dashed, next to the array. Inside a `catch`, the panel explains which line raised the error and that the rest of the `try` did not run.
-
-![Index out of range: the position that does not exist](docs/erro.gif)
+| Binary tree | Graph |
+|:---:|:---:|
+| <img src="docs/arvore.gif" alt="A binary search tree growing one insertion at a time" width="320"> | <img src="docs/grafo.gif" alt="Breadth-first search: visited, current and waiting nodes" width="320"> |
 
 ### Classic traps
 
