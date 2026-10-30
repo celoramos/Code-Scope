@@ -2,56 +2,23 @@
 
 **English** | [Português](README.pt-br.md)
 
-A VS Code extension, also for Cursor, Windsurf, VSCodium and Antigravity, and a plugin for IntelliJ IDEA (beta, Java), that shows your code running, visually, for people learning to program. Free and open source ([MIT](LICENSE)).
+Shows your code running, visually, for people learning to program. While you debug, a side panel draws your program and explains each step. Free and open source ([MIT](LICENSE)).
 
-> **Beta.** Code Scope is on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope) and is still a beta for people to try and help shape. If something looks wrong or confusing, [open an issue](https://github.com/celoramos/Code-Scope/issues/new/choose): that is the most useful help right now.
-
-Everything happens inside your editor: the panel sits in the sidebar, next to your code, and uses your theme's colors. It opens no browser, needs no account and sends nothing to the internet.
-
-While you debug, a side panel draws your program: arrays, matrices, lists, stacks, queues, dictionaries, objects, linked lists, trees and the call stack. Think of it as someone drawing your program on a whiteboard. It works with Java, JavaScript, TypeScript, Python, C# and C, and with any other language that has a debugger in VS Code (see [Languages](#languages)). On every F10 the panel animates what changed and explains what happened:
-
-- the changed box flashes and stays highlighted;
-- a swap shows the two boxes crossing over, even when the code uses a `temp` variable and takes two steps;
-- `i`, `j`, `inicio` and `fim` become colored arrows that slide under the boxes;
-- in a list, a new item appears and the ones after it make room; an item that leaves goes away and its neighbors close the gap;
-- in a set (`HashSet`, Python `set`, JavaScript `Set`), boxes have no index, and adding a value that is already there says so: a set keeps no duplicates;
-- in a stack, a pushed item drops onto the top of the tower and a popped one rises and fades, with the "top" label following along;
-- in a queue, items enter from the right of the conveyor belt and the one in front leaves on the left;
-- in a matrix, the row and column the code reads are highlighted and the cell where they cross gets an outline;
-- the text says what changed and which path the program took: "numeros[0] and numeros[1] swapped places", "the condition on line 8 was false: the program skipped the if block", "end of one loop iteration";
-- before an `if` or a loop runs, its condition is split into parts, each one marked true or false with the values in place of the names (`ordenado[meio] == alvo (17 == 25)`), respecting short-circuit;
-- when a function calls another one, or itself, the call stack shows one card per call, each with its own variables; the call that finishes leaves saying what it returned;
-- objects become cards labeled with the variables that point to them: two names on one card are two variables on the same object, not a copy. Linked lists are drawn as nodes and arrows, binary trees as trees;
-- dictionaries (`HashMap`, `dict`, JavaScript objects and `Map`) become a key and value table;
-- in searches and sorts, the positions being compared get an outline, the part of the array a search has already discarded fades out, and the panel counts comparisons and swaps;
-- when the program crashes, the panel stops at the error and explains it in plain words; an index out of range shows the position that does not exist, dashed, next to the array;
-- a trace table fills in step by step, one row per step and one column per variable, like the desk check done on paper;
-- a variable that leaves scope stays one step, crossed out, and a block variable that hides another one with the same name is marked;
-- when recursion splits in two, like `fib(n - 1) + fib(n - 2)`, a recursion tree shows every call, the value each one returned and how many times the same work was redone;
-- a list of objects shows each object inside its position (`turma[1]` with its name and grade); a dictionary of lists becomes a graph, with the visited nodes, the current one and the queue of a breadth-first search;
-- inside a `catch`, the panel explains which line raised the error and that the rest of the `try` did not run; when a subclass method runs, it says why it was that version (polymorphism);
-- text read letter by letter becomes a row of letters with the index arrow, and the classic number traps are explained when they happen: integer division, `0.1 + 0.2`, overflow.
-- `==` versus `equals` (and `is` versus `==` in Python): when a condition compares two objects, the text says whether it asked "same object?" or "same contents?", and explains the classic traps, like `==` between two equal Java strings, or `equals` in a class that never wrote one.
-- changing in place or creating a new one: `x.sort()` changes the list itself (and every name for it), `sorted(x)`, `slice()` or `Arrays.copyOf` make a new one, and `s.trim();` alone on a line creates a text nobody keeps, so `s` stays the same.
-- how much it costs: under the comparison counter, a table puts the program's count next to log n, n, n log n and n², for its own size and for 1000 positions, where a loop inside a loop already makes a million comparisons.
-
-Three extra tools:
-
-- **Guess first**: before a line runs, the panel asks what the variable will be. After F10 it says if the guess was right and keeps the score.
-- **Presentation mode**: the panel opens large next to the code, with bigger text and slower animations, ready to project or record.
-- **Save image**: the current step becomes a PNG, for slides, notes or to share.
-
-The panel speaks English and Portuguese and follows the language of your VS Code: Portuguese when VS Code is in Portuguese, English otherwise.
+Runs in VS Code, in Cursor, Windsurf, VSCodium and Antigravity, and in IntelliJ IDEA (beta, Java). Everything stays inside your editor: no browser, no account, nothing sent to the internet.
 
 ![Code Scope stepping through BubbleSort](docs/demo.gif)
 
-| Stack | Queue |
-|---|---|
-| ![Stack of plates: push and pop at the top](docs/pilha.gif) | ![Bank line: enter at the back, leave at the front](docs/fila.gif) |
+## What it draws
 
-| Matrix | List |
-|---|---|
-| ![Matrix with row i and column j highlighted](docs/matriz.gif) | ![ArrayList receiving an item in the middle](docs/lista.gif) |
+- Arrays, matrices, lists, sets, stacks and queues, with colored arrows for `i` and `j`
+- Dictionaries, objects and references, linked lists, trees and graphs
+- The call stack and the recursion tree
+- A plain-language sentence for each step, each condition split into true and false parts, and every crash explained
+- A trace table filled in step by step, like the desk check done on paper
+
+Three extra tools: **Guess first** asks what a variable will be before the line runs, **Presentation mode** opens the panel large for projecting, and **Save image** turns the current step into a PNG.
+
+The panel speaks English and Portuguese and follows the language of your editor.
 
 | Recursion tree | Error explained |
 |---|---|
@@ -61,247 +28,38 @@ The panel speaks English and Portuguese and follows the language of your VS Code
 |---|---|
 | ![The condition with its values, the compared position and the discarded half](docs/busca.gif) | ![Breadth-first search: visited, current and waiting nodes](docs/grafo.gif) |
 
-| List of objects | Binary tree |
-|---|---|
-| ![Each student inside its position, with melhor pointing to one](docs/objetos.gif) | ![A binary search tree growing one insertion at a time](docs/arvore.gif) |
-
-*Panel captures made with data from real debugger sessions (Java, JavaScript and Python), saved with the panel's own "Save image" button.*
-
-## Languages
-
-Code Scope talks to the debugger through the **Debug Adapter Protocol**, the protocol VS Code uses with every debugger. Each debugger formats values its own way, so each language has an adapter that translates that text for the panel. Languages without their own adapter use the generic mode.
-
-| Language | Debugger | Structures | Status |
-|---|---|---|---|
-| Java | Debugger for Java (`vscjava.vscode-java-debug`) | arrays, matrices, `ArrayList`, `Stack`, `Queue`, `ArrayDeque`, `HashMap`, objects, linked lists, trees | validated with the real debugger |
-| JavaScript and TypeScript | the one built into VS Code (Node, Chrome, Edge) | arrays, matrices, stack (`push`/`pop`), queue (`push`/`shift`), objects as dictionaries, `Map`, class instances, linked lists, trees | validated with the real debugger on Node; the browser uses the same adapter, not tested yet |
-| Python | Python Debugger (`ms-python.debugpy`) | `list`, `tuple`, `deque`, `dict`, matrices, stack (`append`/`pop()`), queue (`pop(0)`/`popleft()`), objects, linked lists, trees | validated with the real debugger |
-| C# | C# extension (`ms-dotnettools.csharp`) | arrays, `List`, `Stack`, `Queue`, `Dictionary`, objects, linked lists | validated with the real debugger |
-| C | C/C++ extension (`ms-vscode.cpptools`) with gdb | arrays, pointers to `struct`, linked lists | validated with the real debugger (gdb) on Windows and Linux; on macOS the C/C++ extension uses lldb, not tested yet. C++ containers like `std::vector` are not drawn yet |
-| Others (Go, Rust, PHP...) | any VS Code debugger | collections the debugger marks as indexed, integers and simple values | generic mode: shows what the protocol guarantees and leaves out what it does not understand |
-
-The flow explanations (if, loops, break) understand the C family (Java, JavaScript, C#, C, Go) and Python. If the panel does not recognize something in your language, open an [issue](https://github.com/celoramos/Code-Scope/issues/new/choose) with the log (see below): that is how a new adapter starts.
-
-## What the panel shows
-
-| Part | What it shows |
-|---|---|
-| Timeline | "Step 7 of 13", previous and next buttons, and a slider to jump to any step. Reviewing the history does not rewind the program. |
-| Code | The line that just ran and the next one, in the same color the editor uses for the stopped line. |
-| Explanation | One sentence per change, plus the path the program took (if, loop, break). Can be turned off. |
-| Condition | Before an `if`, `while` or `for` runs: each part of the condition with its values and whether it is true or false. Parts that short-circuit skips are greyed out. |
-| Error | When the program stops at an error nobody handled: what happened in plain words, a hint of where to look, and the original message below. |
-| Call stack | With two functions or more running: one card per call, the current one on top, each with its own variables. |
-| Variables | Integers, strings, booleans, characters and decimal numbers. Integers that become arrows take the arrow's color. A variable that just left scope stays one step, crossed out. |
-| Structures | Arrays, matrices, lists, stacks and queues. Stacks and queues are recognized by how the code uses the collection. Two names for the same array are drawn once. In searches, compared positions get an outline and discarded ones fade. |
-| Dictionaries | Key and value table; a new key slides in, a replaced value flashes. |
-| Objects | One card per object of a class you wrote, with the variables that point to it. Linked lists as nodes and arrows, trees as trees. |
-| Trace table | One row per step and one column per variable, with the changed cell highlighted. Click a step number to go back to it. |
-| Recursion tree | When recursion splits in two: all calls, each hanging from its caller, with what it returned. |
-| Graph | A dictionary of lists that point to its own keys, with the visited nodes, the current one and the waiting queue. |
-| Guess first | A question before the line runs, the check after F10 and the score. |
-
-## Requirements
-
-- VS Code 1.95 or newer
-- The debugger for your language:
-  - Java: **Extension Pack for Java** (`code --install-extension vscjava.vscode-java-pack`) and a JDK
-  - JavaScript and TypeScript: Node.js 22 or newer; the debugger ships with VS Code. With Node.js 20 the VS Code debugger (js-debug 1.140) runs the program without stopping at breakpoints
-  - Python: the **Python** extension (`code --install-extension ms-python.python`), which brings debugpy, and Python installed
-  - C#: the **C#** extension (`code --install-extension ms-dotnettools.csharp`) and the .NET SDK
-  - C: the **C/C++** extension (`code --install-extension ms-vscode.cpptools`), a compiler and gdb (for example MinGW-w64 or w64devkit on Windows)
-
 ## Install
 
-Install [Code Scope from the VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope): search for **Code Scope** in the Extensions view, or run:
+**VS Code** (1.95 or newer): install from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope), or run:
 
 ```bash
 code --install-extension code-scope.code-scope
 ```
 
-Each [release](https://github.com/celoramos/Code-Scope/releases) also has the `code-scope.vsix`. To install it, open the Extensions view, click the **...** menu and choose **Install from VSIX...**.
+**Cursor, Windsurf, VSCodium, Antigravity**: Code Scope is not on Open VSX yet. Download `code-scope.vsix` from the [latest release](https://github.com/celoramos/Code-Scope/releases/latest) and use **Install from VSIX...** in the Extensions view. Microsoft's C# and C/C++ debuggers do not run in these editors.
 
-To try the latest commit instead, take the `.vsix` from the latest CI run (the repository's **Actions** tab, artifact `code-scope-vsix`) or build your own:
+**IntelliJ IDEA 2026.2 or newer, or an Android Studio built on it** (beta, Java only): download `code-scope-jetbrains-*.zip` from the [latest release](https://github.com/celoramos/Code-Scope/releases/latest), then go to **Settings > Plugins > gear icon > Install Plugin from Disk...**.
 
-```bash
-npm install
-npm run vsix
-code --install-extension code-scope.vsix
-```
+## Languages
 
-### Cursor, Windsurf, VSCodium, Antigravity and other VS Code forks
-
-The same `.vsix` installs in editors built on VS Code. Use the editor's own command (`cursor`, `windsurf`, `codium`, `antigravity`) in place of `code`, or **Install from VSIX...** in its Extensions view. These editors install extensions from [Open VSX](https://open-vsx.org) instead of the Microsoft Marketplace. Code Scope is not on Open VSX yet; until then, use the `.vsix` from the [release](https://github.com/celoramos/Code-Scope/releases).
-
-What changes by language:
-
-- Java, JavaScript and Python work as in VS Code. The Java Extension Pack and `ms-python.debugpy` are on Open VSX, and the JavaScript debugger ships with the editor. CI runs these tests in VSCodium on every push.
-- C# and C: Microsoft's C# and C/C++ debuggers only run inside Microsoft's VS Code. In a fork, use an open debugger: for C#, the **C#** extension by muhammad-sammy (netcoredbg, launch type `coreclr`); for C, **CodeLLDB** (launch type `lldb`). Code Scope listens to both launch types, but these two debuggers are not covered by the tests yet.
-
-### IntelliJ IDEA and Android Studio (beta)
-
-Code Scope also runs as a JetBrains plugin, for **Java**. The panel opens on the right when the debugger stops; step with F8 (Step Over) or F7 (Step Into) as usual.
-
-The plugin is not on the JetBrains Marketplace yet. Build it from the repository (needs Node.js and a JDK 21):
-
-```bash
-npm install
-cd jetbrains
-./gradlew buildPlugin
-```
-
-Then, in the IDE: **Settings > Plugins > gear icon > Install Plugin from Disk...** and pick the `.zip` in `jetbrains/build/distributions`. CI also builds it on every push (artifact `code-scope-jetbrains`).
-
-It needs IntelliJ IDEA 2026.2 or newer (any edition), or an Android Studio built on it. The plugin reuses the code of the VS Code extension: the IDE's Java debugger answers the same questions the VS Code one does, and the panel draws the same thing. PyCharm, WebStorm and the other JetBrains IDEs without Java are not covered yet.
-
-## Run from source
-
-```bash
-git clone https://github.com/celoramos/Code-Scope.git
-cd Code-Scope
-npm install
-```
-
-Open the folder in VS Code and press **F5**. The "Rodar extensão" configuration builds the project and opens a second window, the *Extension Development Host*, with the Java, JavaScript and Python samples already open (`samples/exemplos.code-workspace`).
-
-While developing, `npm run watch` rebuilds on every change; reload the test window with `Ctrl+R`.
-
-## Trying the samples
-
-After installing, the quickest way in is **Code Scope: Open a sample** in the command palette (or the **Get started with Code Scope** walkthrough in **Help > Get Started**): it copies the Java, JavaScript or Python samples to a folder you pick and opens it.
-
-In the Extension Development Host window:
-
-1. Open one of the samples and set a breakpoint on the line its comment points to.
-2. In the **Run and Debug** tab, pick the configuration and press F5. In Java, each sample has a configuration with the same name; in JavaScript and Python, use "Arquivo aberto". The Code Scope panel opens by itself on the first stop.
-3. Step with **F10** (step over) and watch the panel.
-
-| Sample | What to look for |
+| Language | What you need |
 |---|---|
-| `java/BubbleSort.java` | Arrows `i` and `j`; swaps done with `temp` shown as boxes crossing over; true and false ifs |
-| `java/BuscaLinear.java` | Linear search: arrow `i` walking the array; `alvo` holds a value, so it does not become an arrow; the break ending the loop |
-| `java/InverterArray.java` | Reversing an array: arrows `inicio` and `fim` closing in while the ends swap |
-| `java/Palindromo.java` | `char[]` in single quotes; the boolean `ehPalindromo` among the variables |
-| `java/Matriz.java` | 2 by 3 grid with row `i` and column `j` highlighted, cell by cell |
-| `java/ListaDeCompras.java` | Shopping list: starts empty, items added at the end and in the middle, an item removed from the front |
-| `java/Pilha.java` | Stack of plates: `push` on top, `peek` that only looks, `pop` that removes the last one in |
-| `java/Fila.java` | Bank line: customers join at the back and are served from the front |
-| `java/Parenteses.java` | Classic stack use: checking whether `{[()]}` is balanced by pushing every opening bracket |
-| `javascript/bubbleSort.js` | The same BubbleSort in JavaScript, with `let` and `const` inside the loops |
-| `javascript/pilha.js` | Undo history: an array used with `push` and `pop` becomes a stack |
-| `javascript/fila.js` | Printer queue: an array used with `push` and `shift` becomes a queue |
-| `python/bubble_sort.py` | BubbleSort in Python; the swap `a, b = b, a` happens in a single step |
-| `python/pilha.py` | Browser back button: `append` and `pop()` on a list |
-| `python/fila.py` | Snack bar orders: `deque` with `append` and `popleft()` |
-| `Fatorial` (all three languages) | Recursion: use **F11** to enter each call and watch the call stack grow and shrink, each call with its own `n` |
-| `ForaDoLimite` / `foraDoLimite` / `fora_do_limite` | A hidden bug: the loop goes one position too far, and the panel stops at the error and shows the position that does not exist |
-| `Referencias` / `referencias` | Two variables on the same object (`outra = minha`) and on the same array (`b = a`): changing one changes the other |
-| `ListaLigada` / `listaLigada` / `lista_ligada` | A linked list built node by node, and `atual` walking it to the end |
-| `ArvoreBinaria` / `arvoreBinaria` / `arvore_binaria` | Values going into a binary search tree, one recursive insertion at a time |
-| `Dicionario` / `dicionario` | Counting words in a dictionary: new keys and values being replaced |
-| `BuscaBinaria` / `buscaBinaria` / `busca_binaria` | Binary search: the compared position outlined and the discarded half fading out |
-| `Escopo` / `escopo` | Variables born and gone with each block; a block `total` hiding the outer one (JavaScript); a parameter with the same name as a field |
-| `Fibonacci` / `fibonacci` | The recursion tree: use **F11** and watch `fib(2)` being computed more than once |
-| `Turma` / `turma` | A list of students: each object inside its position, and `melhor` pointing to one of them |
-| `Grafo` / `grafo` | Breadth-first search on a graph of cities: visited nodes, current node and the queue |
-| `Heranca` / `heranca` | Inheritance: with **F11**, see `Cachorro.falar` run instead of `Animal.falar` |
-| `TrataErro` / `trataErro` / `trata_erro` | `try/catch`: the line that raised the error and the jump to the `catch` |
-| `Texto` / `texto` | A word read letter by letter, and `+` creating a new text |
-| `Numeros` / `numeros` | Integer division, `0.1 + 0.2` and int overflow |
-| `Igualdade` / `igualdade` | Same object or same contents: `==`, `equals`, `===` and `is` |
-| `Copias` / `copias` | Changing in place (`sort`) or creating a new one (`sorted`, `slice`, `trim`) |
-| `csharp/` (BubbleSort, Pilha, Fila, Dicionario, ListaLigada) | The same lessons in C#: one project, each sample is a configuration in `launch.json` |
-| `c/bubble_sort.c`, `c/lista_ligada.c` | Arrays in C, and a linked list of `struct`s connected by pointers |
+| Java | [Extension Pack for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack) and a JDK |
+| JavaScript, TypeScript | Node.js 22 or newer |
+| Python | [Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and Python |
+| C# | [C# extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) and the .NET SDK |
+| C | [C/C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools), a compiler and gdb |
+| Others (Go, Rust, PHP...) | Any VS Code debugger. Generic mode shows indexed collections and simple values |
 
-With the panel focused: left and right arrows move one step, Home and End jump to the first and last.
+## Get started
 
-If the panel does not show what you expected, open **Output**, pick **Code Scope** and set the level to *Debug*. The channel logs which adapter was used, each snapshot and what the debugger returned.
+1. Run **Code Scope: Open a sample** from the command palette and pick a language.
+2. Set a breakpoint on the line the comment points to and press F5.
+3. Step with F10 and watch the panel.
 
-## Settings
+In IntelliJ, debug any Java file and step with F8.
 
-| Setting | Default | What it does |
-|---|---|---|
-| `codeScope.beginnerMode` | `true` | Shows the sentence explaining each step |
-| `codeScope.animationSpeed` | `normal` | Slow, Normal, Fast or Off (in `settings.json`: `slow`, `normal`, `fast`, `off`). If the system asks for reduced motion, animations are off regardless |
-| `codeScope.maxElements` | `50` | How many positions of each array, list or matrix row are read |
-| `codeScope.valueNames` | `temp`, `aux`, `alvo`, `soma`... | Integers with these names hold a value, not a position, and do not become arrows |
-| `codeScope.revealOnDebug` | `true` | Opens the panel on the first stop of each debug session |
-| `codeScope.pauseOnErrors` | `true` | Pauses the program on errors nobody handles, so the panel can show where and why it broke. What you checked in the Breakpoints view stays as it is |
-
-Commands in the palette: **Code Scope: Show panel**, **Code Scope: Clear history** and **Code Scope: Presentation mode**.
-
-## How it works
-
-```
-language debugger -- "stopped" event --> trackerFactory
-                                              |
-       stackTrace, scopes, variables  <------ dapCollector (customRequest)
-                                              |  the language adapter translates
-                                              |  "int[5]@10", "(5) [5, 1, 4]", "[5, 1, 4]"...
-                                              v
-                   Snapshot { line, code, arrays, pointers, scalars }
-                                              |
-        History --> diff + explain + flow + arrows --> Frame
-                                              | postMessage
-                                              v
-                             Webview (plain HTML, CSS and JS)
-```
-
-| Folder | Responsibility |
-|---|---|
-| `src/debug` | Speaks the Debug Adapter Protocol. `adapters/` has one adapter per language plus the generic mode; it is the only part that knows each debugger's format. |
-| `src/model` | `Snapshot`, step diff, history, arrows, matrix row and column, explanation text. Does not depend on VS Code, DAP or the language. |
-| `src/core` | One debugger stop turned into a `Snapshot` (`collectStep.ts`), with no dependency on the editor. |
-| `src/host` | The panel, model and collector bundled for an editor that is not VS Code: the JetBrains plugin runs this inside the IDE's built-in browser. |
-| `src/webview` | The panel's `WebviewViewProvider` and the message protocol. |
-| `jetbrains` | The IntelliJ plugin (Kotlin). `JavaDap.kt` answers the collector's Debug Adapter Protocol requests from the IDE's Java debugger, in the same format as VS Code's Java Debugger. |
-| `media` | The panel's HTML, CSS and JS. Colors, fonts and borders come from the VS Code theme. |
-| `samples` | Samples in Java, JavaScript and Python, with a ready `launch.json`. |
-| `test` | Unit tests (mocha) and integration tests with real debuggers. |
-
-## Tests
-
-| Command | What it does |
-|---|---|
-| `npm test` | Unit tests for the model, adapters and collector, with responses recorded from the real debuggers |
-| `npm run test:integration` | Downloads an isolated VS Code into `.vscode-test/`, installs the Java Extension Pack, the Python Debugger and, when the tools are there, the C# and C/C++ extensions in it, and really debugs the Java, JavaScript, Python, C# and C samples. Your VS Code is not touched. Takes a few minutes the first time |
-| `npx tsx jetbrains/self-test.ts <Sample>` | After `./gradlew runIde -PselfTest=<Sample>:<line>:<steps>` in `jetbrains/`, which opens a real IntelliJ, debugs `samples/java/<Sample>.java` and records what the panel drew: compares it, step by step, with what VS Code drew for the same sample |
-
-CI runs both on every push, on Windows, Linux and macOS, plus the integration test on the minimum VS Code (1.95) and on the latest VSCodium (debuggers from Open VSX), builds the JetBrains plugin, and publishes the `.vsix` and the plugin `.zip` as artifacts. Each integration job leaves a note on the run page with how many tests passed or were skipped per debugger.
-
-The Python tests need an interpreter. Point to one with the `CODE_SCOPE_PYTHON` variable or, without installing anything, unzip the *Windows embeddable package* from python.org into `.vscode-test/python` and rename the `python3XX._pth` file that comes with it. Without an interpreter, they are skipped with a warning.
-
-The C# and C tests need the .NET SDK, gcc and gdb on the `PATH`. Without installing anything, they can also live in `.vscode-test/dotnet` (the official `dotnet-install` script with `-InstallDir`) and `.vscode-test/w64devkit` (the w64devkit release unzipped there): the test runner adds both to the `PATH` of the test VS Code. Without them, those tests are skipped.
-
-## Known limits
-
-- Earlier calls on the call stack show their simple variables and the first 8 items of their arrays and lists, not their objects. At most 12 calls are read.
-- Only objects of classes declared in the file being debugged are drawn, at most 40 per step. Objects inside arrays show only as text.
-- JavaScript does not show object identity, so the program itself is asked (`a === b`); across steps, an object keeps its identity by the paths that lead to it. A list rebuilt from scratch in a single step can look like new objects.
-- A condition part that calls a method is only evaluated when the method just reads (`len`, `.length`, `.size()`, `.equals`, `.get`...); otherwise it shows "cannot tell beforehand".
-- Hidden variables (one name hiding another) are detected in JavaScript blocks and in parameters with the same name as a field. Java and Python have no block scope for local variables.
-- In generic mode, only collections the debugger marks as indexed, or whose size is written in the value, show up.
-- Matrices with three or more dimensions show the third level as text.
-- A list that gains or loses several items in one step is animated when they form one block (`addAll`, `extend`, `splice`); items added in different places show as resized.
-- Outside matrices, an integer becomes an arrow when the code uses it as a position: inside brackets (`v[i]`), in `get(i)`, `insert(i, x)` and the like, compared with the length, or in the math of another position (`meio = (inicio + fim) / 2`). Names in `codeScope.valueNames` never become arrows. Without the source file, any integer that fits the indexes does.
-- Stacks and queues are recognized by variable name, reading the whole file: the methods used (`push`, `poll`, `popleft`...) are added up from every place. Two variables with the same name used in different ways in the same file can be classified wrong.
-- If you use F5 (continue) between breakpoints instead of F10, the panel shows the accumulated difference between the two stops, and the "ran" line is the previous breakpoint's.
-- The JetBrains plugin covers Java only (settings in Settings > Tools > Code Scope). Presentation mode is VS Code only. IntelliJ's F8 also stops on the `}` that closes an `if`, which VS Code skips, so the same program can take a few more steps there. After F7, the value a call returned does not show up in IntelliJ.
-
-## Releases
-
-What each version brought, in short. The details are in the [CHANGELOG](CHANGELOG.md) (in Portuguese).
-
-| Version | What it brought |
-|---|---|
-| 0.8.0 | Published on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope). Arrows only for the variable the code uses as a position; lists that gain or lose a block of items animated and explained; array items in the earlier calls of the call stack; sets (`HashSet`, `set`, `Set`); a first-run walkthrough and the "Open a sample" command; tests in VSCodium with the Open VSX debuggers; a plugin for IntelliJ IDEA and Android Studio (beta, Java); merge sort and quick sort samples. |
-| 0.7.0 | Accessibility fixes: high contrast themes, 4.5:1 contrast, the matrix read as a table by screen readers. Arrows and the recursion tree no longer overlap. Requires VS Code 1.95 or newer, and `animationSpeed` now takes `slow`, `normal`, `fast` and `off`. |
-| 0.6.0 | Recursion tree, guess mode, presentation mode and save image. Lists of objects, graphs, try/catch, inheritance and polymorphism, text letter by letter, number gotchas, `==` or `equals`, change in place or make a new one, and the cost table. Dedicated adapters for C# and C. Contributing guide and a list of starter tasks. |
-| 0.5.0 | Trace table, errors explained (with `pauseOnErrors`), call stack and recursion, objects and references, linked lists and trees, dictionaries, conditions split into parts, searches and sorts, scope. Panel and README in English and Portuguese. |
-| 0.4.0 | Any language with a debugger in VS Code: adapters for JavaScript, TypeScript and Python, and the generic mode for the rest. |
-| 0.3.0 | Stacks drawn as a tower and queues as a conveyor, recognized by how the code uses the collection. |
-| 0.2.0 | Matrices, animated lists, the line that ran and the next one, the program's path explained, the timeline, settings and the first test with the real Java debugger. |
-| 0.0.1 | First version: Java arrays as boxes, `i` and `j` arrows, the swap animation and step history. |
+Something looks wrong? Check the [known limits](docs/known-limits.md), then [open an issue](https://github.com/celoramos/Code-Scope/issues/new/choose). Code Scope is a beta, and that is the most useful help right now.
 
 ## Roadmap
 
@@ -314,20 +72,8 @@ What each version brought, in short. The details are in the [CHANGELOG](CHANGELO
 
 ## Contributing
 
-Code Scope is open source to help as many people as possible get into programming, and to help those already in it understand their own code better. You can help even if you are just starting:
-
-- report what confused you in the panel by opening an [issue](https://github.com/celoramos/Code-Scope/issues/new/choose);
-- write a new sample in `samples/`, in any language;
-- improve an explanation sentence;
-- write the adapter for your favorite language;
-- implement a roadmap item.
-
-The [good first issues](docs/good-first-issues.md) list says what to do, where to look and how to know you are done, from tasks that need no code to new language adapters. The [contributing guide](CONTRIBUTING.md) explains how to set up the environment, run the tests and where each part of the code lives. All participation follows the [code of conduct](CODE_OF_CONDUCT.md).
-
-## Author
-
-Code Scope was created and is maintained by [@celoramos](https://github.com/celoramos). Everyone who helped is on the [contributors page](https://github.com/celoramos/Code-Scope/graphs/contributors).
+You can help even if you are just starting. The [good first issues](docs/good-first-issues.md) say what to do and how to know you are done, and the [contributing guide](CONTRIBUTING.md) covers setup, tests and where each part of the code lives. All participation follows the [code of conduct](CODE_OF_CONDUCT.md). What changed in each version is in the [changelog](CHANGELOG.md) (in Portuguese).
 
 ## License
 
-[MIT](LICENSE). You may use, study, modify and distribute it, including in classes and courses.
+[MIT](LICENSE). Created and maintained by [@celoramos](https://github.com/celoramos).
