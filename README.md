@@ -4,7 +4,7 @@
 
 A VS Code extension, also for Cursor, Windsurf, VSCodium and Antigravity, and a plugin for IntelliJ IDEA (beta, Java), that shows your code running, visually, for people learning to program. Free and open source ([MIT](LICENSE)).
 
-> **Beta.** Version 0.7.0 is a beta for people to try and help shape. Install it from the [release page](https://github.com/celoramos/Code-Scope/releases/tag/v0.7.0), and if something looks wrong or confusing, [open an issue](https://github.com/celoramos/Code-Scope/issues/new/choose): that is the most useful help right now.
+> **Beta.** Code Scope is on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope) and is still a beta for people to try and help shape. If something looks wrong or confusing, [open an issue](https://github.com/celoramos/Code-Scope/issues/new/choose): that is the most useful help right now.
 
 Everything happens inside your editor: the panel sits in the sidebar, next to your code, and uses your theme's colors. It opens no browser, needs no account and sends nothing to the internet.
 
