@@ -2,7 +2,7 @@
 
 **English** | [Português](README.pt-br.md)
 
-A VS Code extension that shows your code running, visually, for people learning to program. Free and open source ([MIT](LICENSE)).
+A VS Code extension, also for Cursor, Windsurf, VSCodium and Antigravity, and a plugin for IntelliJ IDEA (beta, Java), that shows your code running, visually, for people learning to program. Free and open source ([MIT](LICENSE)).
 
 > **Beta.** Code Scope is on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope) and is still a beta for people to try and help shape. If something looks wrong or confusing, [open an issue](https://github.com/celoramos/Code-Scope/issues/new/choose): that is the most useful help right now.
 

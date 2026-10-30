@@ -2,7 +2,7 @@
 
 [English](README.md) | **Português**
 
-Extensão do VS Code que mostra o código rodando de forma visual, para quem está aprendendo a programar. Gratuita e de código aberto ([MIT](LICENSE)).
+Extensão do VS Code, que também roda no Cursor, no Windsurf, no VSCodium e no Antigravity, e plugin para o IntelliJ IDEA (beta, Java), que mostra o código rodando de forma visual, para quem está aprendendo a programar. Gratuita e de código aberto ([MIT](LICENSE)).
 
 > **Beta.** O Code Scope está no [Marketplace do VS Code](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope) e ainda é uma beta para as pessoas testarem e ajudarem a melhorar. Se algo parecer errado ou confuso, [abra uma issue](https://github.com/celoramos/Code-Scope/issues/new/choose): é a ajuda mais útil agora.
 
