@@ -131,7 +131,7 @@ code --install-extension code-scope.vsix
 
 ### Cursor, Windsurf, VSCodium, Antigravity and other VS Code forks
 
-The same `.vsix` installs in editors built on VS Code. Use the editor's own command (`cursor`, `windsurf`, `codium`, `antigravity`) in place of `code`, or **Install from VSIX...** in its Extensions view. These editors install extensions from [Open VSX](https://open-vsx.org) instead of the Microsoft Marketplace. Code Scope goes to Open VSX starting with the next release; until then, use the `.vsix`.
+The same `.vsix` installs in editors built on VS Code. Use the editor's own command (`cursor`, `windsurf`, `codium`, `antigravity`) in place of `code`, or **Install from VSIX...** in its Extensions view. These editors install extensions from [Open VSX](https://open-vsx.org) instead of the Microsoft Marketplace. Code Scope is not on Open VSX yet; until then, use the `.vsix` from the [release](https://github.com/celoramos/Code-Scope/releases).
 
 What changes by language:
 
@@ -288,10 +288,25 @@ The C# and C tests need the .NET SDK, gcc and gdb on the `PATH`. Without install
 - If you use F5 (continue) between breakpoints instead of F10, the panel shows the accumulated difference between the two stops, and the "ran" line is the previous breakpoint's.
 - The JetBrains plugin covers Java only (settings in Settings > Tools > Code Scope). Presentation mode is VS Code only. IntelliJ's F8 also stops on the `}` that closes an `if`, which VS Code skips, so the same program can take a few more steps there. After F7, the value a call returned does not show up in IntelliJ.
 
+## Releases
+
+What each version brought, in short. The details are in the [CHANGELOG](CHANGELOG.md) (in Portuguese).
+
+| Version | What it brought |
+|---|---|
+| 0.8.0 | Published on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope). Arrows only for the variable the code uses as a position; lists that gain or lose a block of items animated and explained; array items in the earlier calls of the call stack; sets (`HashSet`, `set`, `Set`); a first-run walkthrough and the "Open a sample" command; tests in VSCodium with the Open VSX debuggers; a plugin for IntelliJ IDEA and Android Studio (beta, Java); merge sort and quick sort samples. |
+| 0.7.0 | Accessibility fixes: high contrast themes, 4.5:1 contrast, the matrix read as a table by screen readers. Arrows and the recursion tree no longer overlap. Requires VS Code 1.95 or newer, and `animationSpeed` now takes `slow`, `normal`, `fast` and `off`. |
+| 0.6.0 | Recursion tree, guess mode, presentation mode and save image. Lists of objects, graphs, try/catch, inheritance and polymorphism, text letter by letter, number gotchas, `==` or `equals`, change in place or make a new one, and the cost table. Dedicated adapters for C# and C. Contributing guide and a list of starter tasks. |
+| 0.5.0 | Trace table, errors explained (with `pauseOnErrors`), call stack and recursion, objects and references, linked lists and trees, dictionaries, conditions split into parts, searches and sorts, scope. Panel and README in English and Portuguese. |
+| 0.4.0 | Any language with a debugger in VS Code: adapters for JavaScript, TypeScript and Python, and the generic mode for the rest. |
+| 0.3.0 | Stacks drawn as a tower and queues as a conveyor, recognized by how the code uses the collection. |
+| 0.2.0 | Matrices, animated lists, the line that ran and the next one, the program's path explained, the timeline, settings and the first test with the real Java debugger. |
+| 0.0.1 | First version: Java arrays as boxes, `i` and `j` arrows, the swap animation and step history. |
+
 ## Roadmap
 
 1. PyCharm and WebStorm: Python and JavaScript in the JetBrains plugin
-2. JetBrains Marketplace and VS Code Marketplace
+2. JetBrains Marketplace and Open VSX
 3. C++ containers (`std::vector`, `std::map`) and the newer concepts in C#
 4. Objects in the variables of earlier calls
 5. JavaScript in the browser, tested with the real debugger

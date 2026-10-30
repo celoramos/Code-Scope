@@ -131,7 +131,7 @@ code --install-extension code-scope.vsix
 
 ### Cursor, Windsurf, VSCodium, Antigravity e outros editores feitos a partir do VS Code
 
-O mesmo `.vsix` instala nos editores construídos sobre o VS Code. Use o comando do próprio editor (`cursor`, `windsurf`, `codium`, `antigravity`) no lugar de `code`, ou **Install from VSIX...** na aba Extensões dele. Esses editores instalam extensões do [Open VSX](https://open-vsx.org), e não do Marketplace da Microsoft. O Code Scope entra no Open VSX a partir da próxima versão; até lá, use o `.vsix`.
+O mesmo `.vsix` instala nos editores construídos sobre o VS Code. Use o comando do próprio editor (`cursor`, `windsurf`, `codium`, `antigravity`) no lugar de `code`, ou **Install from VSIX...** na aba Extensões dele. Esses editores instalam extensões do [Open VSX](https://open-vsx.org), e não do Marketplace da Microsoft. O Code Scope ainda não está no Open VSX; até lá, use o `.vsix` da [release](https://github.com/celoramos/Code-Scope/releases).
 
 O que muda em cada linguagem:
 
@@ -288,10 +288,25 @@ Os testes de C# e de C precisam do .NET SDK, do gcc e do gdb no `PATH`. Sem inst
 - Se você usar F5 (continue) entre breakpoints em vez de F10, o painel mostra a diferença acumulada entre as duas paradas e a linha "Executou" é a do breakpoint anterior.
 - O plugin JetBrains cobre só Java (configurações em Settings > Tools > Code Scope). O modo apresentação é só do VS Code. O F8 do IntelliJ também para no `}` que fecha um `if`, que o VS Code pula, então o mesmo programa pode levar alguns passos a mais lá. Depois do F7, o valor que uma chamada devolveu não aparece no IntelliJ.
 
+## Versões
+
+O que entrou em cada versão, em resumo. Os detalhes estão no [CHANGELOG](CHANGELOG.md).
+
+| Versão | O que trouxe |
+|---|---|
+| 0.8.0 | Publicado no [Marketplace do VS Code](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope). Setas só para a variável que o código usa como posição; listas que ganham ou perdem um bloco de itens animadas e explicadas; itens dos arrays nas chamadas de baixo da pilha; conjuntos (`HashSet`, `set`, `Set`); tour de primeiro uso e o comando "Abrir um exemplo"; testes no VSCodium com os debuggers do Open VSX; plugin para IntelliJ IDEA e Android Studio (beta, Java); exemplos de merge sort e quick sort. |
+| 0.7.0 | Ajustes de acessibilidade: temas de alto contraste, contraste de 4,5:1, matriz lida como tabela pelo leitor de tela. Setas e árvore de recursão sem sobreposição. Pede VS Code 1.95 ou mais novo, e `animationSpeed` passa a usar `slow`, `normal`, `fast` e `off`. |
+| 0.6.0 | Árvore de recursão, modo de adivinhar, modo apresentação e salvar imagem. Lista de objetos, grafo, try/catch, herança e polimorfismo, texto letra por letra, pegadinhas de número, `==` ou `equals`, mudar no lugar ou criar outro, e a tabela de custo. Adaptadores próprios para C# e C. Guia de contribuição e lista de tarefas para começar. |
+| 0.5.0 | Teste de mesa, erros explicados (com `pauseOnErrors`), pilha de chamadas e recursão, objetos e referências, listas ligadas e árvores, dicionários, condições quebradas em partes, buscas e ordenações, escopo. Painel e README em português e inglês. |
+| 0.4.0 | Qualquer linguagem com debugger no VS Code: adaptadores para JavaScript, TypeScript e Python, e o modo genérico para as outras. |
+| 0.3.0 | Pilha desenhada como torre e fila como esteira, reconhecidas pelo jeito como o código usa a coleção. |
+| 0.2.0 | Matrizes, listas animadas, linha que executou e próxima, explicação do caminho do programa, linha do tempo, configurações e o primeiro teste com o debugger real do Java. |
+| 0.0.1 | Primeira versão: arrays de Java como caixas, setas `i` e `j`, animação de troca e histórico de passos. |
+
 ## Roadmap
 
 1. PyCharm e WebStorm: Python e JavaScript no plugin JetBrains
-2. Marketplace da JetBrains e do VS Code
+2. Marketplace da JetBrains e Open VSX
 3. Coleções do C++ (`std::vector`, `std::map`) e os conceitos novos em C#
 4. Objetos nas variáveis das chamadas de baixo
 5. JavaScript no navegador, testado com o debugger real
