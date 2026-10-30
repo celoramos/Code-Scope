@@ -126,6 +126,19 @@ Com o painel em foco, as setas esquerda e direita andam um passo, e Home e End v
 
 Se o painel não mostrar o que você esperava, abra **Output**, escolha **Code Scope** e mude o nível para *Debug*: o canal registra qual adaptador foi usado e o que o debugger devolveu. Depois veja os [limites conhecidos](docs/limites-conhecidos.md) ou [abra uma issue](https://github.com/celoramos/Code-Scope/issues/new/choose) com o log.
 
+## Como funciona no VS Code
+
+O Code Scope coloca um ícone na barra de atividades, com o painel dentro dele. Ele começa junto com o debug e abre o painel na primeira parada de cada sessão. Você continua usando o debugger do próprio VS Code: breakpoints, F5, F10 e F11 funcionam como sempre.
+
+A cada parada, quatro coisas acontecem:
+
+1. O debugger da linguagem avisa o VS Code que o programa parou, e o Code Scope escuta esse aviso.
+2. O Code Scope pede a esse debugger a pilha de chamadas, os escopos e as variáveis pelo Debug Adapter Protocol, o protocolo que o VS Code usa com todos os debuggers.
+3. Cada debugger escreve os valores do seu jeito (`int[5]@10`, `(5) [5, 1, 4]`, `[5, 1, 4]`), então o adaptador da linguagem traduz tudo para um snapshot com a linha, o código, os arrays, os ponteiros e os valores simples.
+4. O Code Scope compara o snapshot com o passo anterior, calcula as setas e a explicação e manda o resultado para o painel, que anima a mudança.
+
+O painel é um webview em HTML, CSS e JS puros, e as cores, as fontes e as bordas vêm do seu tema do VS Code. Os passos ficam guardados num histórico, então andar pela linha do tempo só redesenha o que foi guardado e não mexe no programa rodando. O [guia de contribuição](CONTRIBUTING.pt-br.md) mostra onde cada parte fica no código.
+
 ## Configurações
 
 | Configuração | Padrão | O que faz |

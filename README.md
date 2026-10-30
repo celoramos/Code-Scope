@@ -126,6 +126,19 @@ With the panel focused, the left and right arrows move one step, and Home and En
 
 If the panel does not show what you expected, open **Output**, pick **Code Scope** and set the level to *Debug*: the channel logs which adapter was used and what the debugger returned. Then check the [known limits](docs/known-limits.md) or [open an issue](https://github.com/celoramos/Code-Scope/issues/new/choose) with the log.
 
+## How it works in VS Code
+
+Code Scope adds an icon to the Activity Bar, with the panel inside it. It starts when you start debugging and opens the panel on the first stop of each session. You keep using VS Code's own debugger: breakpoints, F5, F10 and F11 work as usual.
+
+On every stop, four things happen:
+
+1. The language's debugger tells VS Code the program stopped, and Code Scope hears it.
+2. Code Scope asks that debugger for the call stack, scopes and variables through the Debug Adapter Protocol, the protocol VS Code uses with every debugger.
+3. Each debugger writes values its own way (`int[5]@10`, `(5) [5, 1, 4]`, `[5, 1, 4]`), so the language's adapter translates them into a snapshot with the line, the code, the arrays, the pointers and the simple values.
+4. Code Scope compares the snapshot with the previous step, works out the arrows and the explanation, and sends the result to the panel, which animates the change.
+
+The panel is a webview in plain HTML, CSS and JS, and its colors, fonts and borders come from your VS Code theme. Steps are saved in a history, so moving through the timeline only redraws what was saved and does not touch the running program. The [contributing guide](CONTRIBUTING.md) shows where each part lives in the code.
+
 ## Settings
 
 | Setting | Default | What it does |
