@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "go",
+      "name": "main.go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/main.go"
+    }
+  ]
+}

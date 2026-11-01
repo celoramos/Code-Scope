@@ -31,7 +31,7 @@ describe('pickAdapter', () => {
   });
 
   it('cai no modo genérico para o resto', () => {
-    assert.equal(pickAdapter('go', '/x/main.go'), genericAdapter);
+    assert.equal(pickAdapter('rust', '/x/main.rs'), genericAdapter);
     assert.equal(pickAdapter('lua', '/x/main.lua'), genericAdapter);
   });
 });
