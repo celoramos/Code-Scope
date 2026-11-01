@@ -102,7 +102,7 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async sendCss(webview: vscode.Webview) {
-    const bytes = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(this.extensionUri, 'media', 'main.css'));
+    const bytes = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(this.dist, 'main.css'));
     const reply: Reply = { type: 'css', text: new TextDecoder().decode(bytes) };
     void webview.postMessage(reply);
   }
@@ -110,7 +110,7 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
   private html(webview: vscode.Webview, media: vscode.Uri, present: boolean): string {
     return panelHtml({
       cspSource: webview.cspSource,
-      cssUri: webview.asWebviewUri(vscode.Uri.joinPath(media, 'main.css')).toString(),
+      cssUri: webview.asWebviewUri(vscode.Uri.joinPath(this.dist, 'main.css')).toString(),
       jsUri: webview.asWebviewUri(vscode.Uri.joinPath(this.dist, 'webview.js')).toString(),
       nonce: makeNonce(),
       present,

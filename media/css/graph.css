@@ -1,0 +1,86 @@
+/* ---------- Grafo ---------- */
+
+.graph {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  margin: 0 auto;
+}
+
+.graph-edge {
+  stroke: var(--cs-muted);
+  stroke-width: 1.2;
+}
+
+.graph-arrow {
+  fill: var(--cs-muted);
+}
+
+.graph-node circle {
+  fill: var(--cs-cell-bg);
+  stroke: var(--cs-line);
+  stroke-width: 1.2;
+  transition: fill var(--cs-move) var(--cs-ease), stroke var(--cs-move) var(--cs-ease);
+}
+
+.graph-node text {
+  fill: var(--cs-fg);
+  font-family: var(--cs-mono);
+  font-size: 11px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.graph-node.is-visited circle {
+  fill: color-mix(in srgb, var(--cs-true) 30%, var(--cs-cell-bg));
+  stroke: var(--cs-true);
+}
+
+.graph-node.is-waiting circle {
+  stroke: var(--cs-change);
+  stroke-dasharray: 3 2;
+}
+
+.graph-node.is-current circle {
+  stroke: var(--cs-active);
+  stroke-width: 3;
+}
+
+.graph-order {
+  fill: var(--cs-muted);
+  font-size: 9px;
+}
+
+.graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--cs-space-3);
+  margin: var(--cs-space-1) 0 0;
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+.graph-key::before {
+  content: '';
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: var(--cs-space-1);
+  border: 1px solid var(--cs-line);
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.graph-key.is-visited::before {
+  border-color: var(--cs-true);
+  background: color-mix(in srgb, var(--cs-true) 30%, var(--cs-cell-bg));
+}
+
+.graph-key.is-current::before {
+  border: 2px solid var(--cs-active);
+}
+
+.graph-key.is-waiting::before {
+  border: 1px dashed var(--cs-change);
+}

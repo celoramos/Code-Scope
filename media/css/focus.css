@@ -1,0 +1,157 @@
+/* ---------- Comparação e intervalo de busca ---------- */
+
+/* As duas posições que a próxima condição compara: contorno na cor da linha ativa. */
+.cell.is-compared .cell-value {
+  outline: 2px solid var(--cs-active);
+  outline-offset: 1px;
+}
+
+/*
+ * Fora do intervalo que a busca ainda olha: continua lá, mas apagada, com a
+ * mesma borda tracejada da variável que saiu de escopo. Apagada pela cor, não
+ * por opacidade, para o número continuar legível (4,5:1).
+ */
+.cell.is-outside .cell-value {
+  border-style: dashed;
+  background: none;
+  color: var(--cs-muted);
+  font-weight: 400;
+}
+
+/* Exercício do arquivo. */
+.exercise {
+  margin: 0 0 var(--cs-space-2);
+  padding: var(--cs-space-2);
+  border: 1px solid var(--cs-line);
+  border-left: 3px solid var(--cs-active);
+  border-radius: var(--cs-radius-sm);
+}
+
+.exercise.is-done {
+  border-color: var(--vscode-testing-iconPassed, var(--cs-active));
+}
+
+.exercise-title,
+.notes-title,
+.compare-title {
+  margin: 0;
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+  font-weight: 600;
+}
+
+.exercise-goal {
+  margin: var(--cs-space-1) 0;
+  overflow-wrap: anywhere;
+}
+
+.exercise-checks,
+.notes-list,
+.details {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exercise-check {
+  color: var(--cs-muted);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: var(--cs-small);
+  overflow-wrap: anywhere;
+}
+
+.exercise-check.is-ok {
+  color: var(--cs-fg);
+  font-weight: 600;
+}
+
+.exercise-status {
+  margin: var(--cs-space-1) 0 0;
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+.exercise-status:empty {
+  display: none;
+}
+
+/* Nota do professor, em destaque sobre a explicação. */
+.notes {
+  margin: 0 0 var(--cs-space-2);
+  padding: var(--cs-space-2);
+  border-left: 3px solid var(--cs-line);
+  background: var(--cs-cell-bg);
+  border-radius: var(--cs-radius-sm);
+}
+
+.notes-item {
+  margin-top: var(--cs-space-1);
+  overflow-wrap: anywhere;
+}
+
+/* Nível detalhado: o estado da memória, em texto de código. */
+.details {
+  margin-bottom: var(--cs-space-2);
+  color: var(--cs-muted);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: var(--cs-small);
+  overflow-wrap: anywhere;
+}
+
+.compare {
+  margin: 0 0 var(--cs-space-2);
+  font-size: var(--cs-small);
+}
+
+.compare-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cs-space-2);
+}
+
+.stats {
+  margin: 0 0 var(--cs-space-2);
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Quanto custa: as curvas lado a lado e a contagem do programa embaixo. */
+.cost {
+  margin: 0 0 var(--cs-space-2);
+  font-size: var(--cs-small);
+}
+
+.cost summary {
+  cursor: pointer;
+  color: var(--cs-muted);
+}
+
+.cost-table {
+  margin: var(--cs-space-1) 0;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.cost-table th,
+.cost-table td {
+  padding: 2px var(--cs-space-2);
+  text-align: right;
+  border-bottom: 1px solid var(--vscode-panel-border, transparent);
+}
+
+.cost-table th[scope='row'],
+.cost-table thead th:first-child {
+  text-align: left;
+  font-weight: normal;
+}
+
+.cost-table tr.is-program {
+  font-weight: 600;
+}
+
+.cost-note {
+  margin: var(--cs-space-1) 0 0;
+  color: var(--cs-muted);
+}

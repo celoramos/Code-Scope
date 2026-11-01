@@ -1,0 +1,237 @@
+/* ---------- Arrays ---------- */
+
+.arrays {
+  display: grid;
+  gap: var(--cs-space-3);
+}
+
+/* Item de grid tem min-width auto: sem isto o array longo alarga o painel. */
+.array {
+  min-width: 0;
+  padding: var(--cs-space-2) var(--cs-space-3) var(--cs-space-1);
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius);
+  background: var(--cs-surface);
+}
+
+.array-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cs-space-2);
+  margin-bottom: var(--cs-space-1);
+}
+
+.array-name {
+  margin: 0;
+  font-family: var(--cs-mono);
+  font-size: 1em;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.array-meta {
+  flex: 0 0 auto;
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+/* Arrays longos rolam na horizontal; o painel nunca rola de lado. */
+.array-track {
+  position: relative;
+  overflow-x: auto;
+  padding: 0 1px var(--cs-space-2);
+}
+
+.cells {
+  display: flex;
+  gap: var(--cs-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.cell-index {
+  color: var(--cs-muted);
+  font-family: var(--cs-mono);
+  font-size: 0.8em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.7;
+}
+
+.cell-value {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--cs-cell-size);
+  max-width: 8em;
+  height: var(--cs-cell-size);
+  padding: 0 var(--cs-space-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius-sm);
+  background: var(--cs-cell-bg);
+  font-family: var(--cs-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Mudou neste passo: fica marcado até o próximo, e pisca ao chegar. */
+.cell.is-changed .cell-value {
+  background: var(--cs-change-bg);
+  border-color: var(--cs-change);
+  animation: cs-flash var(--cs-flash) var(--cs-ease);
+}
+
+@keyframes cs-flash {
+  0%,
+  40% {
+    background: color-mix(in srgb, var(--cs-change) 50%, var(--cs-cell-bg));
+  }
+}
+
+/* Troca: cada caixa parte da posição da outra e faz meio arco, uma por cima, outra por baixo. */
+.cell.swap-up .cell-value,
+.cell.swap-down .cell-value {
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--vscode-widget-shadow, black) 60%, transparent);
+}
+
+.cell.swap-up .cell-value {
+  animation: cs-swap-up var(--cs-move) var(--cs-ease), cs-flash var(--cs-flash) var(--cs-ease);
+}
+
+.cell.swap-down .cell-value {
+  animation: cs-swap-down var(--cs-move) var(--cs-ease), cs-flash var(--cs-flash) var(--cs-ease);
+}
+
+@keyframes cs-swap-up {
+  from {
+    transform: translateX(var(--dx));
+  }
+  50% {
+    transform: translate(calc(var(--dx) / 2), -60%);
+  }
+}
+
+@keyframes cs-swap-down {
+  from {
+    transform: translateX(var(--dx));
+  }
+  50% {
+    transform: translate(calc(var(--dx) / 2), 60%);
+  }
+}
+
+/* Item que só mudou de lugar porque a lista abriu ou fechou espaço. */
+.cell.slide .cell-value {
+  animation: cs-slide var(--cs-move) var(--cs-ease);
+}
+
+@keyframes cs-slide {
+  from {
+    transform: translateX(var(--dx));
+  }
+}
+
+.cell.is-inserted .cell-value {
+  animation: cs-pop var(--cs-move) var(--cs-ease), cs-flash var(--cs-flash) var(--cs-ease);
+}
+
+@keyframes cs-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* Conjunto: sem posições, então sem o número em cima de cada caixa. */
+.array.is-set .cell-index {
+  visibility: hidden;
+}
+
+/* Lista cresce: uma vaga tracejada no fim diz que cabe mais um. */
+.array.is-list .cells::after {
+  content: '';
+  flex: 0 0 auto;
+  align-self: flex-end;
+  width: calc(var(--cs-cell-size) * 0.6);
+  height: var(--cs-cell-size);
+  border: 1px dashed var(--cs-line);
+  border-radius: var(--cs-radius-sm);
+}
+
+/*
+ * Saída de um item: a cópia vai embora na direção da estrutura enquanto
+ * encolhe, e os vizinhos fecham o espaço no mesmo movimento. A margem
+ * negativa final desconta o gap, para não sobrar um salto de 4px no fim.
+ */
+.cell.ghost {
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cell.ghost .cell-value {
+  background: var(--cs-change-bg);
+  border-color: var(--cs-change);
+}
+
+.cell.ghost-array {
+  animation: cs-ghost-down var(--cs-move) var(--cs-ease) forwards;
+}
+
+.cell.ghost-queue {
+  animation: cs-ghost-left var(--cs-move) var(--cs-ease) forwards;
+}
+
+.cell.ghost-stack {
+  animation: cs-ghost-up var(--cs-move) var(--cs-ease) forwards;
+}
+
+@keyframes cs-ghost-down {
+  from {
+    max-width: 8em;
+  }
+  to {
+    max-width: 0;
+    margin-inline-end: calc(-1 * var(--cs-space-1));
+    opacity: 0;
+    transform: translateY(70%);
+  }
+}
+
+@keyframes cs-ghost-left {
+  from {
+    max-width: 8em;
+  }
+  to {
+    max-width: 0;
+    margin-inline-end: calc(-1 * var(--cs-space-1));
+    opacity: 0;
+    transform: translateX(-90%);
+  }
+}
+
+@keyframes cs-ghost-up {
+  from {
+    max-height: calc(var(--cs-cell-size) + 2px);
+  }
+  to {
+    max-height: 0;
+    margin-bottom: calc(-1 * var(--cs-space-1));
+    opacity: 0;
+    transform: translateY(-120%);
+  }
+}

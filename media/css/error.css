@@ -1,0 +1,66 @@
+/* ---------- Erro ---------- */
+
+.error-card {
+  margin: 0 0 var(--cs-space-3);
+  padding: var(--cs-space-2) var(--cs-space-3);
+  border-left: 3px solid var(--cs-error);
+  border-radius: 0 var(--cs-radius-sm) var(--cs-radius-sm) 0;
+  background: color-mix(in srgb, var(--cs-error) 10%, var(--cs-bg));
+}
+
+.error-card.is-handled {
+  border-left-color: var(--cs-change);
+  background: color-mix(in srgb, var(--cs-change) 10%, var(--cs-bg));
+}
+
+.error-title {
+  margin: 0 0 var(--cs-space-1);
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.error-text {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-wrap: pretty;
+}
+
+.error-item + .error-item {
+  margin-top: var(--cs-space-1);
+}
+
+/* A mensagem original, como o terminal mostraria: o aluno aprende a ler as duas. */
+.error-raw {
+  margin: var(--cs-space-2) 0 0;
+  color: var(--cs-muted);
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+  overflow-wrap: anywhere;
+}
+
+/* A posição que não existe: tracejada, vazia, fora do array. */
+.cell.is-missing .cell-value {
+  border: 1px dashed var(--cs-error);
+  background: color-mix(in srgb, var(--cs-error) 10%, var(--cs-bg));
+  color: var(--cs-error);
+  animation: cs-missing-in var(--cs-flash) var(--cs-ease);
+}
+
+.cell.is-missing .cell-index {
+  color: var(--cs-error);
+  font-weight: 600;
+}
+
+.cell-missing-label {
+  color: var(--cs-error);
+  font-size: var(--cs-small);
+  white-space: nowrap;
+}
+
+@keyframes cs-missing-in {
+  from {
+    opacity: 0;
+    transform: translateX(-30%);
+  }
+}

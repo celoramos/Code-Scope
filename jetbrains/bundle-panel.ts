@@ -21,7 +21,7 @@ const js = esbuild.buildSync({
   write: false,
   absWorkingDir: root,
 }).outputFiles[0].text;
-const css = fs.readFileSync(path.join(root, 'media', 'main.css'), 'utf8');
+const css = esbuild.buildSync({ entryPoints: [path.join(root, 'media', 'css', 'index.css')], bundle: true, write: false, absWorkingDir: root }).outputFiles[0].text;
 
 fs.mkdirSync(out, { recursive: true });
 for (const language of ['en', 'pt'] as const) {

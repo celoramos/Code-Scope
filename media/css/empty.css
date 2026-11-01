@@ -1,0 +1,77 @@
+/* ---------- Estado vazio ---------- */
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--cs-space-2);
+  padding: var(--cs-space-5) var(--cs-space-2);
+  text-align: center;
+}
+
+.empty-art {
+  width: 120px;
+  height: 64px;
+  margin-bottom: var(--cs-space-2);
+  fill: var(--cs-cell-bg);
+  stroke: var(--cs-line);
+  stroke-width: 1.5;
+}
+
+.empty-art-accent {
+  stroke: var(--cs-ptr-0);
+}
+
+.empty-art-pointer {
+  fill: var(--cs-ptr-0);
+  stroke: none;
+}
+
+.empty-title {
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+.empty-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  color: var(--cs-muted);
+  text-align: left;
+}
+
+.empty-steps li {
+  counter-increment: step;
+  display: flex;
+  align-items: baseline;
+  gap: var(--cs-space-2);
+  padding: 2px 0;
+}
+
+/* Estes três passos são uma sequência de verdade, então levam número. */
+.empty-steps li::before {
+  content: counter(step);
+  flex: 0 0 auto;
+  width: 1.5em;
+  height: 1.5em;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--cs-cell-bg);
+  color: var(--cs-fg);
+  font-size: var(--cs-small);
+  font-variant-numeric: tabular-nums;
+}
+
+kbd {
+  padding: 0 var(--cs-space-1);
+  border: 1px solid var(--vscode-keybindingLabel-border, var(--cs-line));
+  border-bottom-color: var(--vscode-keybindingLabel-bottomBorder, var(--cs-line));
+  border-radius: 3px;
+  background: var(--vscode-keybindingLabel-background, var(--cs-cell-bg));
+  color: var(--vscode-keybindingLabel-foreground, var(--cs-fg));
+  font-family: var(--vscode-font-family);
+  font-size: var(--cs-small);
+}

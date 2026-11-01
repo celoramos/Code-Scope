@@ -1,0 +1,37 @@
+/* ---------- Movimento reduzido ---------- */
+
+/*
+ * O sistema pedindo menos movimento vence a configuração da extensão: o
+ * !important ganha do --cs-speed que o script põe no estilo inline.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --cs-speed: 0 !important;
+  }
+
+  .cell .cell-value,
+  .cell.swap-up .cell-value,
+  .cell.swap-down .cell-value,
+  .cell.slide .cell-value,
+  .cell.is-inserted .cell-value,
+  .cell.drop-in .cell-value,
+  .cell.enter-back .cell-value,
+  .cell.ghost,
+  .cell.is-missing .cell-value,
+  .call-frame.is-entering,
+  .call-frame.is-leaving,
+  .node-box.is-new,
+  .node-link.is-changed::after,
+  .heap-card.is-new,
+  .var.is-born,
+  .map-table tr > *,
+  .array.is-new {
+    animation: none;
+  }
+
+  .pointer,
+  .marker,
+  .var {
+    transition: none;
+  }
+}

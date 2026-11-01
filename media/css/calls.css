@@ -1,0 +1,126 @@
+/* ---------- Pilha de chamadas ---------- */
+
+/* A árvore de recursão vem logo depois da pilha e antes das variáveis: precisa do espaço embaixo. */
+.calls + .heap {
+  margin-bottom: var(--cs-space-3);
+}
+
+.calls {
+  margin: 0 0 var(--cs-space-3);
+  padding: var(--cs-space-2) var(--cs-space-3) var(--cs-space-3);
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius);
+  background: var(--cs-surface);
+}
+
+.calls-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cs-space-2);
+  margin-bottom: var(--cs-space-2);
+}
+
+.calls-title {
+  margin: 0;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.calls-count {
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+/* Cartões empilhados: a chamada atual em cima, como um prato posto por último. */
+.call-stack {
+  display: grid;
+  gap: var(--cs-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.call-frame {
+  padding: var(--cs-space-1) var(--cs-space-2);
+  border: 1px solid var(--cs-line);
+  border-left-width: 3px;
+  border-radius: var(--cs-radius-sm);
+  background: var(--cs-cell-bg);
+}
+
+.call-frame.is-current {
+  border-color: var(--cs-active);
+  background: color-mix(in srgb, var(--cs-active) 12%, var(--cs-cell-bg));
+}
+
+.call-frame.is-program {
+  border-style: dashed;
+}
+
+.call-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cs-space-2);
+}
+
+.call-name {
+  font-family: var(--cs-mono);
+  font-weight: 600;
+}
+
+.call-frame.is-program .call-name {
+  font-family: inherit;
+  font-weight: 400;
+  color: var(--cs-muted);
+}
+
+.call-line,
+.call-note {
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+  white-space: nowrap;
+}
+
+.call-note {
+  color: var(--cs-fg);
+  font-family: var(--cs-mono);
+}
+
+.call-vars {
+  margin: 2px 0 0;
+  color: var(--cs-muted);
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+  white-space: pre-wrap;
+}
+
+.call-frame.is-entering {
+  animation: cs-call-in var(--cs-move) var(--cs-ease);
+}
+
+/* Quem terminou sobe e some, levando o valor devolvido. */
+.call-frame.is-leaving {
+  border-style: dashed;
+  animation: cs-call-out calc(var(--cs-flash) * 1.6) var(--cs-ease) forwards;
+}
+
+@keyframes cs-call-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes cs-call-out {
+  0%,
+  45% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}

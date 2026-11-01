@@ -32,6 +32,13 @@ async function main() {
       outfile: 'dist/webview.js',
       logLevel: 'info',
     }),
+    esbuild.context({
+      entryPoints: ['media/css/index.css'],
+      bundle: true,
+      minify: production,
+      outfile: 'dist/main.css',
+      logLevel: 'info',
+    }),
   ]);
   if (watch) {
     await Promise.all(contexts.map((ctx) => ctx.watch()));

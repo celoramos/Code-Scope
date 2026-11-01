@@ -1,0 +1,46 @@
+/* ---------- Status e explicação ---------- */
+
+.status {
+  margin: 0 0 var(--cs-space-3);
+  color: var(--cs-muted);
+  text-wrap: pretty;
+}
+
+.status:empty {
+  display: none;
+}
+
+.status.is-error {
+  color: var(--vscode-errorForeground);
+}
+
+.explanation {
+  margin: 0 0 var(--cs-space-3);
+  padding: var(--cs-space-2) var(--cs-space-3);
+  list-style: none;
+  border-left: 3px solid var(--cs-change);
+  border-radius: 0 var(--cs-radius-sm) var(--cs-radius-sm) 0;
+  background: color-mix(in srgb, var(--cs-change) 8%, var(--cs-bg));
+  text-wrap: pretty;
+}
+
+.explanation:empty {
+  display: none;
+}
+
+.explanation-item + .explanation-item {
+  margin-top: var(--cs-space-1);
+}
+
+/*
+ * O VS Code põe nos webviews um estilo próprio para <code>, com as cores de texto pré-formatado
+ * do tema (no alto contraste claro, texto branco sobre azul-escuro). Aqui fundo e cor são do painel.
+ */
+.code {
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--cs-cell-bg);
+  color: var(--cs-fg);
+  font-family: var(--cs-mono);
+  font-size: 0.95em;
+}

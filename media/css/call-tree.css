@@ -1,0 +1,48 @@
+/* ---------- Árvore de recursão ---------- */
+
+.call-tree {
+  --row: 3.4em;
+  grid-template-columns: repeat(var(--cols), minmax(3.6em, 1fr));
+  grid-template-rows: repeat(var(--rows), var(--row));
+}
+
+/*
+ * O pai fica no meio dos filhos, então --x pode ser fracionário (1.5), e grid-column só aceita
+ * inteiro: o nó cairia na primeira coluna livre. A posição usa a mesma conta das linhas do SVG,
+ * medida na árvore inteira (com grid-column, a medida seria só a coluna do nó).
+ */
+.call-node {
+  position: absolute;
+  grid-area: auto;
+  top: calc(var(--y) * var(--row));
+  left: calc((var(--x) + 0.5) / var(--cols) * 100%);
+  gap: 0;
+  transform: translateX(-50%);
+}
+
+.call-node-label {
+  position: relative;
+  padding: 1px var(--cs-space-1);
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius-sm);
+  background: var(--cs-cell-bg);
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+  white-space: nowrap;
+}
+
+.call-node.is-active .call-node-label {
+  border-color: var(--cs-active);
+  background: color-mix(in srgb, var(--cs-active) 14%, var(--cs-cell-bg));
+}
+
+.call-node.is-done .call-node-label {
+  color: var(--cs-muted);
+}
+
+.call-node-returned {
+  color: var(--cs-fg);
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+  font-weight: 600;
+}

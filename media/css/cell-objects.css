@@ -1,0 +1,31 @@
+/* ---------- Objetos dentro de arrays ---------- */
+
+/* A posição guarda um objeto: o valor principal na caixa e os outros campos embaixo. */
+.cell-object {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 2px;
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+  line-height: 1.3;
+}
+
+.cell-type {
+  font-family: var(--vscode-font-family);
+  font-weight: 600;
+}
+
+.cell-detail {
+  color: var(--cs-muted);
+  white-space: nowrap;
+}
+
+.cell.is-object {
+  padding: 0 2px;
+}
+
+.cell.is-field-changed .cell-value {
+  border-color: var(--cs-change);
+  background: var(--cs-change-bg);
+}

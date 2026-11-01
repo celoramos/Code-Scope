@@ -1,0 +1,74 @@
+/* ---------- Variáveis inteiras ---------- */
+
+.vars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cs-space-1);
+  margin: 0 0 var(--cs-space-3);
+  padding: 0;
+  list-style: none;
+  font-family: var(--cs-mono);
+}
+
+.vars:empty {
+  display: none;
+}
+
+.var {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cs-space-1);
+  padding: 1px var(--cs-space-2);
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius-sm);
+  background: var(--cs-surface);
+  transition: background-color var(--cs-move) var(--cs-ease), border-color var(--cs-move) var(--cs-ease);
+}
+
+/* A bolinha liga a variável à seta da mesma cor. */
+.var.is-pointer::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ptr);
+}
+
+.var-name {
+  color: var(--cs-muted);
+}
+
+.var-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sobre o fundo amarelo, o cinza do nome não chega a 4,5:1: o nome fica na cor do texto. */
+.var.is-changed {
+  --cs-muted: var(--cs-fg);
+  background: var(--cs-change-bg);
+  border-color: var(--cs-change);
+}
+
+/* Variável que acabou de nascer entra crescendo; a que saiu de escopo fica um passo, riscada. */
+.var.is-born {
+  animation: cs-node-in var(--cs-move) var(--cs-ease);
+}
+
+/* Apagada pela cor, não por opacidade: com opacidade o texto cai abaixo de 4,5:1. */
+.var.is-gone {
+  border-style: dashed;
+  background: none;
+  color: var(--cs-muted);
+}
+
+.var.is-gone .var-name,
+.var.is-gone .var-value {
+  text-decoration: line-through;
+}
+
+.var-note {
+  color: var(--cs-muted);
+  font-family: var(--vscode-font-family);
+  font-size: var(--cs-small);
+}

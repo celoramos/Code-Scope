@@ -1,0 +1,24 @@
+/* O CSS do painel, por componente. A ordem importa: o esbuild junta tudo em dist/main.css. */
+@import './base.css';
+@import './empty.css';
+@import './toolbar.css';
+@import './predict.css';
+@import './condition.css';
+@import './explanation.css';
+@import './vars.css';
+@import './arrays.css';
+@import './stack.css';
+@import './queue.css';
+@import './markers.css';
+@import './matrix.css';
+@import './pointers.css';
+@import './error.css';
+@import './objects.css';
+@import './cell-objects.css';
+@import './focus.css';
+@import './graph.css';
+@import './call-tree.css';
+@import './maps.css';
+@import './calls.css';
+@import './trace.css';
+@import './motion.css';

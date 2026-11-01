@@ -1,0 +1,107 @@
+/*
+ * Tokens do painel. Tudo deriva do tema do VS Code: o painel vive dentro do
+ * editor e herda a temperatura dele. Superfícies e bordas são misturas do
+ * texto com o fundo, então funcionam igual em tema claro, escuro e alto
+ * contraste. Nenhuma regra abaixo do :root digita uma cor.
+ */
+:root {
+  --cs-fg: var(--vscode-foreground);
+  --cs-muted: var(--vscode-descriptionForeground);
+  --cs-bg: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  --cs-focus: var(--vscode-focusBorder);
+
+  /* Três degraus de profundidade: cartão, caixa, borda. */
+  --cs-surface: color-mix(in srgb, var(--cs-fg) 4%, var(--cs-bg));
+  --cs-cell-bg: color-mix(in srgb, var(--cs-fg) 8%, var(--cs-bg));
+  --cs-line: color-mix(in srgb, var(--cs-fg) 14%, var(--cs-bg));
+
+  /*
+   * Mudança em amarelo, ponteiros nas cores de gráfico do tema, que cada
+   * tema já ajusta para o próprio fundo. Texto nunca usa essas cores
+   * direto: elas pintam bordas, pontas de seta e fundos misturados, e o
+   * texto por cima continua na cor de primeiro plano.
+   */
+  --cs-change: var(--vscode-charts-yellow);
+  --cs-error: var(--vscode-errorForeground);
+  /* A chamada que está rodando agora. */
+  --cs-active: var(--vscode-focusBorder);
+  /* Resultado de uma condição: verdadeiro e falso. */
+  --cs-true: var(--vscode-charts-green);
+  --cs-false: var(--vscode-charts-red);
+  --cs-change-bg: color-mix(in srgb, var(--cs-change) 22%, var(--cs-cell-bg));
+  --cs-ptr-0: var(--vscode-charts-blue);
+  --cs-ptr-1: var(--vscode-charts-purple);
+  --cs-ptr-2: var(--vscode-charts-green);
+  --cs-ptr-3: var(--vscode-charts-orange);
+
+  /* Base 4px: a barra lateral é estreita, densidade alta. */
+  --cs-space-1: 4px;
+  --cs-space-2: 8px;
+  --cs-space-3: 12px;
+  --cs-space-4: 16px;
+  --cs-space-5: 24px;
+
+  /* Caixas e botões com o raio dos controles do VS Code; cartões um degrau acima. */
+  --cs-radius-sm: 4px;
+  --cs-radius: 6px;
+
+  /* Caixa quadrada que cabe um número de 3 dígitos na fonte do editor. */
+  --cs-cell-size: 2.6em;
+  --cs-mono: var(--vscode-editor-font-family);
+  --cs-small: 0.88em;
+
+  /* Altura de uma linha de seta: ponta + etiqueta. */
+  --cs-pointer-row: 2.3em;
+
+  /*
+   * Rápido o bastante para não atrasar o F10, lento o bastante para ver a troca.
+   * --cs-speed vem da configuração codeScope.animationSpeed (0 desliga).
+   */
+  --cs-speed: 1;
+  /* Modo apresentação: tudo mais devagar, para quem assiste acompanhar. */
+  --cs-slow: 1;
+  --cs-move: calc(420ms * var(--cs-speed) * var(--cs-slow));
+  --cs-flash: calc(900ms * var(--cs-speed) * var(--cs-slow));
+  --cs-ease: cubic-bezier(0.3, 0, 0.2, 1);
+}
+
+/*
+ * Alto contraste: o tema separa as coisas por borda, não por fundo. A mistura
+ * de 14% some sobre o preto (ou o branco), então a borda vira a do tema.
+ */
+body.vscode-high-contrast,
+body.vscode-high-contrast-light {
+  --cs-line: var(--vscode-contrastBorder, var(--cs-fg));
+}
+
+body {
+  margin: 0;
+  padding: var(--cs-space-3);
+  color: var(--cs-fg);
+  background: var(--cs-bg);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  line-height: 1.45;
+}
+
+/* Modo apresentação: o painel na área do editor, com letra grande para projetar. */
+:root.is-present {
+  --cs-slow: 1.6;
+  font-size: 125%;
+}
+
+:root.is-present body {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: var(--cs-space-5);
+  font-size: calc(var(--vscode-font-size) * 1.35);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+:focus-visible {
+  outline: 1px solid var(--cs-focus);
+  outline-offset: 2px;
+}

@@ -1,0 +1,193 @@
+/* ---------- Barra de passos ---------- */
+
+.toolbar {
+  margin-bottom: var(--cs-space-3);
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--cs-space-2);
+}
+
+.step {
+  flex: 1;
+  display: grid;
+  gap: var(--cs-space-1);
+}
+
+.counter {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Linha do tempo: um range nativo (teclado e leitor de tela de graça) com o
+ * trilho fino da barra de progresso. A parte já percorrida é um gradiente
+ * cortado em --progress.
+ */
+.timeline {
+  --fill: var(--vscode-progressBar-background, var(--cs-ptr-0));
+  width: 100%;
+  height: 14px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+}
+
+.timeline:disabled {
+  cursor: default;
+}
+
+.timeline::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--fill) calc(var(--progress, 1) * 100%),
+    var(--cs-line) calc(var(--progress, 1) * 100%)
+  );
+}
+
+.timeline::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+  margin-top: -4.5px; /* centraliza no trilho de 3px: (3 - 12) / 2 */
+  border: 2px solid var(--cs-bg);
+  border-radius: 50%;
+  background: var(--fill);
+  appearance: none;
+}
+
+.timeline:disabled::-webkit-slider-thumb {
+  background: var(--cs-line);
+}
+
+.link-button {
+  margin-top: var(--cs-space-2);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--vscode-textLink-foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground));
+  text-decoration: underline;
+}
+
+/* Executou / Próxima: duas linhas de código como no editor, número à esquerda. */
+.code-lines {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 2px var(--cs-space-2);
+  margin: var(--cs-space-2) 0 0;
+}
+
+.code-label {
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+.code-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cs-space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 2px var(--cs-space-2);
+  border-radius: var(--cs-radius-sm);
+  font-family: var(--cs-mono);
+}
+
+.code-line.is-executed {
+  background: var(--cs-surface);
+}
+
+/* A próxima linha usa a mesma cor que o editor dá à linha parada no debug. */
+.code-line.is-next {
+  --cs-muted: var(--cs-fg);
+  background: var(--vscode-editor-stackFrameHighlightBackground, var(--cs-change-bg));
+}
+
+/* No alto contraste o fundo da linha parada pode não existir: a borda ativa do tema marca a próxima. */
+body.vscode-high-contrast .code-line.is-next,
+body.vscode-high-contrast-light .code-line.is-next {
+  outline: 1px dashed var(--vscode-contrastActiveBorder, var(--cs-focus));
+  outline-offset: -1px;
+}
+
+.code-num {
+  flex: 0 0 auto;
+  min-width: 2ch;
+  color: var(--cs-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.code-text {
+  padding: 0;
+  background: none;
+  color: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Alvo de 28px: o tamanho dos botões de ícone do VS Code. */
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--cs-line);
+  border-radius: var(--cs-radius-sm);
+  background: var(--cs-surface);
+  color: var(--cs-fg);
+  cursor: pointer;
+}
+
+.icon-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--vscode-toolbar-hoverBackground, var(--cs-cell-bg));
+}
+
+.icon-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.location {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cs-space-1) var(--cs-space-2);
+  margin: var(--cs-space-2) 0 0;
+}
+
+.location-file {
+  font-family: var(--cs-mono);
+  overflow-wrap: anywhere;
+}
+
+.badge {
+  padding: 0 var(--cs-space-2);
+  border-radius: var(--cs-radius-sm);
+  background: var(--cs-cell-bg);
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}

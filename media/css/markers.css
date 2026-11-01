@@ -1,0 +1,74 @@
+/* ---------- Etiquetas das pontas ---------- */
+
+.markers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.marker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  transition: transform var(--cs-move) var(--cs-ease);
+}
+
+.marker.no-move {
+  transition: none;
+}
+
+/* Pilha: etiqueta à direita do topo, com a ponta apontando para ele. */
+.marker.is-stack {
+  --ptr: var(--cs-ptr-0);
+  transform: translate(var(--x), calc(var(--y) - 50%));
+}
+
+.marker.is-stack .marker-head {
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 6px solid var(--ptr);
+}
+
+/* Fila: etiquetas embaixo da frente e do fim, com a ponta para cima. */
+.marker.is-queue {
+  flex-direction: column;
+  transform: translate(calc(var(--x) - 50%), var(--y));
+}
+
+.marker.is-queue[data-label='frente'] {
+  --ptr: var(--cs-ptr-2);
+}
+
+.marker.is-queue[data-label='fim'] {
+  --ptr: var(--cs-ptr-1);
+}
+
+.marker.is-queue .marker-head {
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid var(--ptr);
+}
+
+.marker-head {
+  width: 0;
+  height: 0;
+}
+
+.marker-text {
+  padding: 0 var(--cs-space-1);
+  border: 1px solid var(--ptr);
+  border-radius: var(--cs-radius-sm);
+  background: color-mix(in srgb, var(--ptr) 18%, var(--cs-bg));
+  font-size: var(--cs-small);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.array-rule {
+  margin: var(--cs-space-1) 0 var(--cs-space-1);
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+  text-align: center;
+}

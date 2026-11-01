@@ -59,7 +59,7 @@ Se mudou algo visual, teste no VS Code com um tema claro e um escuro, e com anim
 | `src/host` | `standalone.ts`: o painel, o modelo e o coletor empacotados para o plugin JetBrains, falando com a IDE por `bridge.ts`. |
 | `src/webview` | O provider do painel e o protocolo de mensagens entre extensão e painel. |
 | `jetbrains` | O plugin do IntelliJ em Kotlin. `JavaDap.kt` lê a JVM pela JDI e responde `threads`, `stackTrace`, `scopes`, `variables`, `evaluate` e `exceptionInfo` no formato do Java Debugger do VS Code, então `src/debug/adapters/java.ts` funciona sem mudar. `bundle-panel.ts` gera o HTML do painel que o plugin carrega. Gere com `./gradlew buildPlugin`; teste com `./gradlew runIde`. |
-| `media` | HTML, CSS e JS do painel, sem framework. |
+| `media` | O painel, sem framework: scripts em `media/src`, CSS em `media/css`, um arquivo por componente. `npm run compile` junta o CSS em `dist/main.css`. |
 | `samples` | Exemplos por linguagem, cada pasta com o seu `launch.json`, e `exemplos.code-workspace` que abre todas juntas. |
 | `test` | Testes unitários (`*.test.ts`) e de integração (`test/integration`). |
 

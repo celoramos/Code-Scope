@@ -1,0 +1,77 @@
+/* ---------- Pilha ---------- */
+
+/*
+ * A torre não rola: precisa de espaço em cima para o item cair e para o que
+ * sai subir. Ela fica presa pela base (flex-end) numa altura reservada para
+ * --reserve itens, então empilhar não empurra os pratos de baixo.
+ */
+.array.is-stack .array-track {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: calc(var(--reserve, 4) * (var(--cs-cell-size) + var(--cs-space-1)) + var(--cs-space-2) * 2 + var(--cs-space-4));
+  overflow: visible;
+  padding: var(--cs-space-4) 4.5em 0 var(--cs-space-2);
+}
+
+/* Um tubo aberto em cima: o único lugar por onde se entra e se sai. */
+.array.is-stack .cells {
+  flex-direction: column-reverse;
+  align-items: stretch;
+  min-width: 7em;
+  min-height: calc(var(--cs-cell-size) + var(--cs-space-2) * 2);
+  padding: var(--cs-space-2);
+  border: 2px solid var(--cs-line);
+  border-top: none;
+  border-radius: 0 0 var(--cs-radius) var(--cs-radius);
+}
+
+/* Na pilha os pratos são largos; na fila cada item ocupa o que o valor pede, para caber na barra lateral. */
+.array.is-stack .cell-value {
+  min-width: 5em;
+}
+
+/* Os pratos têm a largura do tubo. */
+.array.is-stack .cell {
+  align-items: stretch;
+}
+
+.array.is-stack .cell-value {
+  max-width: none;
+}
+
+.array.is-stack .cell-index,
+.array.is-queue .cell-index {
+  display: none;
+}
+
+.array.is-stack .cells:empty::before,
+.array.is-queue .cells:empty::before {
+  content: var(--cs-empty-label, 'vazia');
+  align-self: center;
+  margin: auto;
+  color: var(--cs-muted);
+  font-size: var(--cs-small);
+}
+
+/* Push: o item cai do alto, passa um pouco do lugar e assenta. */
+.cell.drop-in .cell-value {
+  animation: cs-drop calc(var(--cs-move) * 1.4) var(--cs-ease), cs-flash var(--cs-flash) var(--cs-ease);
+}
+
+@keyframes cs-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-180%);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(8%);
+  }
+  75% {
+    transform: translateY(-3%);
+  }
+  100% {
+    transform: none;
+  }
+}

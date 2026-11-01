@@ -1,0 +1,41 @@
+/* ---------- Setas ---------- */
+
+.pointers {
+  position: relative;
+  height: calc(var(--rows, 0) * var(--cs-pointer-row));
+}
+
+.pointer {
+  position: absolute;
+  top: calc(var(--row) * var(--cs-pointer-row) + 3px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(calc(var(--x) - 50%));
+  transition: transform var(--cs-move) var(--cs-ease);
+}
+
+.pointer.no-move {
+  transition: none;
+}
+
+.pointer-head {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid var(--ptr);
+}
+
+.pointer-name {
+  padding: 0 var(--cs-space-1);
+  border: 1px solid var(--ptr);
+  border-radius: var(--cs-radius-sm);
+  background: color-mix(in srgb, var(--ptr) 18%, var(--cs-bg));
+  font-family: var(--cs-mono);
+  font-size: var(--cs-small);
+  line-height: 1.4;
+  white-space: nowrap;
+  transform: translateX(var(--nudge, 0px));
+}
