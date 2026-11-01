@@ -1,4 +1,5 @@
 // Números públicos do projeto, sem telemetria: o Code Scope não envia nada. Roda com: npm run stats
+/* global console, fetch, process */
 const repo = 'celoramos/Code-Scope';
 
 async function marketplace() {
