@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { checkExercise } from '../../src/model/annotations';
 import { heapView } from '../../src/model/heap';
 import type { Snapshot } from '../../src/model/snapshot';
-import { debugFile, samplesRoot } from './helpers';
+import { api, debugFile, samplesRoot } from './helpers';
 
 /*
  * Exercícios, novas estruturas, Go e C++ nos debuggers reais. Go precisa da
@@ -79,6 +79,18 @@ describe('Novidades Java real', () => {
     const heap = snaps.flatMap((s) => (arrayOf(s, 'senhas')?.kind === 'heap' ? [arrayOf(s, 'senhas')] : []));
     assert.equal(heap.find((a) => a?.length === 4)?.values[0], '10');
     assert.ok(snaps.some((s) => arrayOf(s, 'vagoes')?.kind === 'deque'), `vagoes: ${JSON.stringify(snaps.at(-1)?.arrays)}`);
+  });
+
+  it('exemplo sem breakpoint nenhum para sozinho no main e desenha', async () => {
+    const cs = await api();
+    await vscode.window.showTextDocument(vscode.Uri.file(path.join(samplesRoot, 'java', 'BubbleSort.java')));
+    await before();
+    vscode.debug.removeBreakpoints(vscode.debug.breakpoints);
+    assert.ok(await vscode.debug.startDebugging(vscode.workspace.workspaceFolders?.[0], 'BubbleSort'));
+    const start = Date.now();
+    while (cs.snapshots().length === 0 && Date.now() - start < 120_000) await new Promise((r) => setTimeout(r, 200));
+    assert.ok(cs.snapshots().length >= 1, 'o exemplo terminou sem parar');
+    await vscode.debug.stopDebugging();
   });
 
   it('Cubo: cada camada vira uma matriz', async () => {

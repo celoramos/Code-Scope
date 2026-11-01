@@ -5,193 +5,225 @@
       "type": "java",
       "name": "BubbleSort",
       "request": "launch",
-      "mainClass": "BubbleSort"
+      "mainClass": "BubbleSort",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "BuscaLinear",
       "request": "launch",
-      "mainClass": "BuscaLinear"
+      "mainClass": "BuscaLinear",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "InverterArray",
       "request": "launch",
-      "mainClass": "InverterArray"
+      "mainClass": "InverterArray",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Matriz",
       "request": "launch",
-      "mainClass": "Matriz"
+      "mainClass": "Matriz",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "ListaDeCompras",
       "request": "launch",
-      "mainClass": "ListaDeCompras"
+      "mainClass": "ListaDeCompras",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Palindromo",
       "request": "launch",
-      "mainClass": "Palindromo"
+      "mainClass": "Palindromo",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Pilha",
       "request": "launch",
-      "mainClass": "Pilha"
+      "mainClass": "Pilha",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Fila",
       "request": "launch",
-      "mainClass": "Fila"
+      "mainClass": "Fila",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Parenteses",
       "request": "launch",
-      "mainClass": "Parenteses"
+      "mainClass": "Parenteses",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Fatorial",
       "request": "launch",
-      "mainClass": "Fatorial"
+      "mainClass": "Fatorial",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "ForaDoLimite",
       "request": "launch",
-      "mainClass": "ForaDoLimite"
+      "mainClass": "ForaDoLimite",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Referencias",
       "request": "launch",
-      "mainClass": "Referencias"
+      "mainClass": "Referencias",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "ListaLigada",
       "request": "launch",
-      "mainClass": "ListaLigada"
+      "mainClass": "ListaLigada",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "ArvoreBinaria",
       "request": "launch",
-      "mainClass": "ArvoreBinaria"
+      "mainClass": "ArvoreBinaria",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "QuickSort",
       "request": "launch",
-      "mainClass": "QuickSort"
+      "mainClass": "QuickSort",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "MergeSort",
       "request": "launch",
-      "mainClass": "MergeSort"
+      "mainClass": "MergeSort",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Conjunto",
       "request": "launch",
-      "mainClass": "Conjunto"
+      "mainClass": "Conjunto",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Dicionario",
       "request": "launch",
-      "mainClass": "Dicionario"
+      "mainClass": "Dicionario",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "BuscaBinaria",
       "request": "launch",
-      "mainClass": "BuscaBinaria"
+      "mainClass": "BuscaBinaria",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Escopo",
       "request": "launch",
-      "mainClass": "Escopo"
+      "mainClass": "Escopo",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Turma",
       "request": "launch",
-      "mainClass": "Turma"
+      "mainClass": "Turma",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Texto",
       "request": "launch",
-      "mainClass": "Texto"
+      "mainClass": "Texto",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "TrataErro",
       "request": "launch",
-      "mainClass": "TrataErro"
+      "mainClass": "TrataErro",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Heranca",
       "request": "launch",
-      "mainClass": "Heranca"
+      "mainClass": "Heranca",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Grafo",
       "request": "launch",
-      "mainClass": "Grafo"
+      "mainClass": "Grafo",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Numeros",
       "request": "launch",
-      "mainClass": "Numeros"
+      "mainClass": "Numeros",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Fibonacci",
       "request": "launch",
-      "mainClass": "Fibonacci"
+      "mainClass": "Fibonacci",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Igualdade",
       "request": "launch",
-      "mainClass": "Igualdade"
+      "mainClass": "Igualdade",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Copias",
       "request": "launch",
-      "mainClass": "Copias"
+      "mainClass": "Copias",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Exercicio",
       "request": "launch",
-      "mainClass": "Exercicio"
+      "mainClass": "Exercicio",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "FilaDePrioridade",
       "request": "launch",
-      "mainClass": "FilaDePrioridade"
+      "mainClass": "FilaDePrioridade",
+      "stopOnEntry": true
     },
     {
       "type": "java",
       "name": "Cubo",
       "request": "launch",
-      "mainClass": "Cubo"
+      "mainClass": "Cubo",
+      "stopOnEntry": true
     }
   ]
 }

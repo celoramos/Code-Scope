@@ -76,7 +76,10 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
 
   try {
     const folder = vscode.workspace.workspaceFolders?.[0];
-    assert.ok(await vscode.debug.startDebugging(folder, run.config), `não iniciou o debug de ${run.dump}`);
+    // Os exemplos param sozinhos no main (stopOnEntry); aqui quem manda é o breakpoint da linha pedida.
+    const named = typeof run.config === 'string' ? vscode.workspace.getConfiguration('launch', folder).get<vscode.DebugConfiguration[]>('configurations')?.find((c) => c.name === run.config) : undefined;
+    const config = named ? { ...named, stopOnEntry: false } : run.config;
+    assert.ok(await vscode.debug.startDebugging(folder, config), `não iniciou o debug de ${run.dump}`);
 
     // Iniciar o debug limpa o histórico; espera a primeira parada.
     await waitFor('a primeira parada', () => cs.snapshots().length >= 1 || ended || undefined, 240_000);
