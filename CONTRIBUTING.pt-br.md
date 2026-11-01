@@ -54,6 +54,7 @@ Se mudou algo visual, teste no VS Code com um tema claro e um escuro, e com anim
 |---|---|
 | `src/debug` | Conversa com o debugger pelo Debug Adapter Protocol. Em `adapters/` fica um arquivo por linguagem (`java.ts`, `javascript.ts`, `python.ts`), o modo genérico (`generic.ts`), a interface comum (`adapter.ts`) e o registro que escolhe o adaptador (`index.ts`). `dapCollector.ts` monta o passo; `heapCollector.ts` lê os objetos; `conditionEval.ts` pergunta ao programa o valor de cada parte de uma condição; `pauseOnErrors.ts` liga a pausa nas exceções não tratadas. |
 | `src/model` | O modelo neutro de linguagem: `Snapshot`, diff entre passos, histórico, setas, textos explicativos, e um módulo por conceito: `calls.ts` e `callTree.ts` (pilha e árvore de chamadas), `heap.ts` e `heapIdentity.ts` (objetos, listas ligadas, árvores), `graph.ts`, `classes.ts` (herança), `errors.ts` (erros e try/catch), `condition.ts`, `focus.ts` (comparações e intervalo de busca), `scope.ts`, `text.ts`, `numbers.ts`, `predict.ts` (modo de adivinhar), `trace.ts` (teste de mesa). Não importa nada do VS Code. |
+| `src/model` (novidades) | `annotations.ts` lê os comentários `@exercise`, `@expect` e `@note`; `details.ts` é a visão técnica de um passo; `session.ts` salva, reabre, compara e busca execuções; `priority.ts` explica as filas de prioridade. |
 | `src/core` | `collectStep.ts`: uma parada do debugger virando `Snapshot`, usado pela extensão do VS Code e pelo plugin JetBrains. |
 | `src/host` | `standalone.ts`: o painel, o modelo e o coletor empacotados para o plugin JetBrains, falando com a IDE por `bridge.ts`. |
 | `src/webview` | O provider do painel e o protocolo de mensagens entre extensão e painel. |
@@ -65,6 +66,10 @@ Se mudou algo visual, teste no VS Code com um tema claro e um escuro, e com anim
 A regra mais importante da arquitetura: **nada do formato do debugger sai de `src/debug`**. O resto do projeto só conhece o `Snapshot`. É isso que permite suportar outras linguagens sem reescrever o painel.
 
 ## Receitas
+
+### Adicionar um exercício
+
+Escreva o erro num exemplo e coloque `@exercicio`, `@espera` e `@nota` em comentários. Não precisa de mais nada: não existe lista de exercícios.
 
 ### Adicionar um exemplo
 

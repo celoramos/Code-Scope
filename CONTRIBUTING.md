@@ -55,6 +55,7 @@ If you changed something visual, check it in VS Code with a light theme and a da
 |---|---|
 | `src/debug` | Talks to the debugger through the Debug Adapter Protocol. `adapters/` has one file per language (`java.ts`, `javascript.ts`, `python.ts`), the generic mode (`generic.ts`), the shared interface (`adapter.ts`) and the registry that picks the adapter (`index.ts`). `dapCollector.ts` builds each step; `heapCollector.ts` reads objects; `conditionEval.ts` asks the program for the value of each part of a condition; `pauseOnErrors.ts` turns on pausing on uncaught exceptions. |
 | `src/model` | The language-neutral model: `Snapshot`, step diff, history, arrows, explanation texts, and one module per concept: `calls.ts` and `callTree.ts` (call stack and call tree), `heap.ts` and `heapIdentity.ts` (objects, linked lists, trees), `graph.ts`, `classes.ts` (inheritance), `errors.ts` (errors and try/catch), `condition.ts`, `focus.ts` (comparisons and search range), `scope.ts`, `text.ts`, `numbers.ts`, `predict.ts` (guess mode), `trace.ts` (trace table). It imports nothing from VS Code. |
+| `src/model` (new features) | `annotations.ts` reads `@exercise`, `@expect` and `@note` comments; `details.ts` is the technical view of a step; `session.ts` saves, reopens, compares and searches runs; `priority.ts` explains priority queues. |
 | `src/core` | `collectStep.ts`: one debugger stop turned into a `Snapshot`, shared by the VS Code extension and the JetBrains plugin. |
 | `src/host` | `standalone.ts`: the panel, model and collector bundled for the JetBrains plugin, talking to the IDE through `bridge.ts`. |
 | `src/webview` | The panel provider, the message protocol between extension and panel, and the panel texts (`strings.ts`). |
@@ -66,6 +67,10 @@ If you changed something visual, check it in VS Code with a light theme and a da
 The most important rule of the architecture: **nothing about the debugger's format leaves `src/debug`**. The rest of the project only knows the `Snapshot`. That is what lets it support other languages without rewriting the panel.
 
 ## Recipes
+
+### Add an exercise
+
+Write the bug in a sample and put `@exercise`, `@expect` and `@note` in comments. Nothing else is needed: there is no list of exercises.
 
 ### Add a sample
 

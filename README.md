@@ -4,7 +4,7 @@
 
 Code Scope shows your code running, for people learning to program. While you debug, a side panel draws your program and, on every F10, animates what changed and explains it in plain words. Think of it as someone drawing your program on a whiteboard.
 
-It works with Java, JavaScript, TypeScript, Python, C# and C, and in a generic mode with any other language that has a debugger in VS Code. It runs in VS Code, Cursor, Windsurf, VSCodium and Antigravity, and in IntelliJ IDEA and Android Studio (beta, Java only). The panel sits next to your code and uses your theme's colors. It opens no browser, needs no account and sends nothing to the internet. Free and open source ([MIT](LICENSE)).
+It works with Java, JavaScript, TypeScript, Python, C#, C and Go, and in a generic mode with any other language that has a debugger in VS Code. It runs in VS Code, Cursor, Windsurf, VSCodium and Antigravity, and in IntelliJ IDEA and Android Studio (beta, Java only). The panel sits next to your code and uses your theme's colors. It opens no browser, needs no account and sends nothing to the internet. Free and open source ([MIT](LICENSE)).
 
 > **Beta.** Code Scope is on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope) and is still a beta for people to try and help shape. If something looks wrong or confusing, [open an issue](https://github.com/celoramos/Code-Scope/issues/new/choose): that is the most useful help right now.
 
@@ -18,7 +18,7 @@ It works with Java, JavaScript, TypeScript, Python, C# and C, and in a generic m
 
 An array is a row of boxes. The box that changed flashes and stays highlighted, and a swap shows the two boxes crossing over, even when the code uses a `temp` variable and takes two steps. Variables the code uses as a position, like `i`, `j`, `inicio` and `fim`, become colored arrows that slide under the boxes. `soma = 2` does not point at position 2.
 
-In a list, a new item appears and the ones after it make room; an item that leaves goes away and its neighbors close the gap. In a matrix, the row and column the code reads are highlighted and the cell where they cross gets an outline. In a set (`HashSet`, Python `set`, JavaScript `Set`), boxes have no index, and adding a value that is already there is explained: a set keeps no duplicates.
+In a list, a new item appears and the ones after it make room; an item that leaves goes away and its neighbors close the gap. In a matrix, the row and column the code reads are highlighted and the cell where they cross gets an outline; a three-dimensional array shows one matrix per layer. In a set (`HashSet`, Python `set`, JavaScript `Set`), boxes have no index, and adding a value that is already there is explained: a set keeps no duplicates.
 
 | Matrix | List |
 |:---:|:---:|
@@ -26,7 +26,7 @@ In a list, a new item appears and the ones after it make room; an item that leav
 
 ### Stacks and queues
 
-The panel recognizes the role of a collection by how the code uses it. A stack is a tower: a pushed item drops onto the top and a popped one rises and fades, with the "top" label following along. A queue is a conveyor belt: items enter from the right and the one in front leaves on the left.
+The panel recognizes the role of a collection by how the code uses it. A stack is a tower: a pushed item drops onto the top and a popped one rises and fades, with the "top" label following along. A queue is a conveyor belt: items enter from the right and the one in front leaves on the left. A deque (`addFirst` with `pollLast`, `appendleft` with `pop`) enters and leaves at both ends. A priority queue (`PriorityQueue`, `heapq`) shows the array and the same values as a tree, level by level, and the text says who entered and who is at the root now.
 
 | Stack | Queue |
 |:---:|:---:|
@@ -64,6 +64,20 @@ Linked lists are drawn as nodes and arrows, binary trees as trees.
 |:---:|:---:|
 | <img src="docs/arvore.gif" alt="A binary search tree growing one insertion at a time" width="320"> | <img src="docs/grafo.gif" alt="Breadth-first search: visited, current and waiting nodes" width="320"> |
 
+### Exercises and teacher notes
+
+Exercises and notes live in comments in the code, so anyone teaching needs only a text editor. They work in every language with `//` or `#` comments.
+
+```java
+// @exercise This loop has a bug: the sum should be 15.
+// @expect soma = 15
+int soma = 0;
+// @note Look at how far i goes.
+for (int i = 0; i < numeros.length - 1; i++) {
+```
+
+The panel shows the goal, checks each `@expect` against the program's real values and says at which step the goal was reached. An `@expect` can name a variable, a position (`numeros[2]`) or a whole array (`numeros = [1, 2, 3]`). A `@note` appears when the program stops on the line below it, or on its own line when it comes after the code. In Portuguese, `@exercicio`, `@espera` and `@nota` work too. The `Exercicio` samples are ready to try.
+
 ### Classic traps
 
 The panel explains these when they happen in your program:
@@ -81,6 +95,11 @@ The timeline shows "Step 7 of 13", with a slider to jump to any step; reviewing 
 - **Guess first:** before a line runs, the panel asks what the variable will be. After F10 it says if the guess was right and keeps the score.
 - **Presentation mode:** the panel opens large next to the code, with bigger text and slower animations, ready to project or record.
 - **Save image:** the current step becomes a PNG, for slides, notes or to share.
+- **Save GIF:** the whole run becomes an animated GIF, up to 80 steps.
+- **Save session:** the run becomes a file anyone can reopen with **Code Scope: Open a saved session**, no debugger needed. The file keeps the source file's name, not its folders.
+- **Compare:** this run next to a saved session, with steps, comparisons and swaps. Save a bubble sort, run a quick sort and see the difference.
+- **Details:** adds the technical view of each step, like `v[1]: 5 → 3`, under the plain sentences.
+- **Find:** type a variable to jump to the steps where it changed, or any text to jump to the lines that contain it.
 
 The panel speaks English and Portuguese and follows the language of your editor.
 
@@ -96,8 +115,9 @@ Each language has an adapter that translates its debugger's values for the panel
 | JavaScript and TypeScript | Node.js 22 or newer; the debugger ships with VS Code | arrays, matrices, stack, queue, objects as dictionaries, `Map`, class instances, linked lists, trees | validated on Node; the browser is not tested yet |
 | Python | [Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and Python | `list`, `tuple`, `deque`, `dict`, matrices, stack, queue, objects, linked lists, trees | validated with the real debugger |
 | C# | [C# extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) and the .NET SDK | arrays, `List`, `Stack`, `Queue`, `Dictionary`, objects, linked lists | validated with the real debugger |
-| C | [C/C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools), a compiler and gdb | arrays, pointers to `struct`, linked lists | validated with gdb on Windows and Linux; lldb on macOS is not tested yet |
-| Others (Go, Rust, PHP...) | any VS Code debugger | collections the debugger marks as indexed, integers and simple values | generic mode |
+| C and C++ | [C/C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools), a compiler and gdb | arrays, pointers to `struct`, linked lists, `std::vector`, `std::map` | C validated with gdb on Windows and Linux; lldb on macOS is not tested yet. `std::vector` and `std::map` are new and not validated in VS Code yet |
+| Go | [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.go) and Go | arrays, slices, matrices, maps, stack, queue, structs, pointers, linked lists | validated with the real Delve debugger, not yet inside VS Code |
+| Others (Rust, PHP...) | any VS Code debugger | collections the debugger marks as indexed, integers and simple values | generic mode |
 
 The flow explanations (if, loops, break) understand the C family (Java, JavaScript, C#, C, Go) and Python.
 
@@ -150,16 +170,16 @@ The panel is a webview in plain HTML, CSS and JS, and its colors, fonts and bord
 | `codeScope.revealOnDebug` | `true` | Opens the panel on the first stop of each debug session |
 | `codeScope.pauseOnErrors` | `true` | Pauses the program on errors nobody handles, so the panel can show where and why it broke |
 
-Commands in the palette: **Code Scope: Show panel**, **Code Scope: Clear history**, **Code Scope: Presentation mode** and **Code Scope: Open a sample**.
+Commands in the palette: **Code Scope: Show panel**, **Code Scope: Clear history**, **Code Scope: Presentation mode**, **Code Scope: Open a sample**, **Code Scope: Open a saved session** and **Code Scope: Compare with a saved session**.
 
 ## Roadmap
 
 1. PyCharm and WebStorm: Python and JavaScript in the JetBrains plugin
 2. JetBrains Marketplace and Open VSX
-3. C++ containers (`std::vector`, `std::map`) and the newer concepts in C#
-4. Objects in the variables of earlier calls
-5. JavaScript in the browser, tested with the real debugger
-6. Adapter for Go
+3. `std::stack` in C++
+4. The newer concepts in C#
+5. Objects in the variables of earlier calls
+6. JavaScript in the browser, tested with the real debugger
 
 ## Contributing
 

@@ -4,7 +4,7 @@
 
 O Code Scope mostra o código rodando, para quem está aprendendo a programar. Enquanto você debuga, um painel lateral desenha o seu programa e, a cada F10, anima o que mudou e explica em palavras simples. É o "quer que eu desenhe?" da programação.
 
-Funciona com Java, JavaScript, TypeScript, Python, C# e C, e num modo genérico com qualquer outra linguagem que tenha debugger no VS Code. Roda no VS Code, no Cursor, no Windsurf, no VSCodium e no Antigravity, e no IntelliJ IDEA e no Android Studio (beta, só Java). O painel fica ao lado do seu código e usa as cores do seu tema. Não abre navegador, não precisa de conta e não envia nada para a internet. Gratuito e de código aberto ([MIT](LICENSE)).
+Funciona com Java, JavaScript, TypeScript, Python, C#, C e Go, e num modo genérico com qualquer outra linguagem que tenha debugger no VS Code. Roda no VS Code, no Cursor, no Windsurf, no VSCodium e no Antigravity, e no IntelliJ IDEA e no Android Studio (beta, só Java). O painel fica ao lado do seu código e usa as cores do seu tema. Não abre navegador, não precisa de conta e não envia nada para a internet. Gratuito e de código aberto ([MIT](LICENSE)).
 
 > **Beta.** O Code Scope está no [Marketplace do VS Code](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope) e ainda é uma beta para as pessoas testarem e ajudarem a melhorar. Se algo parecer errado ou confuso, [abra uma issue](https://github.com/celoramos/Code-Scope/issues/new/choose): é a ajuda mais útil agora.
 
@@ -18,7 +18,7 @@ Funciona com Java, JavaScript, TypeScript, Python, C# e C, e num modo genérico 
 
 Um array é uma fileira de caixas. A caixa alterada pisca e fica marcada, e uma troca aparece como as duas caixas se cruzando, mesmo quando o código usa uma variável `temp` e leva dois passos. As variáveis que o código usa como posição, como `i`, `j`, `inicio` e `fim`, viram setas coloridas que deslizam embaixo das caixas. `soma = 2` não aponta para a posição 2.
 
-Numa lista, o item novo surge e os seguintes abrem espaço; o que sai vai embora e os vizinhos fecham o buraco. Numa matriz, a linha e a coluna lidas pelo código ficam marcadas e a célula onde elas se cruzam ganha contorno. Num conjunto (`HashSet`, `set` do Python, `Set` do JavaScript), as caixas não têm índice, e adicionar um valor que já estava é explicado: conjunto não guarda repetidos.
+Numa lista, o item novo surge e os seguintes abrem espaço; o que sai vai embora e os vizinhos fecham o buraco. Numa matriz, a linha e a coluna lidas pelo código ficam marcadas e a célula onde elas se cruzam ganha contorno; um array de três dimensões mostra uma matriz por camada. Num conjunto (`HashSet`, `set` do Python, `Set` do JavaScript), as caixas não têm índice, e adicionar um valor que já estava é explicado: conjunto não guarda repetidos.
 
 | Matriz | Lista |
 |:---:|:---:|
@@ -26,7 +26,7 @@ Numa lista, o item novo surge e os seguintes abrem espaço; o que sai vai embora
 
 ### Pilhas e filas
 
-O painel reconhece o papel de uma coleção pelo jeito como o código usa ela. A pilha é uma torre: o item empilhado cai no topo e o desempilhado sobe e some, com a etiqueta "topo" acompanhando. A fila é uma esteira: o item entra pela direita e quem está na frente sai pela esquerda.
+O painel reconhece o papel de uma coleção pelo jeito como o código usa ela. A pilha é uma torre: o item empilhado cai no topo e o desempilhado sobe e some, com a etiqueta "topo" acompanhando. A fila é uma esteira: o item entra pela direita e quem está na frente sai pela esquerda. Um deque (`addFirst` com `pollLast`, `appendleft` com `pop`) entra e sai pelas duas pontas. Uma fila de prioridade (`PriorityQueue`, `heapq`) mostra o array e os mesmos valores como árvore, nível por nível, e o texto diz quem entrou e quem está na raiz agora.
 
 | Pilha | Fila |
 |:---:|:---:|
@@ -64,6 +64,20 @@ Lista ligada aparece como nós e setas, árvore binária como árvore.
 |:---:|:---:|
 | <img src="docs/arvore.gif" alt="Uma árvore binária de busca crescendo uma inserção por vez" width="320"> | <img src="docs/grafo.gif" alt="Busca em largura: visitados, atual e esperando" width="320"> |
 
+### Exercícios e notas do professor
+
+Exercícios e notas ficam em comentários no código, então quem ensina só precisa de um editor de texto. Funcionam em toda linguagem com comentários `//` ou `#`.
+
+```java
+// @exercicio Este laço tem um erro: a soma deveria dar 15.
+// @espera soma = 15
+int soma = 0;
+// @nota Repare até onde o i vai.
+for (int i = 0; i < numeros.length - 1; i++) {
+```
+
+O painel mostra o objetivo, confere cada `@espera` com os valores reais do programa e diz em que passo o objetivo foi alcançado. Um `@espera` pode citar uma variável, uma posição (`numeros[2]`) ou um array inteiro (`numeros = [1, 2, 3]`). Uma `@nota` aparece quando o programa para na linha abaixo dela, ou na própria linha quando vem depois do código. Em inglês, também valem `@exercise`, `@expect` e `@note`. Os exemplos `Exercicio` estão prontos para testar.
+
 ### Pegadinhas clássicas
 
 O painel explica estas quando elas acontecem no seu programa:
@@ -81,6 +95,11 @@ A linha do tempo mostra "Passo 7 de 13", com um controle deslizante para pular p
 - **Adivinhar antes:** antes de uma linha rodar, o painel pergunta quanto a variável vai valer. Depois do F10 diz se o palpite acertou e guarda o placar.
 - **Modo apresentação:** o painel abre grande ao lado do código, com letra maior e animações mais lentas, pronto para projetar ou gravar.
 - **Salvar imagem:** o passo atual vira um PNG, para slides, anotações ou para compartilhar.
+- **Salvar GIF:** a execução inteira vira um GIF animado, com até 80 passos.
+- **Salvar sessão:** a execução vira um arquivo que qualquer pessoa reabre com **Code Scope: Abrir uma sessão salva**, sem debugger. O arquivo guarda o nome do arquivo-fonte, não as pastas.
+- **Comparar:** esta execução ao lado de uma sessão salva, com passos, comparações e trocas. Salve um bubble sort, rode um quick sort e veja a diferença.
+- **Detalhes:** acrescenta a visão técnica de cada passo, como `v[1]: 5 → 3`, embaixo das frases simples.
+- **Buscar:** digite uma variável para ir aos passos em que ela mudou, ou qualquer texto para ir às linhas que o contêm.
 
 O painel fala português e inglês e segue o idioma do seu editor.
 
@@ -96,8 +115,9 @@ Cada linguagem tem um adaptador que traduz os valores do debugger para o painel.
 | JavaScript e TypeScript | Node.js 22 ou mais novo; o debugger vem no VS Code | arrays, matrizes, pilha, fila, objetos como dicionário, `Map`, instâncias de classe, listas ligadas, árvores | validada no Node; o navegador ainda não tem teste |
 | Python | [Extensão Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) e o Python | `list`, `tuple`, `deque`, `dict`, matrizes, pilha, fila, objetos, listas ligadas, árvores | validada com o debugger real |
 | C# | [Extensão C#](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) e o .NET SDK | arrays, `List`, `Stack`, `Queue`, `Dictionary`, objetos, listas ligadas | validada com o debugger real |
-| C | [Extensão C/C++](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools), um compilador e o gdb | arrays, ponteiros para `struct`, listas ligadas | validada com gdb no Windows e no Linux; lldb no macOS ainda não tem teste |
-| Outras (Go, Rust, PHP...) | qualquer debugger do VS Code | coleções que o debugger marca como indexadas, inteiros e valores simples | modo genérico |
+| C e C++ | [Extensão C/C++](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools), um compilador e o gdb | arrays, ponteiros para `struct`, listas ligadas, `std::vector`, `std::map` | C validado com gdb no Windows e no Linux; lldb no macOS ainda não tem teste. `std::vector` e `std::map` são novos e ainda não foram validados no VS Code |
+| Go | [Extensão Go](https://marketplace.visualstudio.com/items?itemName=golang.go) e o Go | arrays, slices, matrizes, mapas, pilha, fila, structs, ponteiros, listas ligadas | validada com o debugger real Delve, ainda não dentro do VS Code |
+| Outras (Rust, PHP...) | qualquer debugger do VS Code | coleções que o debugger marca como indexadas, inteiros e valores simples | modo genérico |
 
 As explicações de fluxo (if, laços, break) entendem a família de C (Java, JavaScript, C#, C, Go) e Python.
 
@@ -150,16 +170,16 @@ O painel é um webview em HTML, CSS e JS puros, e as cores, as fontes e as borda
 | `codeScope.revealOnDebug` | `true` | Abre o painel na primeira parada de cada sessão de debug |
 | `codeScope.pauseOnErrors` | `true` | Pausa o programa nos erros que ninguém trata, para o painel mostrar onde e por que ele quebrou |
 
-Comandos na paleta: **Code Scope: Mostrar painel**, **Code Scope: Limpar histórico**, **Code Scope: Modo apresentação** e **Code Scope: Abrir um exemplo**.
+Comandos na paleta: **Code Scope: Mostrar painel**, **Code Scope: Limpar histórico**, **Code Scope: Modo apresentação**, **Code Scope: Abrir um exemplo**, **Code Scope: Abrir uma sessão salva** e **Code Scope: Comparar com uma sessão salva**.
 
 ## Roadmap
 
 1. PyCharm e WebStorm: Python e JavaScript no plugin JetBrains
 2. Marketplace da JetBrains e Open VSX
-3. Coleções do C++ (`std::vector`, `std::map`) e os conceitos novos em C#
-4. Objetos nas variáveis das chamadas de baixo
-5. JavaScript no navegador, testado com o debugger real
-6. Adaptador para Go
+3. `std::stack` no C++
+4. Os conceitos novos em C#
+5. Objetos nas variáveis das chamadas de baixo
+6. JavaScript no navegador, testado com o debugger real
 
 ## Contribuindo
 

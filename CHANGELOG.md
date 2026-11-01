@@ -1,5 +1,22 @@
 # Changelog
 
+## Próxima versão
+
+### Novo
+
+- Exercícios guiados: `@exercise` e `@expect` em comentários, conferidos com os valores reais do programa. Exemplos `Exercicio` em Java, JavaScript e Python.
+- Notas do professor: `@note` em comentário aparece quando o programa para na linha.
+- Detalhes: botão que mostra a visão técnica de cada passo.
+- Salvar GIF: a execução inteira, com até 80 passos.
+- Sessão salva: botão "Salvar sessão" e comando "Abrir uma sessão salva", sem debugger.
+- Comparar: esta execução ao lado de uma sessão salva, com passos, comparações e trocas.
+- Busca no histórico: passos em que uma variável mudou, ou linhas com um texto.
+- Fila de prioridade (`PriorityQueue`, `heapq`) com o array e a árvore, e deque usado pelas duas pontas.
+- Arrays de três dimensões: uma matriz por camada.
+- Objetos dentro de matrizes mostram o valor principal na célula.
+- `std::vector` com ou sem pretty-printers, e `std::map` com eles. Ainda não validados no VS Code.
+- Adaptador de Go: arrays, slices, matrizes, mapas, pilha, fila, structs, ponteiros, listas ligadas e condições, validados com o Delve real.
+
 ## 0.8.0
 
 ### Novo
