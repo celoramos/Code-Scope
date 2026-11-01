@@ -123,7 +123,7 @@ export async function collectSnapshot(
         pointers.push({ name: v.name, value: shape.value });
         break;
       case 'scalar':
-        scalars.push({ name: v.name, value: shape.value });
+        scalars.push({ name: v.name, value: clip(shape.value) });
         break;
     }
   }
@@ -381,7 +381,7 @@ async function readSequence(
     const ref = objects ? await objects(c) : undefined;
     if (ref) {
       refs[i] = ref;
-      values.push(adapter.formatElement(c));
+      values.push(clip(adapter.formatElement(c)));
       continue;
     }
     const unbox = adapter.unbox?.(c);
@@ -389,11 +389,11 @@ async function readSequence(
       // Variável "lazy" devolve o próprio valor como único filho; objeto comum devolve os campos.
       const fields = await variables(session, c.variablesReference);
       const inner = fields.find((f) => f.name === 'value') ?? (fields.length === 1 ? fields[0] : undefined);
-      values.push(inner ? unbox(inner) : adapter.formatElement(c));
+      values.push(clip(inner ? unbox(inner) : adapter.formatElement(c)));
     } else {
       const text = adapter.formatElement(c);
       const blank = (text === '' || text === '{...}') && c.variablesReference > 0 && adapter.shape(c).kind !== 'sequence';
-      values.push(blank ? await fieldsText(session, c) : text);
+      values.push(clip(blank ? await fieldsText(session, c) : text));
     }
   }
   const array: ArrayVar = { name, values, length };
@@ -419,6 +419,11 @@ async function readSequence(
   }
   return { array, children };
 }
+
+/** Maior texto guardado por valor: o histórico guarda todos os passos, e um texto de 5 MB vai junto em cada um. */
+const MAX_TEXT = 500;
+
+const clip = (text: string) => (text.length > MAX_TEXT ? `${text.slice(0, MAX_TEXT)}…` : text);
 
 /** Struct sem texto no debugger (C e C++): os primeiros campos, para a célula não ficar em branco. */
 async function fieldsText(session: Session, v: DapVariable): Promise<string> {
@@ -485,8 +490,9 @@ async function readMap(session: Session, adapter: LanguageAdapter, v: DapVariabl
   if (inner) children = await variables(session, inner.variablesReference);
   const entries: MapVar['entries'] = [];
   for (const c of children) {
-    const e = adapter.mapEntry(c);
-    if (!e) continue;
+    const raw = adapter.mapEntry(c);
+    if (!raw) continue;
+    const e = { key: clip(raw.key), value: clip(raw.value) };
     const items = entries.length < MAX_LIST_ENTRIES ? await entryList(session, adapter, c, e.value, max) : undefined;
     entries.push(items ? { ...e, value: `[${items.join(', ')}]`, items } : e);
     if (entries.length >= max) break;

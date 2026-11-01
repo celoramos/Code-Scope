@@ -129,3 +129,13 @@ describe('Go: textos do Delve', () => {
     assert.deepEqual(goAdapter.mapEntry?.({ name: '"k"', value: '[]int len: 2, cap: 2, [1,2]', variablesReference: 3 }), { key: '"k"', value: '[1,2]' });
   });
 });
+
+describe('texto muito longo', () => {
+  it('corta variáveis e posições, para o histórico não crescer sem limite', async () => {
+    const long = `'${'x'.repeat(100000)}'`;
+    const snap = await collect({ 1: [{ name: 't', value: long, type: 'str', variablesReference: 0 }, { name: 'l', value: '[...]', type: 'list', variablesReference: 2 }], 2: [{ name: '0', value: long, type: 'str', variablesReference: 0 }] }, pythonAdapter);
+    assert.ok((snap.scalars?.[0].value.length ?? 0) <= 501);
+    assert.ok(snap.scalars?.[0].value.endsWith('…'));
+    assert.ok(snap.arrays[0].values[0].length <= 501);
+  });
+});
