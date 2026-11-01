@@ -220,7 +220,8 @@ export function isUserFrame(f: DapStackFrame): boolean {
  */
 export function functionName(raw: string): { name: string; program: boolean; owner?: string } {
   if (raw === '<module>' || raw === '<anonymous>' || raw === '') return { name: raw, program: true };
-  const noArgs = raw.replace(/\(.*\)$/, '');
+  // O vsdbg escreve "Exemplo.dll!Programa.Main() Line 29", com a palavra "Line" traduzida.
+  const noArgs = raw.replace(/^[\w.-]+\.(?:dll|exe)!/, '').replace(/\(.*\)(?:\s+\S+\s+\d+)?$/, '');
   const parts = noArgs.split('.');
   const last = parts.pop() ?? noArgs;
   if (last === '<init>') return { name: `new ${(parts.pop() ?? '').split('$').pop()}`, program: false };

@@ -93,3 +93,17 @@ describe('C#: matriz retangular', () => {
     assert.deepEqual(snap.arrays[0].rows?.map((r) => r.values), [['0', '1', '2'], ['3', '4', '5']]);
   });
 });
+
+describe('C#: textos do vsdbg', () => {
+  it('"... returned" é o valor devolvido, não uma variável', () => {
+    assert.deepEqual(csharpAdapter.returnValue?.({ name: 'Programa.Soma returned', value: '3', variablesReference: 0 }), { function: 'Soma', value: '3' });
+  });
+  it('HashSet é conjunto', () => {
+    const v = { name: 's', value: 'Count = 2', type: 'System.Collections.Generic.HashSet<int>', variablesReference: 3 };
+    assert.equal((csharpAdapter.shape(v) as { collection?: string }).collection, 'set');
+  });
+  it('nome da pilha sem módulo nem linha, em qualquer idioma', () => {
+    assert.deepEqual(functionName('Estresse.dll!Programa.Main() Line 29'), { name: 'Main', program: false, owner: 'Programa' });
+    assert.deepEqual(functionName('Estresse.dll!Programa.Main() Linha 29'), { name: 'Main', program: false, owner: 'Programa' });
+  });
+});

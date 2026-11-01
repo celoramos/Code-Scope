@@ -73,7 +73,8 @@ export const csharpAdapter: LanguageAdapter = {
       const n = Number(count[1]);
       if (n === 0) return { kind: 'empty-list' };
       const role = coll[1] === 'Stack' ? { role: 'stack' as const, topFirst: true } : coll[1] === 'Queue' ? { role: 'queue' as const, topFirst: false } : undefined;
-      return { kind: 'sequence', length: n, collection: 'list', ...(role ? { role } : {}) };
+      const collection = coll[1].endsWith('Set') ? ('set' as const) : ('list' as const);
+      return { kind: 'sequence', length: n, collection, ...(role ? { role } : {}) };
     }
     if (INTEGERS.has(type)) {
       const n = asInteger(v.value);
@@ -90,6 +91,11 @@ export const csharpAdapter: LanguageAdapter = {
   elementIndex: numericIndex,
   formatElement: formatValue,
   isNull: (v) => v.value === 'null',
+  // O vsdbg guarda o que uma função devolveu como "Programa.Soma returned" nas locais de quem chamou.
+  returnValue(v) {
+    const m = /^(.+) returned$/.exec(v.name);
+    return m ? { function: m[1].replace(/\(.*$/, '').split('.').pop(), value: v.value } : undefined;
+  },
   identityExpr: (a, b) => `object.ReferenceEquals(${a}, ${b})`,
 
   mapEntry(child): MapEntry | undefined {
