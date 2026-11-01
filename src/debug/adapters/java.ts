@@ -172,6 +172,11 @@ export function collectionRole(source: string, name: string): CollectionRole | u
   const created = new RegExp(`\\b${n}\\s*=\\s*new\\s+(\\w+)`).exec(source)?.[1];
   const ops = methodsCalledOn(source, name).map((c) => c.method);
 
+  if (declared === 'PriorityQueue' || created === 'PriorityQueue') return { role: 'heap', topFirst: false };
+  // Usada pelas duas pontas: deque, mesmo que a variável se chame fila.
+  if (ops.some((op) => /^(add|offer|remove|poll|peek)First$/.test(op)) && ops.some((op) => /^(add|offer|remove|poll|peek)Last$/.test(op))) {
+    return { role: 'deque', topFirst: false };
+  }
   if (declared === 'Stack' || created === 'Stack') return { role: 'stack', topFirst: false };
   if (declared === 'Queue' || ops.some((op) => /^(offer|poll|element)$/.test(op))) return { role: 'queue', topFirst: false };
   if (ops.some((op) => /^(push|pop)$/.test(op))) return { role: 'stack', topFirst: true };

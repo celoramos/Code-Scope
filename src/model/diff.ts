@@ -1,6 +1,6 @@
 import type { ArrayVar, Snapshot } from './snapshot';
 
-export type Structure = 'array' | 'list' | 'stack' | 'queue' | 'matrix' | 'text' | 'set';
+export type Structure = 'array' | 'list' | 'stack' | 'queue' | 'matrix' | 'text' | 'set' | 'deque' | 'heap';
 
 /*
  * Em matrizes, "array" é o nome da linha ("grade[1]"), então as mudanças de

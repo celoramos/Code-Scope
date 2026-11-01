@@ -92,8 +92,9 @@ export function setNames(block, names) {
 /**
  * @param {string} name
  * @param {'array' | 'stack' | 'queue'} kind
+ * @param {boolean} [deque] a esteira anda nos dois sentidos: entra e sai pelas duas pontas
  */
-export function createBlock(name, kind) {
+export function createBlock(name, kind, deque = false) {
   const block = el('article', `array is-${kind}`);
   const header = el('header', 'array-header');
   const title = el('h3', 'array-name');
@@ -110,9 +111,9 @@ export function createBlock(name, kind) {
     track.append(cells, markers);
     block.append(rule(t('stackRule')));
   } else if (kind === 'queue') {
-    cells.setAttribute('aria-label', t('queueLabel', name));
+    cells.setAttribute('aria-label', t(deque ? 'dequeLabel' : 'queueLabel', name));
     track.append(laneEnd('exit'), cells, laneEnd('entry'), markers);
-    block.append(rule(t('queueRule')));
+    block.append(rule(t(deque ? 'dequeRule' : 'queueRule')));
   } else {
     cells.setAttribute('aria-label', t('arrayLabel', name));
     track.append(cells, markers);
@@ -148,7 +149,7 @@ function laneEnd(side) {
  */
 export function updateBlock(block, arr) {
   const meta = /** @type {HTMLElement} */ (block.querySelector('.array-meta'));
-  const collection = arr.kind === 'list' || arr.kind === 'stack' || arr.kind === 'queue' || arr.kind === 'text' || arr.kind === 'set';
+  const collection = arr.kind !== undefined && arr.kind !== 'array';
   const unit = arr.kind === 'text' ? [t('letter'), t('letters')] : collection ? [t('item'), t('items')] : [t('position'), t('positions')];
   const count =
     arr.values.length < arr.length
@@ -167,6 +168,7 @@ export function updateBlock(block, arr) {
     block.style.setProperty('--reserve', String(reserve));
   }
 
+  updateLevels(block, arr);
   const list = /** @type {HTMLElement} */ (block.querySelector('.cells'));
   for (const ghost of Array.from(list.querySelectorAll('.ghost, .is-missing'))) ghost.remove();
   while (list.children.length > arr.values.length) list.lastElementChild?.remove();
@@ -179,6 +181,39 @@ export function updateBlock(block, arr) {
     cell.dataset.label = arr.kind === 'set' ? t('setItemLabel', arr.name, value) : `${arr.name}[${i}] = ${value}`;
     cell.setAttribute('aria-label', cell.dataset.label);
   });
+}
+
+/**
+ * O heap como árvore: nível por nível, com a raiz em cima. Cada nível tem o
+ * dobro do anterior, e os filhos de i estão em 2i + 1 e 2i + 2.
+ * @param {HTMLElement} block
+ * @param {ArrayVar} arr
+ */
+function updateLevels(block, arr) {
+  let box = block.querySelector('.heap-levels');
+  if (arr.kind !== 'heap') {
+    box?.remove();
+    return;
+  }
+  if (!box) {
+    box = el('div', 'heap-levels');
+    box.setAttribute('role', 'img');
+    box.setAttribute('aria-label', t('heapLevels', arr.name));
+    block.append(box, rule(t('heapRule')));
+  }
+  const rows = [];
+  for (let start = 0, size = 1; start < arr.values.length; start += size, size *= 2) {
+    const row = el('div', 'heap-level');
+    row.append(
+      ...arr.values.slice(start, start + size).map((value) => {
+        const node = el('span', 'heap-node');
+        node.textContent = value;
+        return node;
+      }),
+    );
+    rows.push(row);
+  }
+  box.replaceChildren(...rows);
 }
 
 /** @param {number} index */

@@ -1,3 +1,4 @@
+import type { Exercise } from './annotations';
 import type { ClassInfo } from './classes';
 import type { ConditionInfo } from './condition';
 
@@ -18,8 +19,10 @@ export interface ArrayVar {
    * "stack" e "queue" têm uma ordem combinada: na pilha, values[0] é o fundo e
    * o último é o topo; na fila, values[0] é a frente, quem sai primeiro.
    * "set" é um conjunto: sem posições e sem repetidos, na ordem em que o debugger mostra.
+   * "deque" entra e sai pelas duas pontas; values[0] é a frente. "heap" é uma fila de
+   * prioridade: values é o array por dentro, com a raiz em values[0].
    */
-  kind?: 'array' | 'list' | 'stack' | 'queue' | 'text' | 'set';
+  kind?: 'array' | 'list' | 'stack' | 'queue' | 'text' | 'set' | 'deque' | 'heap';
   /**
    * Linhas de uma matriz (array de arrays). Cada linha se chama "nome[i]".
    * Quando existe, values guarda só um resumo de cada linha.
@@ -125,6 +128,10 @@ export interface Snapshot {
   classes?: Record<string, ClassInfo>;
   /** O programa parou por um erro que ninguém tratou. */
   exception?: ExceptionInfo;
+  /** Notas do professor na linha parada (comentários @note). */
+  notes?: string[];
+  /** Exercício declarado no arquivo (comentários @exercise e @expect). */
+  exercise?: Exercise;
 }
 
 /** Uma chamada de função em andamento e as variáveis dela. */

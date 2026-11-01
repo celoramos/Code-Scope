@@ -9,7 +9,7 @@ import type { Snapshot } from './snapshot';
  * painel, com os valores no lugar dos nomes ("3 < 5").
  */
 
-export type Syntax = 'c' | 'python';
+export type Syntax = 'c' | 'python' | 'go';
 
 export interface ParsedCondition {
   keyword: 'if' | 'elif' | 'while' | 'for';
@@ -63,6 +63,13 @@ export function parseCondition(code: string | undefined, syntax: Syntax): Parsed
     if (!m) return undefined;
     keyword = m[1] as ParsedCondition['keyword'];
     text = m[2].trim();
+  } else if (syntax === 'go') {
+    // Sem parênteses: if x > 0 {, for i < n {, for i := 0; i < n; i++ {, if v := f(); v > 0 {.
+    const m = /^(?:\}\s*)?(?:else\s+)?(if|for)\s+(.+?)\s*\{\s*(\/\/.*)?$/.exec(line);
+    if (!m || /\brange\b/.test(m[2])) return undefined;
+    keyword = m[1] as ParsedCondition['keyword'];
+    const pieces = splitTop(m[2], [';']).parts;
+    text = (pieces.length === 3 ? pieces[1] : pieces.at(-1))?.trim();
   } else {
     const m = /^(?:\}\s*)?(?:else\s+)?(if|while|for)\s*\(/.exec(line);
     if (!m) return undefined;

@@ -10,10 +10,11 @@ import { collectStep, toSource } from '../core/collectStep';
 import type { Session } from '../debug/dapCollector';
 import { makeFrame, type FrameOptions } from '../model/frame';
 import { History } from '../model/history';
+import { parseSession, serializeSession, summarizeSession, type SessionSummary } from '../model/session';
 import type { Language } from '../model/messages';
 import { VALUE_NAMES } from '../model/pointers';
 import { readAnimationSpeed } from '../animationSpeed';
-import { readError } from '../webview/strings';
+import { invalidSession, readError } from '../webview/strings';
 import { request, type HostEvent } from './bridge';
 
 const language: Language = document.documentElement.lang.startsWith('pt') ? 'pt' : 'en';
@@ -25,6 +26,8 @@ const history = new History();
 let state: 'idle' | 'running' | 'ended' = 'idle';
 /** Cada parada ganha um número; uma coleta só publica se ainda for a mais recente. */
 let generation = 0;
+/** Sessão salva ao lado da atual, depois de "Comparar". */
+let compared: SessionSummary | undefined;
 
 const session: Session = {
   customRequest: (command: string, args?: unknown) => request({ kind: 'dap', command, args }),
@@ -32,7 +35,9 @@ const session: Session = {
 
 function showCurrent() {
   const step = history.current();
-  if (step) postToPanel({ type: 'render', frame: makeFrame(step, frameOptions) });
+  if (!step) return;
+  const compare = compared && { current: summarizeSession(history.all()), saved: compared };
+  postToPanel({ type: 'render', frame: { ...makeFrame(step, frameOptions), ...(compare ? { compare } : {}) } });
 }
 
 function setState(s: typeof state) {
@@ -88,6 +93,34 @@ function receive(event: HostEvent) {
   }
 }
 
+/** Abre uma sessão salva para rever, ou só para comparar com a atual. */
+async function openSession(compare: boolean) {
+  const text = (await request({ kind: 'open-file' })) as string | null;
+  if (text == null) return;
+  const snapshots = parseSession(text);
+  if (!snapshots) {
+    postToPanel({ type: 'error', text: invalidSession(language) });
+    return;
+  }
+  if (compare) {
+    compared = summarizeSession(snapshots);
+  } else {
+    generation++;
+    history.load(snapshots);
+    postToPanel({ type: 'reset' });
+    setState('ended');
+  }
+  showCurrent();
+}
+
+/** Texto em base64, como a ponte leva os arquivos. */
+function toBase64(text: string): string {
+  const bytes = new TextEncoder().encode(text);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(binary);
+}
+
 (window as unknown as { codeScope: unknown }).codeScope = { receive };
 // A IDE espera este aviso para mandar os eventos guardados (início da sessão, paradas).
 void request({ kind: 'ready' }).catch(() => {});
@@ -116,7 +149,24 @@ onPanelMessage((msg) => {
       postToPanel({ type: 'css', text: document.getElementById('cs-css')?.textContent ?? '' });
       break;
     case 'save-image':
-      void request({ kind: 'save-image', data: msg.data, step: msg.step });
+      void request({ kind: 'save-file', data: msg.data, name: `code-scope-passo-${msg.step}.png`, ext: 'png' });
+      break;
+    case 'save-gif':
+      void request({ kind: 'save-file', data: msg.data, name: 'code-scope.gif', ext: 'gif' });
+      break;
+    case 'save-session':
+      void request({ kind: 'save-file', data: toBase64(serializeSession(history.all())), name: 'code-scope.session.json', ext: 'json' });
+      break;
+    case 'open-session':
+      void openSession(msg.compare);
+      break;
+    case 'compare-close':
+      compared = undefined;
+      showCurrent();
+      break;
+    case 'find':
+      if (history.find(msg.query, msg.dir)) showCurrent();
+      else postToPanel({ type: 'find-miss', query: msg.query });
       break;
   }
 });

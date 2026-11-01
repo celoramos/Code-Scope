@@ -25,6 +25,10 @@ const PY_OBJECT = /^<([\w.]+) object at (0x[0-9a-fA-F]+)>$/;
 export function pythonRole(source: string, name: string): CollectionRole | undefined {
   const calls = methodsCalledOn(source, name);
   const has = (method: string, args?: string) => calls.some((c) => c.method === method && (args === undefined || c.args === args));
+  // heapq trabalha numa lista comum: heappush(fila, x), heapq.heappop(fila).
+  if (new RegExp(`\\bheap(?:push|pop|ify|replace|pushpop)\\s*\\(\\s*${name}\\b`).test(source)) return { role: 'heap', topFirst: false };
+  if (has('appendleft') && (has('append') || has('pop', ''))) return { role: 'deque', topFirst: false };
+  if (has('popleft') && has('pop', '')) return { role: 'deque', topFirst: false };
   // pop(0) e popleft() tiram do começo: fila. pop() tira do fim: pilha.
   if (has('popleft') || has('pop', '0')) return { role: 'queue', topFirst: false };
   if (has('append') && has('pop', '')) return { role: 'stack', topFirst: false };

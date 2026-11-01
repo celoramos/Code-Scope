@@ -5,8 +5,9 @@ import { registerPauseOnErrors } from './debug/pauseOnErrors';
 import { registerStopTracker } from './debug/trackerFactory';
 import { makeFrame } from './model/frame';
 import { History } from './model/history';
-import type { FromWebview, ScopeViewProvider } from './webview/scopeViewProvider';
-import { readError } from './webview/strings';
+import { parseSession, serializeSession, summarizeSession, type SessionSummary } from './model/session';
+import { saveFile, type FromWebview, type ScopeViewProvider } from './webview/scopeViewProvider';
+import { invalidSession, pickSession, readError } from './webview/strings';
 
 type SessionState = 'idle' | 'running' | 'ended';
 
@@ -21,6 +22,8 @@ export class ScopeController implements vscode.Disposable {
   private generation = 0;
   /** Abrir o painel na próxima parada (configuração codeScope.revealOnDebug). */
   private revealPending = false;
+  /** Sessão salva ao lado da atual, depois de "Comparar". */
+  private compared?: SessionSummary;
 
   constructor(
     private readonly view: ScopeViewProvider,
@@ -42,6 +45,8 @@ export class ScopeController implements vscode.Disposable {
       }),
       vscode.commands.registerCommand('codeScope.show', () => this.reveal()),
       vscode.commands.registerCommand('codeScope.present', () => this.view.openPresentation()),
+      vscode.commands.registerCommand('codeScope.openSession', () => this.openSession(false)),
+      vscode.commands.registerCommand('codeScope.compareSession', () => this.openSession(true)),
       vscode.commands.registerCommand('codeScope.clearHistory', () => {
         this.history.clear();
         this.view.post({ type: 'reset' });
@@ -116,10 +121,46 @@ export class ScopeController implements vscode.Disposable {
       case 'goto':
         if (this.history.goto(msg.step)) this.showCurrent();
         break;
+      case 'find':
+        if (this.history.find(msg.query, msg.dir)) this.showCurrent();
+        else this.view.post({ type: 'find-miss', query: msg.query });
+        break;
+      case 'save-session':
+        void saveFile(new TextEncoder().encode(serializeSession(this.history.all())), 'code-scope.session.json', { JSON: ['json'] });
+        break;
+      case 'open-session':
+        void this.openSession(msg.compare);
+        break;
+      case 'compare-close':
+        this.compared = undefined;
+        this.showCurrent();
+        break;
       case 'focus-editor':
         void vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
         break;
     }
+  }
+
+  /** Abre uma sessão salva para rever, ou só para comparar com a atual. */
+  private async openSession(compare: boolean) {
+    const language = uiLanguage();
+    const picked = await vscode.window.showOpenDialog({ canSelectMany: false, filters: { JSON: ['json'] }, title: pickSession(language, compare) });
+    if (!picked?.[0]) return;
+    const snapshots = parseSession(new TextDecoder().decode(await vscode.workspace.fs.readFile(picked[0])));
+    if (!snapshots) {
+      void vscode.window.showErrorMessage(invalidSession(language));
+      return;
+    }
+    if (compare) {
+      this.compared = summarizeSession(snapshots);
+    } else {
+      this.generation++;
+      this.history.load(snapshots);
+      this.view.post({ type: 'reset' });
+      this.setState('ended');
+      await this.reveal();
+    }
+    this.showCurrent();
   }
 
   private async reveal() {
@@ -137,7 +178,9 @@ export class ScopeController implements vscode.Disposable {
 
   private showCurrent() {
     const step = this.history.current();
-    if (step) this.view.post({ type: 'render', frame: makeFrame(step, readSettings().frame) });
+    if (!step) return;
+    const compare = this.compared && { current: summarizeSession(this.history.all()), saved: this.compared };
+    this.view.post({ type: 'render', frame: { ...makeFrame(step, readSettings().frame), ...(compare ? { compare } : {}) } });
   }
 
   dispose() {

@@ -27,6 +27,18 @@ export interface PanelStrings {
     predictMode: string;
     predictSave: string;
     saveImage: string;
+    saveGif: string;
+    saveSession: string;
+    openSession: string;
+    compareSession: string;
+    closeCompare: string;
+    detailsMode: string;
+    find: string;
+    findPrevious: string;
+    findNext: string;
+    exercise: string;
+    notes: string;
+    details: string;
   };
   script: Record<
     | 'idle'
@@ -40,6 +52,12 @@ export interface PanelStrings {
     | 'stackRule'
     | 'queueLabel'
     | 'queueRule'
+    | 'dequeLabel'
+    | 'dequeRule'
+    | 'deque'
+    | 'heap'
+    | 'heapRule'
+    | 'heapLevels'
     | 'arrayLabel'
     | 'exit'
     | 'entry'
@@ -140,7 +158,25 @@ export interface PanelStrings {
     | 'predictRight'
     | 'predictWrong'
     | 'predictScore'
-    | 'predictOff',
+    | 'predictOff'
+    | 'exerciseTitle'
+    | 'exerciseDone'
+    | 'exercisePending'
+    | 'exerciseCheck'
+    | 'exerciseMissing'
+    | 'notesTitle'
+    | 'detailsTitle'
+    | 'findMiss'
+    | 'gifProgress'
+    | 'gifSampled'
+    | 'compareTitle'
+    | 'compareCurrent'
+    | 'compareSaved'
+    | 'compareSteps'
+    | 'compareComparisons'
+    | 'compareSwaps'
+    | 'compareFewer'
+    | 'compareSame',
     string
   >;
 }
@@ -171,6 +207,18 @@ const pt: PanelStrings = {
     predictMode: 'Adivinhar antes',
     predictSave: 'Guardar palpite',
     saveImage: 'Salvar imagem',
+    saveGif: 'Salvar GIF',
+    saveSession: 'Salvar sessão',
+    openSession: 'Abrir sessão salva',
+    compareSession: 'Comparar',
+    closeCompare: 'Fechar comparação',
+    detailsMode: 'Detalhes',
+    find: 'Variável ou texto da linha',
+    findPrevious: 'Passo anterior que combina',
+    findNext: 'Próximo passo que combina',
+    exercise: 'Exercício',
+    notes: 'Notas do professor',
+    details: 'Detalhes do passo',
   },
   script: {
     idle: 'Pronto para visualizar',
@@ -184,6 +232,12 @@ const pt: PanelStrings = {
     stackRule: 'Último a entrar, primeiro a sair.',
     queueLabel: 'Fila {0}, da frente para o fim',
     queueRule: 'Primeiro a entrar, primeiro a sair.',
+    dequeLabel: 'Deque {0}, da frente para o fim',
+    dequeRule: 'Entra e sai pelas duas pontas.',
+    deque: 'deque',
+    heap: 'fila de prioridade',
+    heapRule: 'A raiz é a primeira a sair, e cada pai vem antes dos filhos.',
+    heapLevels: 'Heap {0} como árvore, nível por nível',
     arrayLabel: 'Posições de {0}',
     exit: 'saída',
     entry: 'entrada',
@@ -285,6 +339,24 @@ const pt: PanelStrings = {
     predictWrong: 'Quase: {0} ficou {1}, e o seu palpite foi {2}.',
     predictScore: '{0} de {1} palpites certos',
     predictOff: 'Modo de adivinhar desligado',
+    exerciseTitle: 'Exercício',
+    exerciseDone: 'Objetivo alcançado no passo {0}.',
+    exercisePending: 'Ainda não: conserte o código e rode de novo, ou continue andando.',
+    exerciseCheck: '{0} = {1}',
+    exerciseMissing: '{0}: esperado {1}, ainda não existe',
+    notesTitle: 'Nota do professor',
+    detailsTitle: 'Detalhes',
+    findMiss: 'Nenhum outro passo combina com "{0}".',
+    gifProgress: 'Gerando o GIF: passo {0} de {1}',
+    gifSampled: 'O GIF mostra {0} dos {1} passos.',
+    compareTitle: 'Comparação',
+    compareCurrent: 'Esta sessão',
+    compareSaved: 'Salva',
+    compareSteps: 'Passos',
+    compareComparisons: 'Comparações',
+    compareSwaps: 'Trocas',
+    compareFewer: '{0} fez {1} comparações a menos.',
+    compareSame: 'As duas fizeram o mesmo número de comparações.',
   },
 };
 
@@ -314,6 +386,18 @@ const en: PanelStrings = {
     predictMode: 'Guess first',
     predictSave: 'Save guess',
     saveImage: 'Save image',
+    saveGif: 'Save GIF',
+    saveSession: 'Save session',
+    openSession: 'Open saved session',
+    compareSession: 'Compare',
+    closeCompare: 'Close comparison',
+    detailsMode: 'Details',
+    find: 'Variable or line text',
+    findPrevious: 'Previous matching step',
+    findNext: 'Next matching step',
+    exercise: 'Exercise',
+    notes: 'Teacher notes',
+    details: 'Step details',
   },
   script: {
     idle: 'Ready to visualize',
@@ -327,6 +411,12 @@ const en: PanelStrings = {
     stackRule: 'Last in, first out.',
     queueLabel: 'Queue {0}, from front to back',
     queueRule: 'First in, first out.',
+    dequeLabel: 'Deque {0}, from front to back',
+    dequeRule: 'Items enter and leave at both ends.',
+    deque: 'deque',
+    heap: 'priority queue',
+    heapRule: 'The root leaves first, and every parent comes before its children.',
+    heapLevels: 'Heap {0} as a tree, level by level',
     arrayLabel: 'Positions of {0}',
     exit: 'exit',
     entry: 'entry',
@@ -428,14 +518,43 @@ const en: PanelStrings = {
     predictWrong: 'Close: {0} became {1}, and your guess was {2}.',
     predictScore: '{0} of {1} guesses right',
     predictOff: 'Guess mode off',
+    exerciseTitle: 'Exercise',
+    exerciseDone: 'Goal reached at step {0}.',
+    exercisePending: 'Not yet: fix the code and run again, or keep stepping.',
+    exerciseCheck: '{0} = {1}',
+    exerciseMissing: '{0}: expected {1}, does not exist yet',
+    notesTitle: 'Teacher note',
+    detailsTitle: 'Details',
+    findMiss: 'No other step matches "{0}".',
+    gifProgress: 'Building the GIF: step {0} of {1}',
+    gifSampled: 'The GIF shows {0} of the {1} steps.',
+    compareTitle: 'Comparison',
+    compareCurrent: 'This session',
+    compareSaved: 'Saved',
+    compareSteps: 'Steps',
+    compareComparisons: 'Comparisons',
+    compareSwaps: 'Swaps',
+    compareFewer: '{0} made {1} fewer comparisons.',
+    compareSame: 'Both made the same number of comparisons.',
   },
 };
 
 export const PANEL_STRINGS: Record<Language, PanelStrings> = { pt, en };
 
-/** Aviso depois de salvar a imagem do passo. */
-export function imageSaved(language: Language, path: string): string {
-  return language === 'pt' ? `Imagem salva: ${path}` : `Image saved: ${path}`;
+/** Aviso depois de salvar a imagem, o GIF ou a sessão. */
+export function fileSaved(language: Language, path: string): string {
+  return language === 'pt' ? `Arquivo salvo: ${path}` : `File saved: ${path}`;
+}
+
+/** Aviso quando o arquivo escolhido não é uma sessão do Code Scope. */
+export function invalidSession(language: Language): string {
+  return language === 'pt' ? 'Esse arquivo não é uma sessão salva do Code Scope.' : 'That file is not a saved Code Scope session.';
+}
+
+/** Título da janela de escolher a sessão. */
+export function pickSession(language: Language, compare: boolean): string {
+  if (language === 'pt') return compare ? 'Escolha a sessão para comparar' : 'Escolha a sessão salva';
+  return compare ? 'Pick the session to compare' : 'Pick the saved session';
 }
 
 /** Aviso quando o debugger não responde às perguntas sobre as variáveis. */

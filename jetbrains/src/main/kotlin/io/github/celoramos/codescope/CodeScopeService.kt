@@ -10,6 +10,8 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.project.Project
@@ -106,10 +108,11 @@ class CodeScopeService(private val project: Project) : Disposable {
             }
             null
         }
-        "save-image" -> {
-            saveImage(req.get("data").asString, req.get("step").asInt)
+        "save-file" -> {
+            saveFile(req.get("data").asString, req.get("name").asString, req.get("ext").asString)
             null
         }
+        "open-file" -> openFile()
         "log" -> {
             val text = req.get("text").asString
             if (text.startsWith("snapshot ")) onSnapshot?.invoke(text.removePrefix("snapshot "))
@@ -130,14 +133,24 @@ class CodeScopeService(private val project: Project) : Disposable {
         FileDocumentManager.getInstance().getDocument(file)?.text
     }
 
-    private fun saveImage(data: String, step: Int) {
+    private fun saveFile(data: String, name: String, ext: String) {
         val bytes = Base64.getDecoder().decode(data.substringAfter(","))
         ApplicationManager.getApplication().invokeLater {
             val dialog = FileChooserFactory.getInstance()
-                .createSaveFileDialog(FileSaverDescriptor("Code Scope", "", "png"), project)
-            val target = dialog.save("code-scope-passo-$step.png") ?: return@invokeLater
+                .createSaveFileDialog(FileSaverDescriptor("Code Scope", "", ext), project)
+            val target = dialog.save(name) ?: return@invokeLater
             target.file.writeBytes(bytes)
         }
+    }
+
+    /** Texto do arquivo .json que a pessoa escolher, ou null se ela desistir. */
+    private fun openFile(): String? {
+        var text: String? = null
+        ApplicationManager.getApplication().invokeAndWait {
+            val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor("json")
+            text = FileChooser.chooseFile(descriptor, project, null)?.let { String(it.contentsToByteArray(), Charsets.UTF_8) }
+        }
+        return text
     }
 
     override fun dispose() {}

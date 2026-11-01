@@ -96,7 +96,13 @@ export async function collectSnapshot(
         break;
       case 'sequence': {
         if (arrays.length >= limits.maxArrays) break;
-        const { array, children } = await readSequence(session, adapter, v, v.name, shape, limits.maxElements, true, objectsOf);
+        const { array, children } = await readSequence(session, adapter, v, v.name, shape, limits.maxElements, 2, objectsOf, frame.id);
+        // Matriz de três dimensões: cada camada é uma matriz, com desenho próprio.
+        const layers = array.rows?.filter((r) => r.rows) ?? [];
+        if (layers.length > 0) {
+          arrays.push(...layers.slice(0, limits.maxArrays - arrays.length));
+          break;
+        }
         if (shape.id) array.id = shape.id;
         // O tipo já diz que é pilha ou fila (C#: Stack<T>, Queue<T>), sem precisar olhar o código.
         if (shape.role) {
@@ -219,12 +225,13 @@ export function functionName(raw: string): { name: string; program: boolean; own
   const last = parts.pop() ?? noArgs;
   if (last === '<init>') return { name: `new ${(parts.pop() ?? '').split('$').pop()}`, program: false };
   // A classe do método: "Heranca$Cachorro.falar()" (Java) e "Cachorro.falar" (js-debug) dizem qual versão rodou.
-  const owner = parts.pop()?.split('$').pop();
+  // Método em Go: "main.(*Conta).depositar".
+  const owner = parts.pop()?.split('$').pop()?.replace(/^\(\*?|\)$/g, '');
   return { name: last, program: false, ...(owner && !NOT_OWNERS.has(owner) ? { owner } : {}) };
 }
 
 /** Prefixos que o debugger põe no nome da função e que não são classes do aluno. */
-const NOT_OWNERS = new Set(['global', 'Object', 'Module', '<anonymous>', 'exports']);
+const NOT_OWNERS = new Set(['global', 'Object', 'Module', '<anonymous>', 'exports', 'main']);
 
 async function readCalls(
   session: Session,
@@ -257,7 +264,7 @@ async function readCalls(
       vars = [];
       for (const v of locals.filter((x) => !adapter.returnValue?.(x))) {
         if (vars.length >= MAX_CALL_VARS) break;
-        vars.push(...(await summarizeCall(session, adapter, v)));
+        vars.push(...(await summarizeCall(session, adapter, v, f.id)));
       }
       const self = locals.find((v) => v.name === 'self' || v.name === 'this');
       const shape = self ? adapter.shape(self) : undefined;
@@ -277,10 +284,10 @@ export const MAX_CALL_ITEMS = 8;
  * recursiva), cada chamada guarda um pedaço diferente, e é isso que o aluno
  * precisa ver na pilha. O resto fica como em summarize.
  */
-async function summarizeCall(session: Session, adapter: LanguageAdapter, v: DapVariable): Promise<Scalar[]> {
+async function summarizeCall(session: Session, adapter: LanguageAdapter, v: DapVariable, frameId: number): Promise<Scalar[]> {
   const shape = adapter.shape(v);
   if (shape.kind !== 'sequence') return summarize(adapter, v);
-  const read = await readSequence(session, adapter, v, v.name, shape, MAX_CALL_ITEMS, false).catch(() => undefined);
+  const read = await readSequence(session, adapter, v, v.name, shape, MAX_CALL_ITEMS, 0, undefined, frameId).catch(() => undefined);
   if (!read) return summarize(adapter, v);
   const { values, length } = read.array;
   return [{ name: v.name, value: `[${values.join(', ')}${length > values.length ? ', …' : ''}]` }];
@@ -306,9 +313,9 @@ function summarize(adapter: LanguageAdapter, v: DapVariable): Scalar[] {
 }
 
 /**
- * Lê as posições de uma coleção. Com expandRows, uma coleção cujos elementos
- * também são coleções vira matriz: cada linha é lida uma vez, e o terceiro
- * nível em diante fica só como texto.
+ * Lê as posições de uma coleção. Com depth, uma coleção cujos elementos também
+ * são coleções vira matriz: cada linha é lida uma vez, até depth níveis abaixo.
+ * Depois disso, os níveis ficam só como texto.
  */
 async function readSequence(
   session: Session,
@@ -317,11 +324,17 @@ async function readSequence(
   name: string,
   shape: Sequence,
   max: number,
-  expandRows: boolean,
+  depth: number,
   objects?: (c: DapVariable) => Promise<string | undefined>,
+  frameId?: number,
 ): Promise<{ array: ArrayVar; children: DapVariable[] }> {
   let children: DapVariable[];
-  if (shape.collection === 'set' && adapter.setItem) {
+  const indirect = frameId !== undefined ? adapter.indirectSequence?.(v) : undefined;
+  if (indirect) {
+    const read = await readIndirect(session, indirect, Math.max(max, 1), frameId as number);
+    children = read.children;
+    shape = { ...shape, length: read.length };
+  } else if (shape.collection === 'set' && adapter.setItem) {
     children = (await variables(session, v.variablesReference)).filter((c) => adapter.setItem?.(c)).map((c, i) => ({ ...c, name: String(i) }));
   } else if (shape.length === undefined) {
     children = await variables(session, v.variablesReference);
@@ -336,7 +349,7 @@ async function readSequence(
   }
   // Alguns debuggers ignoram o filtro "indexed" e devolvem também "length", "__proto__"...
   // e outros não preenchem indexedVariables: quem decide o que é posição é o nome.
-  if (!children.some((c) => adapter.elementIndex(c.name) !== undefined)) {
+  if (!indirect && !children.some((c) => adapter.elementIndex(c.name) !== undefined)) {
     const all = await variables(session, v.variablesReference);
     if (all.some((c) => adapter.elementIndex(c.name) !== undefined)) children = all;
   }
@@ -386,14 +399,33 @@ async function readSequence(
 
   const rowShapes = byIndex.slice(0, count).map((c) => (c ? adapter.shape(c) : undefined));
   const isMatrix = count > 0 && rowShapes.every((s) => s?.kind === 'sequence');
-  if (expandRows && isMatrix) {
+  if (depth > 0 && isMatrix) {
     array.rows = [];
     for (let i = 0; i < count; i++) {
       const rowShape = rowShapes[i] as Sequence;
-      array.rows.push((await readSequence(session, adapter, byIndex[i], `${name}[${i}]`, rowShape, max, false)).array);
+      // Só as primeiras camadas de um cubo abrem: 50 x 50 x 50 posições travariam o F10.
+      const below = i < MAX_LAYERS ? depth - 1 : 0;
+      array.rows.push((await readSequence(session, adapter, byIndex[i], `${name}[${i}]`, rowShape, max, below, objects)).array);
     }
   }
   return { array, children };
+}
+
+/** Camadas abertas de uma matriz de três dimensões. */
+export const MAX_LAYERS = 8;
+
+/** Coleção lida por expressões: pede o tamanho e depois os itens. */
+async function readIndirect(
+  session: Session,
+  indirect: NonNullable<ReturnType<NonNullable<LanguageAdapter['indirectSequence']>>>,
+  max: number,
+  frameId: number,
+): Promise<{ children: DapVariable[]; length: number }> {
+  const size = (await session.customRequest('evaluate', { expression: indirect.length, frameId, context: 'watch' })) as { result?: string };
+  const length = Number(size.result);
+  if (!Number.isInteger(length) || length <= 0) return { children: [], length: 0 };
+  const items = (await session.customRequest('evaluate', { expression: indirect.items(Math.min(length, max)), frameId, context: 'watch' })) as { variablesReference?: number };
+  return { children: items.variablesReference ? await variables(session, items.variablesReference) : [], length };
 }
 
 /**
@@ -458,7 +490,7 @@ async function entryList(session: Session, adapter: LanguageAdapter, c: DapVaria
   }
   const shape = list ? adapter.shape(list) : undefined;
   if (!list || shape?.kind !== 'sequence') return undefined;
-  return (await readSequence(session, adapter, list, '', shape, max, false)).array.values;
+  return (await readSequence(session, adapter, list, '', shape, max, 0)).array.values;
 }
 
 async function variables(session: Session, variablesReference: number, extra: object = {}): Promise<DapVariable[]> {
@@ -471,7 +503,7 @@ async function variables(session: Session, variablesReference: number, extra: ob
 /** Posições que guardam objetos mostram o valor principal do objeto ("Ana"), não "Turma$Aluno@30". */
 function labelObjectCells(arrays: ArrayVar[], heap: HeapObject[]): void {
   const byId = new Map(heap.map((o) => [o.id, o]));
-  for (const a of arrays) {
+  for (const a of arrays.flatMap((x) => [x, ...(x.rows ?? [])])) {
     a.refs?.forEach((id, i) => {
       const obj = id ? byId.get(id) : undefined;
       if (obj) a.values[i] = nodeValue(obj);

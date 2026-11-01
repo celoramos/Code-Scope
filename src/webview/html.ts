@@ -39,6 +39,7 @@ export function panelHtml({ cspSource, cssUri: css, jsUri: js, nonce, present, l
       <ol class="empty-steps">
         ${t.emptySteps.map((s) => `<li><span>${s}</span></li>`).join('\n        ')}
       </ol>
+      <button id="open-session" class="toggle-button" type="button">${t.openSession}</button>
     </section>
 
     <header id="toolbar" class="toolbar" hidden>
@@ -57,8 +58,21 @@ export function panelHtml({ cspSource, cssUri: css, jsUri: js, nonce, present, l
       <div class="toolbar-actions">
         <button id="live" class="link-button" type="button" hidden>${t.live}</button>
         <button id="predict-toggle" class="toggle-button" type="button" aria-pressed="false">${t.predictMode}</button>
+        <button id="details-toggle" class="toggle-button" type="button" aria-pressed="false">${t.detailsMode}</button>
         <button id="save-image" class="toggle-button" type="button">${t.saveImage}</button>
+        <button id="save-gif" class="toggle-button" type="button">${t.saveGif}</button>
+        <button id="save-session" class="toggle-button" type="button">${t.saveSession}</button>
+        <button id="compare-session" class="toggle-button" type="button">${t.compareSession}</button>
       </div>
+      <form id="find" class="find" role="search">
+        <input id="find-input" class="predict-input" type="search" placeholder="${t.find}" aria-label="${t.find}" autocomplete="off" spellcheck="false">
+        <button id="find-prev" class="icon-button" type="button" aria-label="${t.findPrevious}" title="${t.findPrevious}">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" /></svg>
+        </button>
+        <button id="find-next" class="icon-button" type="submit" aria-label="${t.findNext}" title="${t.findNext}">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
+        </button>
+      </form>
       <p class="location">
         <span id="file" class="location-file"></span>
         <span id="ended" class="badge" hidden>${t.sessionEnded}</span>
@@ -78,12 +92,31 @@ export function panelHtml({ cspSource, cssUri: css, jsUri: js, nonce, present, l
     </header>
 
     <p id="status" class="status" role="status" aria-live="polite"></p>
+    <section id="exercise" class="exercise" aria-label="${t.exercise}" hidden>
+      <h2 id="exercise-title" class="exercise-title"></h2>
+      <p id="exercise-goal" class="exercise-goal"></p>
+      <ul id="exercise-checks" class="exercise-checks"></ul>
+      <p id="exercise-status" class="exercise-status"></p>
+    </section>
     <section id="error" class="error-card" role="alert" hidden>
       <h2 id="error-title" class="error-title"></h2>
       <ul id="error-text" class="error-text"></ul>
       <p id="error-raw" class="error-raw"></p>
     </section>
     <ul id="explanation" class="explanation" aria-live="polite" aria-label="${t.explanation}"></ul>
+    <section id="notes" class="notes" aria-label="${t.notes}" hidden>
+      <h3 id="notes-title" class="notes-title"></h3>
+      <ul id="notes-list" class="notes-list"></ul>
+    </section>
+    <ul id="details" class="details" aria-label="${t.details}" hidden></ul>
+    <section id="compare" class="compare" aria-labelledby="compare-title" hidden>
+      <header class="compare-header">
+        <h3 id="compare-title" class="compare-title"></h3>
+        <button id="compare-close" class="link-button" type="button">${t.closeCompare}</button>
+      </header>
+      <table class="cost-table"><thead><tr id="compare-head"></tr></thead><tbody id="compare-rows"></tbody></table>
+      <p id="compare-note" class="cost-note"></p>
+    </section>
     <section id="calls" class="calls" aria-labelledby="calls-title" hidden>
       <header class="calls-header">
         <h3 id="calls-title" class="calls-title"></h3>

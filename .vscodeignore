@@ -7,6 +7,7 @@ out-test/**
 # Os exemplos de Java, JavaScript e Python vão na extensão (comando "Abrir um exemplo").
 samples/c/**
 samples/csharp/**
+samples/go/**
 samples/exemplos.code-workspace
 samples/java/bin/**
 samples/**/*.class

@@ -3,9 +3,10 @@ import { applyCollectionRoles, pickAdapter } from '../debug/adapters';
 import { declaredClasses } from '../debug/adapters/adapter';
 import { evaluateCondition } from '../debug/conditionEval';
 import { readExceptionInfo, type ExceptionInfoBody } from '../debug/exceptionFilters';
+import { parseAnnotations } from '../model/annotations';
 import { parseClasses } from '../model/classes';
 import { indexNames } from '../model/indexNames';
-import { parseCondition } from '../model/condition';
+import { parseCondition, type Syntax } from '../model/condition';
 import { dropVariables, notYetDeclared } from '../model/declared';
 import type { Snapshot } from '../model/snapshot';
 import { applyTextRoles } from '../model/text';
@@ -59,6 +60,7 @@ export async function collectStep(session: Session, threadId: number | undefined
   if (source) applyCollectionRoles(snap, source.text, collected.adapter);
   if (source) applyTextRoles(snap, source.text);
   if (source) snap.indexNames = [...indexNames(source.text)].filter((n) => snap.pointers.some((p) => p.name === n));
+  if (collected.adapter.id === 'go') keepLoopVariable(snap, opts.previous);
   // Em C, a variável declarada mais abaixo ainda guarda lixo: só entra quando a declaração rodar.
   if (source && collected.adapter.id === 'c') {
     const names = [...snap.arrays, ...snap.pointers, ...(snap.scalars ?? []), ...(snap.refs ?? []), ...(snap.maps ?? [])].map((v) => v.name);
@@ -67,11 +69,32 @@ export async function collectStep(session: Session, threadId: number | undefined
   // Classes do arquivo: herança (polimorfismo) e se escrevem equals (identidade e igualdade).
   const classes = source ? parseClasses(source.text) : {};
   if (Object.keys(classes).length > 0) snap.classes = classes;
+  // Exercício e notas do professor vêm de comentários no próprio arquivo.
+  if (source) {
+    const { notes, exercise } = parseAnnotations(source.text);
+    const here = notes.get(snap.line);
+    if (here?.length) snap.notes = here;
+    if (exercise) snap.exercise = exercise;
+  }
   if (opts.reason === 'exception') snap.exception = await readException(session, thread);
   // A linha parada testa uma condição? Cada parte vira verdadeiro ou falso antes de rodar.
-  const parsed = snap.exception ? undefined : parseCondition(snap.code, collected.adapter.id === 'python' ? 'python' : 'c');
+  const parsed = snap.exception ? undefined : parseCondition(snap.code, conditionSyntax(collected.adapter.id));
   if (parsed) snap.condition = await evaluateCondition(session, collected.raw.frame.id, parsed, snap);
   return { snapshot: snap, collected };
+}
+
+function conditionSyntax(adapter: string): Syntax {
+  return adapter === 'python' || adapter === 'go' ? adapter : 'c';
+}
+
+/**
+ * Em Go, cada volta do for tem a própria cópia de j, e parado na linha do for o
+ * debugger não mostra nenhuma. Para o aluno é a mesma variável: ela continua lá.
+ */
+function keepLoopVariable(snap: Snapshot, previous: Snapshot | undefined): void {
+  const name = /^for\s+([A-Za-z_]\w*)\s*:=/.exec(snap.code ?? '')?.[1];
+  const kept = name && previous?.pointers.find((p) => p.name === name);
+  if (kept && !snap.pointers.some((p) => p.name === name)) snap.pointers.push(kept);
 }
 
 /** Texto separado em linhas, como o painel usa. */

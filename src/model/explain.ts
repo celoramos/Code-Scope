@@ -31,7 +31,7 @@ function sentence(c: Change, m: Messages): string {
     case 'array-added':
       if (c.structure === 'text') return m.textCreated(c.array, c.length);
       if (c.structure === 'set') return m.setCreated(c.array, c.length);
-      if (c.structure === 'list' || c.structure === 'stack' || c.structure === 'queue') {
+      if (c.structure === 'list' || c.structure === 'stack' || c.structure === 'queue' || c.structure === 'deque' || c.structure === 'heap') {
         return m.collectionCreated(c.structure, c.array, c.length);
       }
       if (c.structure === 'matrix') return m.matrixCreated(c.array, c.length, c.cols ?? 0);
@@ -90,7 +90,7 @@ function keyText(key: string): string {
 function describe(c: Extract<Change, { kind: 'array-added' }>, m: Messages): string {
   if (c.structure === 'matrix') return m.describeMatrix(c.array, c.length, c.cols ?? 0);
   if (c.structure === 'set') return m.describeSet(c.array, c.length);
-  if (c.structure === 'list' || c.structure === 'stack' || c.structure === 'queue') {
+  if (c.structure === 'list' || c.structure === 'stack' || c.structure === 'queue' || c.structure === 'deque' || c.structure === 'heap') {
     return m.describeCollection(c.structure, c.array, c.length);
   }
   return m.describeArray(c.array, c.length);

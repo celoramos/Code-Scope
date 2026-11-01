@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { uiLanguage, type AnimationSpeed } from '../config';
 import type { Frame } from '../model/frame';
 import { panelHtml } from './html';
-import { imageSaved } from './strings';
+import { fileSaved } from './strings';
 
 /** Mensagens que a extensão envia para o painel. */
 export type ToWebview =
@@ -10,7 +10,9 @@ export type ToWebview =
   | { type: 'session'; state: 'idle' | 'running' | 'ended' }
   | { type: 'settings'; animationSpeed: AnimationSpeed }
   | { type: 'reset' }
-  | { type: 'error'; text: string };
+  | { type: 'error'; text: string }
+  /** Nenhum passo combina com a busca. */
+  | { type: 'find-miss'; query: string };
 
 /** Mensagens que o painel envia para a extensão. */
 export type FromWebview =
@@ -23,7 +25,15 @@ export type FromWebview =
   /** O painel quer o CSS para montar a imagem do passo. */
   | { type: 'export-css' }
   /** Imagem do passo pronta, em PNG base64. */
-  | { type: 'save-image'; data: string; step: number };
+  | { type: 'save-image'; data: string; step: number }
+  /** A execução em GIF, em base64. */
+  | { type: 'save-gif'; data: string }
+  | { type: 'save-session' }
+  /** Abre uma sessão salva; com compare, ela só entra na comparação. */
+  | { type: 'open-session'; compare: boolean }
+  | { type: 'compare-close' }
+  /** Próximo (dir 1) ou anterior (dir -1) passo que combina com a busca. */
+  | { type: 'find'; query: string; dir: 1 | -1 };
 
 /** Respostas que só o painel que perguntou recebe. */
 type Reply = { type: 'css'; text: string };
@@ -86,7 +96,8 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
   /** Pedidos da imagem ficam aqui; o resto vai para o controlador. */
   private receive(webview: vscode.Webview, msg: FromWebview) {
     if (msg.type === 'export-css') void this.sendCss(webview);
-    else if (msg.type === 'save-image') void saveImage(msg.data, msg.step);
+    else if (msg.type === 'save-image') void saveFile(Buffer.from(msg.data, 'base64'), `code-scope-passo-${msg.step}.png`, { PNG: ['png'] });
+    else if (msg.type === 'save-gif') void saveFile(Buffer.from(msg.data, 'base64'), 'code-scope.gif', { GIF: ['gif'] });
     else this.messages.fire(msg);
   }
 
@@ -108,17 +119,16 @@ export class ScopeViewProvider implements vscode.WebviewViewProvider {
   }
 }
 
-/** Pergunta onde salvar e grava a imagem do passo. */
-async function saveImage(base64: string, step: number) {
+/** Pergunta onde salvar e grava o arquivo. */
+export async function saveFile(bytes: Uint8Array, name: string, filters: Record<string, string[]>) {
   const folder = vscode.workspace.workspaceFolders?.[0]?.uri;
-  const name = `code-scope-passo-${step}.png`;
   const target = await vscode.window.showSaveDialog({
     defaultUri: folder ? vscode.Uri.joinPath(folder, name) : vscode.Uri.file(name),
-    filters: { PNG: ['png'] },
+    filters,
   });
   if (!target) return;
-  await vscode.workspace.fs.writeFile(target, Buffer.from(base64, 'base64'));
-  void vscode.window.showInformationMessage(imageSaved(uiLanguage(), target.fsPath));
+  await vscode.workspace.fs.writeFile(target, bytes);
+  void vscode.window.showInformationMessage(fileSaved(uiLanguage(), target.fsPath));
 }
 
 function makeNonce(): string {

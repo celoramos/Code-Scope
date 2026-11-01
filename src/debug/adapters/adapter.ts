@@ -18,9 +18,10 @@ export type VariableShape =
   /**
    * Instância de uma classe. id é a identidade na memória quando o debugger
    * mostra uma ("@12" no Java, "0x..." no Python); sem ela, o coletor compara
-   * com evaluate.
+   * com evaluate. address é a expressão que aponta para ele, quando o objeto é um
+   * valor guardado num lugar (struct do Go) e ponteiros podem apontar para esse lugar.
    */
-  | { kind: 'object'; type: string; id?: string }
+  | { kind: 'object'; type: string; id?: string; address?: string }
   /** Referência vazia: null do Java, que não diz o tipo. */
   | { kind: 'null' }
   /** Dicionário: HashMap, dict, objeto literal ou Map do JavaScript. */
@@ -35,7 +36,7 @@ export type VariableShape =
   | { kind: 'skip' };
 
 export interface CollectionRole {
-  role: 'stack' | 'queue';
+  role: 'stack' | 'queue' | 'deque' | 'heap';
   /** O debugger entrega o topo da pilha na posição 0 (o painel inverte para o topo ficar no fim). */
   topFirst: boolean;
 }
@@ -63,6 +64,11 @@ export interface LanguageAdapter {
    * "Character@41" dentro de coleções). Devolve como formatar o valor de dentro.
    */
   unbox?(v: DapVariable): ((inner: DapVariable) => string) | undefined;
+  /**
+   * Coleção que o debugger não abre sozinho, lida por expressões: o tamanho e os
+   * itens (std::vector num gdb sem os pretty-printers do Python).
+   */
+  indirectSequence?(v: DapVariable): { length: string; items: (length: number) => string } | undefined;
   /** Pilha ou fila, pelo uso no código-fonte. */
   collectionRole?(source: string, name: string): CollectionRole | undefined;
   /**
@@ -71,6 +77,8 @@ export interface LanguageAdapter {
    */
   returnValue?(v: DapVariable): ReturnedValue | undefined;
 
+  /** Único filho de um ponteiro que é o objeto apontado (Go); os campos estão dentro dele. */
+  pointee?(fields: DapVariable[]): DapVariable | undefined;
   /** Campos de um objeto, sem o que o debugger acrescenta ("special variables", "[[Prototype]]"). */
   objectFields?(fields: DapVariable[]): DapVariable[];
   /** Valor vazio num campo de objeto: null, None, undefined. */
@@ -80,6 +88,8 @@ export interface LanguageAdapter {
    * para debuggers que não mostram a identidade no valor.
    */
   identityExpr?(a: string, b: string): string;
+  /** Como identityExpr, para arrays, quando a regra é outra. */
+  sameArrayExpr?(a: string, b: string): string;
   /**
    * Uma entrada de dicionário a partir de um filho do dicionário; undefined
    * para o que não é entrada ("len()", "[[Prototype]]"...).
@@ -139,7 +149,10 @@ function unquoteSimple(value: string): string {
 /** Classes declaradas no arquivo: só objetos delas são desenhados. */
 export function declaredClasses(source: string): Set<string> {
   // class (Java, JavaScript, Python, C#, C++), struct (C, C++, C#) e record (C#, Java).
-  return new Set([...source.matchAll(/\b(?:class|struct|record)\s+([A-Za-z_$][\w$]*)/g)].map((m) => m[1]));
+  const declared = [...source.matchAll(/\b(?:class|struct|record)\s+([A-Za-z_$][\w$]*)/g)].map((m) => m[1]);
+  // Em Go o nome vem antes: type No struct.
+  const go = [...source.matchAll(/\btype\s+([A-Za-z_]\w*)\s+struct\b/g)].map((m) => m[1]);
+  return new Set([...declared, ...go]);
 }
 
 export interface ReturnedValue {

@@ -1,3 +1,4 @@
+import { findStep } from './session';
 import type { Snapshot } from './snapshot';
 
 /** Passos guardados por sessão. Um laço longo com F5 não deve encher a memória. */
@@ -37,6 +38,20 @@ export class History {
   /** Cópia de todos os snapshots, do mais antigo ao mais novo. */
   all(): Snapshot[] {
     return [...this.items];
+  }
+
+  /** Troca o histórico por uma sessão salva, com o cursor no primeiro passo. */
+  load(snapshots: readonly Snapshot[]) {
+    this.items = snapshots.slice(-MAX_STEPS);
+    this.cursor = this.items.length > 0 ? 0 : -1;
+  }
+
+  /** Leva o cursor ao próximo passo que combina com a busca; false se não houver. */
+  find(query: string, dir: 1 | -1): boolean {
+    const found = findStep(this.items, this.cursor, query, dir);
+    if (found === undefined) return false;
+    this.cursor = found;
+    return true;
   }
 
   clear() {

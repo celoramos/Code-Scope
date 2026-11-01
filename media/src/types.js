@@ -1,7 +1,7 @@
 // @ts-check
 // Formas dos dados que a extensão manda ao painel (ver src/model/frame.ts).
 /**
- * @typedef {{ name: string, values: string[], length: number, kind?: 'array' | 'list' | 'stack' | 'queue' | 'text' | 'set', rows?: ArrayVar[], id?: string }} ArrayVar
+ * @typedef {{ name: string, values: string[], length: number, kind?: 'array' | 'list' | 'stack' | 'queue' | 'text' | 'set' | 'deque' | 'heap', rows?: ArrayVar[], id?: string }} ArrayVar
  * @typedef {{ name: string, value: number }} Pointer
  * @typedef {{ name: string, value: string }} Scalar
  * @typedef {{ name: string, index: number }} Arrow
@@ -10,9 +10,11 @@
  * @typedef {{ line: number, code?: string }} LineRef
  * @typedef {{ snapshot: { file: string, line: number, code?: string, arrays: ArrayVar[], pointers: Pointer[], scalars?: Scalar[], calls?: CallFrame[], maps?: MapVar[], condition?: Condition, refs?: { name: string, ref: string | null }[] },
  *             executed?: LineRef, changes: Change[], arrows: Record<string, Arrow[]>, axes: Record<string, Axes>,
- *             explanation: string[], trace: Trace, error?: ErrorView, calls?: CallChange[], heap?: HeapView, heapDelta?: HeapDelta,
+ *             explanation: string[], notes: string[], details: string[], exercise?: ExerciseViewT, compare?: { current: SessionSummaryT, saved: SessionSummaryT }, trace: Trace, error?: ErrorView, calls?: CallChange[], heap?: HeapView, heapDelta?: HeapDelta,
  *             focus?: Record<string, ArrayFocus>, prediction?: { target: string }, answers?: Record<string, string>, graphs?: GraphViewT[], callTree?: CallTreeT, shadows?: Record<string, string>, stats?: { comparisons: number, swaps: number },
  *             step: number, total: number }} Frame
+ * @typedef {{ goal: string, checks: { name: string, value: string, actual?: string, ok: boolean }[], doneAt?: number }} ExerciseViewT
+ * @typedef {{ file: string, steps: number, comparisons: number, swaps: number }} SessionSummaryT
  * @typedef {{ name: string, line: number, program?: boolean, owner?: string, vars: Scalar[] }} CallFrame
  * @typedef {{ kind: 'call' | 'return', name: string, depth: number, value?: string }} CallChange
  * @typedef {{ id: string, value: string, names: string[] }} NodeViewT

@@ -81,7 +81,8 @@ export async function linkSameArrays(
   arrays: { array: ArrayVar; v: DapVariable }[],
   frameId: number,
 ): Promise<void> {
-  if (!adapter.identityExpr) return;
+  const sameExpr = adapter.sameArrayExpr ?? adapter.identityExpr;
+  if (!sameExpr) return;
   const pending = arrays.filter((a) => !a.array.id && !a.array.rows);
   let evals = 0;
   for (let i = 0; i < pending.length; i++) {
@@ -90,7 +91,7 @@ export async function linkSameArrays(
       const b = pending[i];
       if (b.array.id || a.array.values.join('\u0000') !== b.array.values.join('\u0000')) continue;
       evals++;
-      if (await evalTrue(session, frameId, adapter.identityExpr(exprOf(a.v), exprOf(b.v)))) {
+      if (await evalTrue(session, frameId, sameExpr(exprOf(a.v), exprOf(b.v)))) {
         a.array.id ??= `~${++syntheticIds}`;
         b.array.id = a.array.id;
       }
@@ -113,14 +114,16 @@ class HeapContext {
     if (this.opts.userTypes && !this.opts.userTypes.has(shape.type)) return undefined;
     const id = await this.identify(v, shape);
     if (this.objects.has(id)) return id;
-    const obj: HeapObject = { id, type: shape.type, fields: [], ...(v.evaluateName ? { expr: v.evaluateName } : {}) };
+    const obj: HeapObject = { id, type: shape.type, fields: [], ...((shape.address ?? v.evaluateName) ? { expr: shape.address ?? v.evaluateName } : {}) };
     this.objects.set(id, obj);
     if (this.objects.size > MAX_OBJECTS) {
       obj.truncated = true;
       return id;
     }
 
-    const all = await variables(this.session, v.variablesReference);
+    let all = await variables(this.session, v.variablesReference);
+    const inner = this.adapter.pointee?.(all);
+    if (inner) all = await variables(this.session, inner.variablesReference);
     const children = this.adapter.objectFields?.(all) ?? all;
     for (const c of children) {
       const field = await this.field(c);

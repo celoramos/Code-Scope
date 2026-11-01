@@ -11,13 +11,23 @@ import { asInteger, numericIndex, type LanguageAdapter, type VariableShape } fro
  *              do struct apontado (o gdb segue o ponteiro); NULL é "0x0"
  *   inteiro:   value "5", type "int"
  * O endereço é a identidade: dois ponteiros com o mesmo endereço apontam para
- * o mesmo struct. As coleções do C++ (std::vector, std::map) só aparecem por
- * dentro (_M_impl) quando o gdb não tem os pretty-printers do Python.
+ * o mesmo struct.
+ *
+ * Coleções do C++. Observado no gdb real sem os pretty-printers do Python
+ * (w64devkit): std::vector tem value "{...}" e só o _Vector_base como filho, mas
+ * as expressões em VECTOR_SIZE e VECTOR_ITEMS leem os itens; std::map é uma
+ * árvore por dentro e fica de fora. Com os pretty-printers (o gdb do Linux), pelo
+ * formato documentado, sem exemplo que confirme ainda: "std::vector of length 3,
+ * capacity 4" e "std::map with 2 elements", com filhos "[0]" e '["chave"]'.
  */
 
 const INTEGER = /^(?:const )?(?:unsigned |signed )?(?:int|short|long|long long|long int|short int|size_t|ssize_t|u?int\d+_t)$/;
 const SCALAR = /^(?:const )?(?:float|double|long double|bool|_Bool|char|unsigned char|signed char)$/;
 const ARRAY = /\[(\d+)\]$/;
+const VECTOR = /^(?:const )?std::(?:__\w+::)?vector</;
+const MAP = /^(?:const )?std::(?:__\w+::)?(?:unordered_)?map</;
+/** Quantos itens o valor diz ter: "of length 3", "with 2 elements", "{ size=3 }". */
+const COUNT = /(?:of length |with |size=)(\d+)/;
 
 /** "97 'a'" vira "'a'"; ponteiro de char ('0x4050a0 "texto"') vira o texto. */
 export function formatValue(v: DapVariable): string {
@@ -38,6 +48,11 @@ export function plausibleAddress(address: string): boolean {
   return n >= 0x10000n && n < 0x800000000000n && n % 4n === 0n;
 }
 
+/** std::vector aberto só por expressões: o gdb sem pretty-printers não mostra os itens. */
+function isOpaqueVector(v: DapVariable): boolean {
+  return VECTOR.test((v.type ?? '').trim()) && !COUNT.test(v.value);
+}
+
 export const cAdapter: LanguageAdapter = {
   id: 'c',
   label: 'C/C++',
@@ -51,6 +66,15 @@ export const cAdapter: LanguageAdapter = {
 
   shape(v): VariableShape {
     const type = (v.type ?? '').trim();
+    if (VECTOR.test(type)) {
+      const count = COUNT.exec(v.value);
+      if (count?.[1] === '0') return { kind: 'empty-list' };
+      return { kind: 'sequence', ...(count ? { length: Number(count[1]) } : {}), collection: 'list' };
+    }
+    if (MAP.test(type)) {
+      const count = COUNT.exec(v.value);
+      return count ? { kind: 'map', length: Number(count[1]) } : { kind: 'skip' };
+    }
     const arr = ARRAY.exec(type);
     if (arr && v.variablesReference > 0) return { kind: 'sequence', length: Number(arr[1]), collection: 'array' };
     if (INTEGER.test(type)) {
@@ -71,6 +95,16 @@ export const cAdapter: LanguageAdapter = {
     return { kind: 'skip' };
   },
 
+  indirectSequence(v) {
+    if (!isOpaqueVector(v)) return undefined;
+    const e = v.evaluateName ?? v.name;
+    return { length: `${e}._M_impl._M_finish - ${e}._M_impl._M_start`, items: (n) => `*${e}._M_impl._M_start@${n}` };
+  },
+  // Entrada de std::map: o nome é a chave, entre colchetes.
+  mapEntry(child) {
+    const m = /^\[(.*)\]$/s.exec(child.name);
+    return m ? { key: m[1], value: formatValue(child) } : undefined;
+  },
   elementIndex: numericIndex,
   formatElement: formatValue,
   isNull: (v) => /^0x0+$/i.test(v.value),

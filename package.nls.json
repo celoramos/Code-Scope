@@ -19,6 +19,8 @@
   "config.pauseOnErrors": "Pauses the program on errors that nobody handles (uncaught exceptions), so the panel can show where and why it broke.",
   "command.present": "Presentation mode (large panel next to the code)",
   "command.openSample": "Open a sample",
+  "command.openSession": "Open a saved session",
+  "command.compareSession": "Compare with a saved session",
   "walkthrough.title": "Get started with Code Scope",
   "walkthrough.description": "See your code run: the panel draws arrays, lists, stacks, objects and recursion while you debug.",
   "walkthrough.sample.title": "Open a sample",

@@ -14,8 +14,10 @@ export type HostRequest =
   | { kind: 'source'; file: string }
   /** Depois do palpite, o foco volta ao editor. */
   | { kind: 'focus-editor' }
-  /** Imagem do passo em PNG base64. */
-  | { kind: 'save-image'; data: string; step: number }
+  /** Arquivo em base64 para a IDE salvar: imagem, GIF ou sessão. */
+  | { kind: 'save-file'; data: string; name: string; ext: string }
+  /** Pede um arquivo .json à pessoa; a resposta é o texto dele, ou null. */
+  | { kind: 'open-file' }
   /** O CSS do painel, para montar a imagem do passo. */
   | { kind: 'css' }
   | { kind: 'log'; level: 'debug' | 'error'; text: string };

@@ -261,4 +261,75 @@ describe('painel (main.js num DOM)', () => {
     assert.equal(visible(panel.doc, 'empty'), true);
     assert.equal(panel.doc.querySelectorAll('#arrays > *').length, 0);
   });
+
+  const base: Snapshot = { line: 3, file: 'a.java', arrays: [], pointers: [{ name: 'soma', value: 15 }] };
+
+  it('exercício: mostra o objetivo e avisa quando bate', () => {
+    const panel = openPanel();
+    const exercise = { goal: 'Some tudo.', expects: [{ name: 'soma', value: '15' }] };
+    panel.stop({ ...base, pointers: [{ name: 'soma', value: 10 }], exercise });
+    assert.equal(visible(panel.doc, 'exercise'), true);
+    assert.equal(panel.doc.getElementById('exercise-goal')?.textContent, 'Some tudo.');
+    assert.match(panel.doc.getElementById('exercise-status')?.textContent ?? '', /Ainda não/);
+    panel.stop({ ...base, exercise });
+    assert.match(panel.doc.getElementById('exercise-status')?.textContent ?? '', /passo 2/);
+    assert.deepEqual(panel.errors, []);
+  });
+
+  it('nota do professor aparece só na linha dela', () => {
+    const panel = openPanel();
+    panel.stop({ ...base, notes: ['Olhe o i.'] });
+    assert.deepEqual(texts(panel.doc, '.notes-item'), ['Olhe o i.']);
+    panel.stop(base);
+    assert.equal(visible(panel.doc, 'notes'), false);
+  });
+
+  it('detalhes ligam e desligam pelo botão', () => {
+    const panel = openPanel();
+    panel.stop(base);
+    assert.equal(visible(panel.doc, 'details'), false);
+    (panel.doc.getElementById('details-toggle') as HTMLElement).click();
+    assert.equal(visible(panel.doc, 'details'), true);
+    assert.deepEqual(texts(panel.doc, '.details-item'), ['linha 3']);
+  });
+
+  it('busca pede o passo à extensão e avisa quando não acha', () => {
+    const panel = openPanel();
+    panel.stop(base);
+    const input = panel.doc.getElementById('find-input') as HTMLInputElement;
+    input.value = ' soma ';
+    (panel.doc.getElementById('find-prev') as HTMLElement).click();
+    assert.equal(JSON.stringify(panel.sent.at(-1)), JSON.stringify({ type: 'find', query: 'soma', dir: -1 }));
+    panel.post({ type: 'find-miss', query: 'soma' });
+    assert.match(panel.doc.getElementById('status')?.textContent ?? '', /soma/);
+  });
+
+  it('heap aparece como árvore e deque com a regra das duas pontas', () => {
+    const panel = openPanel();
+    panel.stop({
+      ...base,
+      arrays: [
+        { name: 'h', values: ['1', '3', '2', '9'], length: 4, kind: 'heap' },
+        { name: 'd', values: ['1'], length: 1, kind: 'deque' },
+      ],
+    });
+    const levels = [...panel.doc.querySelectorAll('.heap-level')].map((l) => l.querySelectorAll('.heap-node').length);
+    assert.deepEqual(levels, [1, 2, 1]);
+    assert.ok(texts(panel.doc, '.array-rule').includes('Entra e sai pelas duas pontas.'));
+    assert.deepEqual(panel.errors, []);
+  });
+
+  it('sessões lado a lado na comparação', () => {
+    const panel = openPanel();
+    const history = new History();
+    history.push(base);
+    const frame = makeFrame(history.current() as never, { valueNames: VALUE_NAMES, beginnerMode: true, language: 'pt' });
+    const summary = (file: string, comparisons: number) => ({ file, steps: 3, comparisons, swaps: 1 });
+    panel.post({ type: 'render', frame: { ...frame, compare: { current: summary('Quick.java', 8), saved: summary('Bubble.java', 20) } } });
+    assert.equal(visible(panel.doc, 'compare'), true);
+    assert.equal(panel.doc.querySelectorAll('#compare-rows tr').length, 3);
+    assert.match(panel.doc.getElementById('compare-note')?.textContent ?? '', /Quick\.java fez 12 comparações a menos/);
+    (panel.doc.getElementById('compare-close') as HTMLElement).click();
+    assert.equal(panel.sent.at(-1)?.type, 'compare-close');
+  });
 });

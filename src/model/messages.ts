@@ -6,11 +6,19 @@
 
 export type Language = 'pt' | 'en';
 
-export type CollectionKind = 'list' | 'stack' | 'queue';
+export type CollectionKind = 'list' | 'stack' | 'queue' | 'deque' | 'heap';
 
 export type ErrorKindName = 'index' | 'null' | 'zero' | 'key' | 'format' | 'recursion' | 'name' | 'type' | 'other';
 
 export interface Messages {
+  /** Nível detalhado: a linha que rodou e a próxima. */
+  detailLines(executed: number | undefined, next: number): string;
+  /** Nível detalhado: chamadas em andamento. */
+  detailDepth(depth: number): string;
+  /** Heap de prioridade: quem entrou e quem ficou na raiz. */
+  priorityIn(array: string, value: string, root: string): string;
+  /** Heap de prioridade: quem saiu e quem ficou na raiz (undefined se esvaziou). */
+  priorityOut(array: string, value: string, root: string | undefined): string;
   firstStepNoArrays: string;
   firstStep(description: string): string;
   nothingChanged: string;
@@ -155,7 +163,7 @@ function count(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
 
-const ptNoun = { list: 'lista', stack: 'pilha', queue: 'fila' };
+const ptNoun = { list: 'lista', stack: 'pilha', queue: 'fila', deque: 'deque', heap: 'fila de prioridade' };
 const ptPositions = (n: number) => count(n, 'posição', 'posições');
 const ptItems = (n: number) => count(n, 'item', 'itens');
 /** "a, b e c"; listas longas cortam no quinto item. */
@@ -168,6 +176,10 @@ function joinList(vs: string[], and: string, more: string): string {
 const ptSize = (rows: number, cols: number) => `${count(rows, 'linha', 'linhas')} e ${count(cols, 'coluna', 'colunas')}`;
 
 const pt: Messages = {
+  detailLines: (executed, next) => (executed === undefined ? `linha ${next}` : `linha ${executed} → ${next}`),
+  detailDepth: (depth) => `${depth} chamadas em andamento`,
+  priorityIn: (arr, v, root) => `${v} entrou em ${arr}. Quem sai primeiro agora é ${root}, na raiz.`,
+  priorityOut: (arr, v, root) => (root === undefined ? `${v} saiu de ${arr}, que ficou vazia.` : `${v} saiu de ${arr}. A nova raiz é ${root}.`),
   firstStepNoArrays: 'Primeiro passo. Ainda não há arrays nas variáveis locais.',
   firstStep: (d) => `Primeiro passo: ${d}.`,
   nothingChanged: 'Nada mudou neste passo.',
@@ -347,6 +359,10 @@ const enItems = (n: number) => count(n, 'item', 'items');
 const enSize = (rows: number, cols: number) => `${count(rows, 'row', 'rows')} and ${count(cols, 'column', 'columns')}`;
 
 const en: Messages = {
+  detailLines: (executed, next) => (executed === undefined ? `line ${next}` : `line ${executed} → ${next}`),
+  detailDepth: (depth) => `${depth} calls running`,
+  priorityIn: (arr, v, root) => `${v} entered ${arr}. The next one out is now ${root}, at the root.`,
+  priorityOut: (arr, v, root) => (root === undefined ? `${v} left ${arr}, which is now empty.` : `${v} left ${arr}. The new root is ${root}.`),
   firstStepNoArrays: 'First step. There are no arrays in the local variables yet.',
   firstStep: (d) => `First step: ${d}.`,
   nothingChanged: 'Nothing changed in this step.',

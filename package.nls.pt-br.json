@@ -19,6 +19,8 @@
   "config.pauseOnErrors": "Pausa o programa nos erros que ninguém trata (exceções não tratadas), para o painel mostrar onde e por que ele quebrou.",
   "command.present": "Modo apresentação (painel grande ao lado do código)",
   "command.openSample": "Abrir um exemplo",
+  "command.openSession": "Abrir uma sessão salva",
+  "command.compareSession": "Comparar com uma sessão salva",
   "walkthrough.title": "Começando com o Code Scope",
   "walkthrough.description": "Veja o código rodando: o painel desenha arrays, listas, pilhas, objetos e recursão enquanto você debuga.",
   "walkthrough.sample.title": "Abra um exemplo",

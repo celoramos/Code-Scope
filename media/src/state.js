@@ -13,6 +13,21 @@ export function setCurrent(frame) {
   current = frame;
 }
 
+/** @type {(() => void) | undefined} */
+let onRender;
+
+/** Resolve quando o próximo passo terminar de ser desenhado. */
+export function nextRender() {
+  return new Promise((resolve) => {
+    onRender = () => resolve(undefined);
+  });
+}
+
+export function rendered() {
+  onRender?.();
+  onRender = undefined;
+}
+
 /** Um bloco por array, reaproveitado entre passos para poder animar. */
 /** @type {Map<string, HTMLElement>} */
 export const blocks = new Map();

@@ -2,14 +2,17 @@
 // Entrada do painel: mensagens da extensão, navegação pelos passos e o desenho de cada passo.
 import { animateBlock, createBlock, createMatrixBlock, setNames, updateArrows, updateBlock, updateCellObjects, updateFocus, updateMarkers, updateMatrix, updateMissing } from './arrays.js';
 import { renderCallTree, renderCalls } from './calls.js';
+import { renderCompare } from './compare.js';
 import { highlightCode, renderCode, renderCondition, renderError } from './code.js';
 import { renderStats } from './cost.js';
 import { arraysEl, backBtn, basename, callsEl, codeEl, counter, el, empty, emptyTitle, endedBadge, explanationEl, fileEl, forwardBtn, heapEl, isString, liveBtn, mapsEl, status, t, timeline, toolbar, traceEl, varsEl, vscode } from './dom.js';
+import { findMissed } from './find.js';
 import { renderHeap } from './heap.js';
 import { cssArrived } from './image.js';
+import { renderDetails, renderExercise, renderNotes } from './lesson.js';
 import { renderMaps } from './maps.js';
 import { checkGuess, renderPredict } from './predict.js';
-import { blocks, current, pointerColor, setCurrent } from './state.js';
+import { blocks, current, pointerColor, rendered, setCurrent } from './state.js';
 import { renderTrace } from './trace.js';
 import { renderVars } from './vars.js';
 /** @typedef {import('./types.js').Frame} Frame */
@@ -29,6 +32,9 @@ window.addEventListener('message', (event) => {
   if (msg.type === 'render') {
     error = undefined;
     render(msg.frame);
+    updateChrome();
+    rendered();
+    return;
   } else if (msg.type === 'session') {
     session = msg.state;
   } else if (msg.type === 'settings') {
@@ -39,6 +45,9 @@ window.addEventListener('message', (event) => {
     error = msg.text;
   } else if (msg.type === 'css') {
     cssArrived(msg.text);
+    return;
+  } else if (msg.type === 'find-miss') {
+    findMissed(msg.query);
     return;
   }
   updateChrome();
@@ -124,6 +133,10 @@ function render(frame) {
       return li;
     }),
   );
+  renderExercise(frame.exercise);
+  renderNotes(frame.notes);
+  renderDetails(frame.details);
+  renderCompare(frame.compare);
   renderError(frame.error);
   renderCalls(s.calls ?? [], frame.calls ?? []);
   renderCallTree(frame.callTree);
@@ -139,7 +152,7 @@ function render(frame) {
     const names = (arr.id && aliasNames.get(arr.id)) || [arr.name];
     if (names[0] !== arr.name) continue;
     seen.add(arr.name);
-    const kind = arr.rows ? 'matrix' : arr.kind === 'stack' || arr.kind === 'queue' ? arr.kind : 'array';
+    const kind = arr.rows ? 'matrix' : arr.kind === 'deque' ? 'queue' : arr.kind === 'stack' || arr.kind === 'queue' ? arr.kind : 'array';
     let block = blocks.get(arr.name);
     if (block && block.dataset.kind !== kind) {
       block.remove();
@@ -147,7 +160,7 @@ function render(frame) {
     }
     const isNew = !block;
     if (!block) {
-      block = kind === 'matrix' ? createMatrixBlock(arr.name) : createBlock(arr.name, kind);
+      block = kind === 'matrix' ? createMatrixBlock(arr.name) : createBlock(arr.name, kind, arr.kind === 'deque');
       block.dataset.kind = kind;
       blocks.set(arr.name, block);
     }

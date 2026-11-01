@@ -1,5 +1,7 @@
+import { checkExercise, type ExerciseView } from './annotations';
 import { callChanges, describeCall, polymorphismNote, returnNote, type CallChange } from './calls';
 import { buildCallTree, type CallTree } from './callTree';
+import { stepDetails } from './details';
 import { diff, type Change } from './diff';
 import { explain } from './explain';
 import { explainCondition } from './condition';
@@ -10,9 +12,11 @@ import { arrayAliases, explainHeap, heapDelta, heapView, referenceNames, type He
 import { MESSAGES, type Language } from './messages';
 import type { Step } from './history';
 import { arrowsFor, matrixAxesFor, VALUE_NAMES, type Arrow, type MatrixAxes } from './pointers';
+import type { Comparison } from './session';
 import type { Snapshot } from './snapshot';
 import { graphNotes, graphViews, type GraphView } from './graph';
 import { numberNotes } from './numbers';
+import { priorityNotes } from './priority';
 import { mutationNotes } from './mutation';
 import { setNotes } from './sets';
 import { samenessNotes } from './sameness';
@@ -58,6 +62,14 @@ export interface Frame {
   explanation: string[];
   /** Erro que parou o programa neste passo, já explicado. */
   error?: ErrorView;
+  /** Notas do professor na linha parada. */
+  notes: string[];
+  /** Nível detalhado: linhas e mudanças escritas como estado da memória. */
+  details: string[];
+  /** Exercício do arquivo, conferido até este passo. */
+  exercise?: ExerciseView;
+  /** Esta sessão ao lado de uma sessão salva. */
+  compare?: Comparison;
   /** Teste de mesa até este passo. */
   trace: TraceTable;
   /** Posição no histórico, a partir de 1. */
@@ -83,7 +95,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
     if (arr.rows) {
       arrows[arr.name] = [];
       axes[arr.name] = matrixAxesFor(arr, snapshot.pointers, [snapshot.code, prev?.code, older?.code]);
-    } else if (arr.kind === 'stack' || arr.kind === 'queue') {
+    } else if (arr.kind === 'stack' || arr.kind === 'queue' || arr.kind === 'deque' || arr.kind === 'heap') {
       // Pilha e fila não têm índice para o aluno: as pontas ganham etiquetas no painel.
       arrows[arr.name] = [];
     } else {
@@ -103,7 +115,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
     explanation = calls.flatMap((c) => [describeCall(c, options.language), polymorphismNote(c, snapshot.classes, options.language)].filter(isText));
   } else if (options.beginnerMode) {
     const heapNotes = prev
-      ? [...explainHeap(prev, snapshot, options.language), ...scopeNotes(prev, snapshot, options.language), ...numberNotes(prev, snapshot, options.language), ...mutationNotes(prev, snapshot, options.language), ...setNotes(prev, snapshot, options.language), ...graphNotes(prev, snapshot, options.language)]
+      ? [...explainHeap(prev, snapshot, options.language), ...scopeNotes(prev, snapshot, options.language), ...numberNotes(prev, snapshot, options.language), ...mutationNotes(prev, snapshot, options.language), ...setNotes(prev, snapshot, options.language), ...graphNotes(prev, snapshot, options.language), ...priorityNotes(prev, snapshot, options.language)]
       : [];
     // Dois nomes para o mesmo array: as mudanças aparecem nos dois, mas basta contar uma vez.
     const extraNames = new Set([...arrayAliases(snapshot).values()].flatMap((names) => names.slice(1)));
@@ -111,9 +123,12 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
     const refNames = referenceNames(prev, snapshot);
     // A total de dentro começando (ou deixando) de existir não é a total mudando de valor.
     const shadowFlip = shadowChanges(prev, snapshot);
+    // No heap, uma entrada mexe em várias posições: quem conta é priorityNotes.
+    const heaps = new Set(snapshot.arrays.filter((a) => a.kind === 'heap').map((a) => a.name));
     const told = changes.filter(
       (c) =>
         !('array' in c && extraNames.has(c.array)) &&
+        !('array' in c && c.kind !== 'array-added' && heaps.has(c.array)) &&
         !(c.kind === 'scalar' && refNames.has(c.name)) &&
         !((c.kind === 'scalar' || c.kind === 'pointer') && shadowFlip.has(c.name)),
     );
@@ -153,6 +168,9 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
     axes,
     explanation,
     error,
+    notes: snapshot.notes ?? [],
+    details: stepDetails(changes, snapshot, executed?.line, options.language),
+    exercise: checkExercise(snapshot.exercise, step.past, step.index - step.past.length + 1),
     trace: traceTable(step.past, step.index - step.past.length + 1),
     step: step.index,
     total: step.total,

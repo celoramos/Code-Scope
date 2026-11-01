@@ -96,6 +96,16 @@
         "command": "codeScope.openSample",
         "title": "%command.openSample%",
         "category": "Code Scope"
+      },
+      {
+        "command": "codeScope.openSession",
+        "title": "%command.openSession%",
+        "category": "Code Scope"
+      },
+      {
+        "command": "codeScope.compareSession",
+        "title": "%command.compareSession%",
+        "category": "Code Scope"
       }
     ],
     "configuration": {
