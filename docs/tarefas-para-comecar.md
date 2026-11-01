@@ -50,41 +50,35 @@ Níveis: **sem código** (não precisa programar), **iniciante** (poucas linhas,
 ### 7. Gravar GIFs novos para o README
 
 - **Issue:** [#8](https://github.com/celoramos/Code-Scope/issues/8)
-- **Por quê:** os GIFs do README só mostram arrays, pilha e fila. A pilha de chamadas, a árvore de recursão, a lista ligada e o teste de mesa ainda não têm demonstração.
+- **Por quê:** o README mostra arrays, pilhas, filas, recursão, erros, grafos e objetos. A pilha de chamadas, as listas ligadas, o teste de mesa, os exercícios e as filas de prioridade ainda não têm demonstração.
 - **Onde:** `docs/`, usados no `README.md` e no `README.pt-br.md`.
 - **Pronto quando:** um GIF curto (menos de 2 MB) de um desses, nos dois READMEs.
 
 ## Intermediário
 
-### 8. `set` do Python e `HashSet` do Java
-
-- **Issue:** [#9](https://github.com/celoramos/Code-Scope/issues/9)
-- **Por quê:** conjunto é a coleção comum que o painel ainda não desenha.
-- **Onde:** os adaptadores em `src/debug/adapters/`, um tipo novo em `src/model/snapshot.ts`, o desenho em `media/src/` (arrays em `arrays.js`, objetos em `heap.js`). Comece rodando o teste de descoberta (veja o CONTRIBUTING) para ver o formato real.
-- **Pronto quando:** o conjunto aparece como caixas sem posição, entrar e sair são explicados, com testes unitários e de integração.
-
-### 9. JavaScript no navegador
+### 8. JavaScript no navegador
 
 - **Issue:** [#10](https://github.com/celoramos/Code-Scope/issues/10)
 - **Por quê:** o adaptador de JavaScript só foi testado no Node. O debugger do navegador (`pwa-chrome`) pode formatar os valores de outro jeito.
 - **Como:** debugue uma página com script no Chrome ou no Edge pelo VS Code, com o painel aberto e o log em *Debug*, e conte (ou corrija) o que mudar.
 
-### 10. Mais C#: lista de objetos, herança e try/catch
+### 9. Mais C#: lista de objetos, herança e try/catch
 
 - **Issue:** [#11](https://github.com/celoramos/Code-Scope/issues/11)
 - **Por quê:** o adaptador de C# (`src/debug/adapters/csharp.ts`) já desenha arrays, `List`, `Stack`, `Queue`, `Dictionary` e objetos, mas os conceitos mais novos (lista de objetos, polimorfismo, erro tratado, árvore de recursão) ainda não têm exemplo nem teste em C#.
 - **Onde:** `samples/csharp` (uma classe por exemplo, registrada no `Program.cs` e no `launch.json`) e `test/integration/csharp.itest.ts`.
 - **Pronto quando:** cada conceito tem um exemplo e um teste de integração em C#.
 
-### 11. Coleções do C++: `std::vector`, `std::map`, `std::stack`
+### 10. Coleções do C++: `std::stack`, `std::map` e um teste de integração
 
 - **Issue:** [#12](https://github.com/celoramos/Code-Scope/issues/12)
-- **Por quê:** o adaptador de C (`src/debug/adapters/c.ts`) desenha arrays e ponteiros para struct, mas com um gdb sem pretty-printers as coleções do C++ só mostram o que têm por dentro (`_M_impl`). O `samples/c/vetor.cpp` já está pronto para isso.
-- **Onde:** ligar os pretty-printers do gdb (`-enable-pretty-printing` em `setupCommands`, precisa de um gdb com Python) ou ler as coleções por `evaluate` (`v.size()`, `v[i]`); o MSVC (`cppvsdbg`) mostra pelo natvis.
-- **Pronto quando:** `std::vector`, `std::map` e `std::stack` aparecem desenhados, com teste de integração.
+- **Por quê:** o adaptador de C (`src/debug/adapters/c.ts`) lê `std::vector` com ou sem pretty-printers e `std::map` com eles, mas só em testes unitários. `std::stack` não é desenhado, e `std::map` precisa de um gdb com Python.
+- **Onde:** `src/debug/adapters/c.ts` e `test/integration/c.itest.ts`.
+- **Pronto quando:** os três aparecem numa sessão real de C++, com teste de integração.
 
-### 12. Variáveis das chamadas de baixo com arrays e objetos
+### 11. Objetos nas variáveis das chamadas de baixo
 
 - **Issue:** [#13](https://github.com/celoramos/Code-Scope/issues/13)
-- **Por quê:** na pilha de chamadas, as chamadas de baixo só mostram valores simples. No merge sort, por exemplo, cada chamada tem o seu pedaço do array.
+- **Por quê:** na pilha de chamadas, as chamadas de baixo já mostram valores simples e os primeiros itens dos arrays, mas não os objetos.
 - **Onde:** `readCalls` em `src/debug/dapCollector.ts` e `renderCalls` em `media/src/calls.js`.
+- **Pronto quando:** uma chamada de baixo mostra os objetos, com um limite para o F10 continuar rápido.

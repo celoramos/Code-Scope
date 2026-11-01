@@ -50,41 +50,35 @@ Levels: **no code** (you do not need to program), **beginner** (a few lines, one
 ### 7. Record new GIFs for the README
 
 - **Issue:** [#8](https://github.com/celoramos/Code-Scope/issues/8)
-- **Why:** the README GIFs only show arrays, stacks and queues. The call stack, the recursion tree, linked lists and the trace table have no demo yet.
+- **Why:** the README shows arrays, stacks, queues, recursion, errors, graphs and objects. The call stack, linked lists, the trace table, exercises and priority queues have no demo yet.
 - **Where:** `docs/`, referenced from `README.md` and `README.pt-br.md`.
 - **Done when:** a short GIF (under 2 MB) for one of these, added to both READMEs.
 
 ## Intermediate
 
-### 8. Python `set` and Java `HashSet`
-
-- **Issue:** [#9](https://github.com/celoramos/Code-Scope/issues/9)
-- **Why:** sets are the one common collection the panel does not draw yet.
-- **Where:** the adapters in `src/debug/adapters/`, a new kind in `src/model/snapshot.ts`, the drawing in `media/src/` (arrays in `arrays.js`, objects in `heap.js`). Start by running the discovery test (see CONTRIBUTING) to see the real format.
-- **Done when:** a set is drawn as boxes without positions, adding and removing are explained, with unit and integration tests.
-
-### 9. JavaScript in the browser
+### 8. JavaScript in the browser
 
 - **Issue:** [#10](https://github.com/celoramos/Code-Scope/issues/10)
 - **Why:** the JavaScript adapter was only tested on Node. The browser debugger (`pwa-chrome`) may format values differently.
 - **How:** debug a page with a script in Chrome or Edge from VS Code, with the Code Scope panel open and the log at *Debug*, and report (or fix) what is different.
 
-### 10. More C#: lists of objects, inheritance and try/catch
+### 9. More C#: lists of objects, inheritance and try/catch
 
 - **Issue:** [#11](https://github.com/celoramos/Code-Scope/issues/11)
 - **Why:** the C# adapter (`src/debug/adapters/csharp.ts`) already draws arrays, `List`, `Stack`, `Queue`, `Dictionary` and objects, but the newer concepts (list of objects, polymorphism, handled errors, recursion tree) have no C# sample or test yet.
 - **Where:** `samples/csharp` (one class per sample, registered in `Program.cs` and `launch.json`) and `test/integration/csharp.itest.ts`.
 - **Done when:** each concept has a C# sample and an integration test.
 
-### 11. C++ containers: `std::vector`, `std::map`, `std::stack`
+### 10. C++ containers: `std::stack`, `std::map` and an integration test
 
 - **Issue:** [#12](https://github.com/celoramos/Code-Scope/issues/12)
-- **Why:** the C adapter (`src/debug/adapters/c.ts`) draws arrays and pointers to structs, but with gdb without pretty-printers the C++ containers only show their internals (`_M_impl`). `samples/c/vetor.cpp` is ready for this.
-- **Where:** either enable gdb pretty-printers (`-enable-pretty-printing` in `setupCommands`, needs a gdb with Python) or read the containers through `evaluate` (`v.size()`, `v[i]`); MSVC (`cppvsdbg`) shows them through natvis.
-- **Done when:** `std::vector`, `std::map` and `std::stack` are drawn, with an integration test.
+- **Why:** the C adapter (`src/debug/adapters/c.ts`) reads `std::vector` with or without pretty-printers and `std::map` with them, but only from unit tests. `std::stack` is not drawn, and `std::map` needs a gdb with Python.
+- **Where:** `src/debug/adapters/c.ts` and `test/integration/c.itest.ts`.
+- **Done when:** the three are drawn in a real C++ session, with an integration test.
 
-### 12. Variables of earlier calls with arrays and objects
+### 11. Objects in the variables of earlier calls
 
 - **Issue:** [#13](https://github.com/celoramos/Code-Scope/issues/13)
-- **Why:** in the call stack, calls below the current one show only simple values. In merge sort, for example, each call has its own piece of the array.
+- **Why:** in the call stack, calls below the current one already show simple values and the first items of arrays, but not objects.
 - **Where:** `readCalls` in `src/debug/dapCollector.ts` and `renderCalls` in `media/src/calls.js`.
+- **Done when:** a call below the current one shows its objects, with a limit so F10 stays fast.
