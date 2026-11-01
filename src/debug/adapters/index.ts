@@ -1,3 +1,4 @@
+import { enclosingFunction } from '../../model/enclosing';
 import type { Snapshot } from '../../model/snapshot';
 import type { LanguageAdapter } from './adapter';
 import { cAdapter } from './c';
@@ -27,9 +28,11 @@ export function pickAdapter(debugType: string, file: string): LanguageAdapter {
 /** Marca listas usadas como pilha ou fila e deixa a pilha com o topo no fim. */
 export function applyCollectionRoles(snapshot: Snapshot, source: string, adapter: LanguageAdapter): void {
   if (!adapter.collectionRole) return;
+  // A função parada decide primeiro: duas variáveis com o mesmo nome em funções diferentes não se misturam.
+  const local = enclosingFunction(source, snapshot.line, adapter.id === 'python');
   for (const arr of snapshot.arrays) {
     if (arr.kind !== 'list') continue;
-    const role = adapter.collectionRole(source, arr.name);
+    const role = (local && adapter.collectionRole(local, arr.name)) ?? adapter.collectionRole(source, arr.name);
     if (!role) continue;
     arr.kind = role.role;
     if (role.topFirst) arr.values.reverse();
