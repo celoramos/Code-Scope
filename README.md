@@ -9,10 +9,16 @@ It works with Java, JavaScript, TypeScript, Python, C#, C and Go, and in a gener
 > **Beta.** Code Scope is on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=code-scope.code-scope) and is still a beta for people to try and help shape. If something looks wrong or confusing, [open an issue](https://github.com/celoramos/Code-Scope/issues/new/choose): that is the most useful help right now.
 
 <p align="center">
-  <img src="docs/demo.gif" alt="Code Scope stepping through BubbleSort" width="320">
+  <img src="docs/video-en.gif" alt="Code Scope explaining an index out of range bug in 60 seconds" width="320">
 </p>
 
+<p align="center"><a href="docs/video-en.mp4">Watch with sound</a></p>
+
 ## What the panel shows
+
+<p align="center">
+  <img src="docs/demo.gif" alt="Code Scope stepping through BubbleSort" width="320">
+</p>
 
 ### Arrays, lists and matrices
 
