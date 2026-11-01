@@ -1,6 +1,6 @@
 # Changelog
 
-## Próxima versão
+## 0.9.0
 
 ### Novo
 
@@ -15,6 +15,10 @@
 - Arrays de três dimensões: uma matriz por camada.
 - Objetos dentro de matrizes mostram o valor principal na célula.
 - `std::vector` com ou sem pretty-printers, validado no VS Code com gdb sem eles. `std::map` com pretty-printers, ainda não validado.
+- Exemplos param sozinhos na primeira linha, sem breakpoint, e o painel explica quando o programa termina sem parar.
+- Tela inicial avisa quando falta o debugger da linguagem do arquivo aberto.
+- F5 entre breakpoints é avisado, e pilha e fila são reconhecidas pelo uso na função parada.
+- IntelliJ: modo apresentação e "Open a Sample" em Tools > Code Scope.
 - Adaptador de Go: arrays, slices, matrizes, mapas, pilha, fila, structs, ponteiros, listas ligadas e condições, validados no VS Code com a extensão Go.
 
 ## 0.8.0
