@@ -13,6 +13,7 @@ export function run(): Promise<void> {
   mocha.addFile(path.join(__dirname, 'novidades.itest.js'));
   mocha.addFile(path.join(__dirname, 'samples.itest.js'));
   mocha.addFile(path.join(__dirname, 'discover.itest.js'));
+  mocha.addFile(path.join(__dirname, 'estresse.itest.js'));
   return new Promise((resolve, reject) => {
     mocha.run((failures) => (failures > 0 ? reject(new Error(`${failures} teste(s) falharam`)) : resolve()));
   });

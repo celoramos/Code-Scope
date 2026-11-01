@@ -1,0 +1,70 @@
+name: Estresse
+
+on:
+  push:
+    branches: [estresse]
+
+jobs:
+  estresse:
+    name: Estresse (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+            ext: vscjava.vscode-java-pack,ms-python.debugpy,ms-dotnettools.csharp,ms-vscode.cpptools,golang.go
+          - name: Linux
+            os: ubuntu-latest
+            ext: vscjava.vscode-java-pack,ms-python.debugpy,ms-dotnettools.csharp,ms-vscode.cpptools,golang.go
+          - name: macOS
+            os: macos-latest
+            ext: vscjava.vscode-java-pack,ms-python.debugpy,ms-dotnettools.csharp,golang.go
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/setup-python@v7
+        id: python
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.24'
+          cache: false
+      - run: go install github.com/go-delve/delve/cmd/dlv@latest
+      - shell: bash
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y gdb
+      - run: npm ci
+      - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:integration 2>&1 | tee itest.log
+        shell: bash
+        env:
+          CODE_SCOPE_PYTHON: ${{ steps.python.outputs.python-path }}
+          CODE_SCOPE_GREP: Estresse
+          CODE_SCOPE_EXTENSIONS: ${{ matrix.ext }}
+      - if: always()
+        run: npx mocha test/webview.test.ts -g "Estresse" --timeout 600000 2>&1 | tee painel.log
+        shell: bash
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: estresse-${{ matrix.name }}
+          path: |
+            itest.log
+            painel.log
+            out-test/estresse-*.json
+            .vscode-test/user-data/logs/**/*Code Scope*
+          if-no-files-found: warn

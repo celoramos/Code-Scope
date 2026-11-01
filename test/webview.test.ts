@@ -342,3 +342,23 @@ describe('programa que termina sem parar', () => {
     assert.match(panel.doc.getElementById('empty-title')?.textContent ?? '', /sem parar.*breakpoint/);
   });
 });
+
+describe('Estresse: dumps reais no painel', () => {
+  const dir = path.join(root, 'out-test');
+  const dumps = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => /^estresse-.*\.json$/.test(f)) : [];
+  for (const file of dumps) {
+    for (const language of ['pt', 'en'] as const) {
+      it(`${file} (${language})`, function () {
+        this.timeout(600_000);
+        const panel = openPanel(language);
+        const { snapshots } = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')) as { snapshots: Snapshot[] };
+        snapshots.forEach((s, i) => {
+          panel.stop(s);
+          assert.deepEqual(panel.errors, [], `passo ${i}`);
+        });
+        for (let i = snapshots.length - 1; i >= 0; i--) panel.goto(i);
+        assert.deepEqual(panel.errors, []);
+      });
+    }
+  }
+});
