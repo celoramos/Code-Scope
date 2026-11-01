@@ -115,8 +115,8 @@ export async function collectSnapshot(
         break;
       }
       case 'map': {
-        const entries = await readMap(session, adapter, v, limits.maxElements);
-        maps.push({ name: v.name, entries, length: Math.max(shape.length ?? 0, entries.length), ...(shape.id ? { id: shape.id } : {}) });
+        const { entries, size } = await readMap(session, adapter, v, limits.maxElements);
+        maps.push({ name: v.name, entries, length: size ?? Math.max(shape.length ?? 0, entries.length), ...(shape.id ? { id: shape.id } : {}) });
         break;
       }
       case 'integer':
@@ -359,7 +359,7 @@ async function readSequence(
   if (group) children = await variables(session, group.variablesReference);
 
   const indices = children.map((c) => adapter.elementIndex(c.name)).filter((i) => i !== undefined);
-  const length = shape.length ?? (indices.length > 0 ? Math.max(...indices) + 1 : 0);
+  const length = adapter.reportedSize?.(children) ?? shape.length ?? (indices.length > 0 ? Math.max(...indices) + 1 : 0);
   const count = Math.min(length, max);
   const byIndex: DapVariable[] = [];
   for (const c of children) {
@@ -432,9 +432,10 @@ async function readIndirect(
  * Entradas de um dicionário. O Map do JavaScript guarda as entradas num
  * filho "[[Entries]]"; coleções grandes podem vir em grupos "[0..99]".
  */
-async function readMap(session: Session, adapter: LanguageAdapter, v: DapVariable, max: number): Promise<MapVar['entries']> {
-  if (v.variablesReference <= 0 || !adapter.mapEntry) return [];
+async function readMap(session: Session, adapter: LanguageAdapter, v: DapVariable, max: number): Promise<{ entries: MapVar['entries']; size?: number }> {
+  if (v.variablesReference <= 0 || !adapter.mapEntry) return { entries: [] };
   let children = await variables(session, v.variablesReference);
+  const size = adapter.reportedSize?.(children);
   const inner = children.find((c) => c.name === '[[Entries]]') ?? children.find((c) => isRangeGroup(c.name));
   if (inner) children = await variables(session, inner.variablesReference);
   const entries: MapVar['entries'] = [];
@@ -445,7 +446,7 @@ async function readMap(session: Session, adapter: LanguageAdapter, v: DapVariabl
     entries.push(items ? { ...e, value: `[${items.join(', ')}]`, items } : e);
     if (entries.length >= max) break;
   }
-  return entries;
+  return { entries, size };
 }
 
 /** Mensagem do erro capturado: no valor (Python, JavaScript) ou num campo do objeto (Java). */

@@ -35,6 +35,11 @@ export function pythonRole(source: string, name: string): CollectionRole | undef
   return undefined;
 }
 
+/** Filhos que o debugpy acrescenta a uma coleção e que não são itens dela. */
+function notAnItem(c: DapVariable): boolean {
+  return /^(special|function|class) variables$/.test(c.name) || c.name === 'len()' || c.name.startsWith('Too large to show');
+}
+
 export const pythonAdapter: LanguageAdapter = {
   id: 'python',
   label: 'Python',
@@ -80,10 +85,14 @@ export const pythonAdapter: LanguageAdapter = {
     if (!m || v.type !== m[1]) return undefined;
     return { type: m[1], message: m[2].replace(/^(["'])(.*)\1$/s, '$2') };
   },
-  mapEntry: (child) =>
-    /^(special|function|class) variables$/.test(child.name) || child.name === 'len()' ? undefined : { key: child.name, value: child.value },
+  mapEntry: (child) => (notAnItem(child) ? undefined : { key: child.name, value: child.value }),
 
-  setItem: (c) => !/^(special|function|class) variables$/.test(c.name) && c.name !== 'len()',
+  setItem: (c) => !notAnItem(c),
+  // A partir de 100 itens o debugpy para de listar, e só o "len()" diz o tamanho.
+  reportedSize(children) {
+    const n = children.find((c) => c.name === 'len()')?.value;
+    return n === undefined ? undefined : asInteger(n);
+  },
   elementIndex: numericIndex,
   formatElement: (v) => v.value,
   collectionRole: pythonRole,

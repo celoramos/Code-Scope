@@ -65,6 +65,11 @@ export interface LanguageAdapter {
    */
   unbox?(v: DapVariable): ((inner: DapVariable) => string) | undefined;
   /**
+   * Tamanho que o debugger informa num filho, quando entrega só parte da coleção
+   * ("len()" no debugpy, que para em 100 filhos).
+   */
+  reportedSize?(children: DapVariable[]): number | undefined;
+  /**
    * Coleção que o debugger não abre sozinho, lida por expressões: o tamanho e os
    * itens (std::vector num gdb sem os pretty-printers do Python).
    */
