@@ -28,14 +28,29 @@ const stopLine = (file: string) => fs.readFileSync(file, 'utf8').split(/\r?\n/).
 
 async function run(dump: string, file: string, config: vscode.DebugConfiguration, steps = 12, step?: 'stepOver' | 'stepInto', before?: () => Promise<void>): Promise<Snapshot[]> {
   const started = Date.now();
+  const inFlight = new Map<number, { at: number; what: string }>();
+  const slow: { ms: number; what: string }[] = [];
+  const tracker = vscode.debug.registerDebugAdapterTrackerFactory('*', {
+    createDebugAdapterTracker: () => ({
+      onWillReceiveMessage: (m: { type?: string; seq: number; command: string; arguments?: unknown }) => {
+        if (m.type === 'request') inFlight.set(m.seq, { at: Date.now(), what: `${m.command} ${JSON.stringify(m.arguments ?? {}).slice(0, 80)}` });
+      },
+      onDidSendMessage: (m: { type?: string; request_seq: number }) => {
+        const r = m.type === 'response' ? inFlight.get(m.request_seq) : undefined;
+        if (r) slow.push({ ms: Date.now() - r.at, what: r.what });
+      },
+    }),
+  });
   try {
     const snaps = await debugFile({ file, breakpointLine: stopLine(file), steps, step, config, dump: `estresse-${dump}`, before });
     assert.ok(snaps.length >= 1, 'nenhuma parada');
     allChanges(snaps);
     const size = JSON.stringify(snaps).length;
     console.log(`ESTRESSE ${dump}: ${snaps.length} passos, ${Date.now() - started} ms, ${Math.round(size / 1024)} KB`);
+    for (const s of slow.sort((a, b) => b.ms - a.ms).slice(0, 4)) console.log(`LENTO ${dump}: ${s.ms} ms ${s.what}`);
     return snaps;
   } finally {
+    tracker.dispose();
     if (vscode.debug.activeDebugSession) await vscode.debug.stopDebugging();
     await new Promise((r) => setTimeout(r, 1000));
   }
@@ -50,10 +65,12 @@ const js = (name: string, steps?: number, step?: 'stepOver' | 'stepInto') => {
   return run(`js-${name}-${step ?? 'f10'}`, file, { type: 'node', request: 'launch', name: `E ${name}`, program: file, skipFiles: ['<node_internals>/**'] }, steps, step);
 };
 
-describe('Estresse Python', () => {
+describe('Estresse Python', function () {
+  this.timeout(1_500_000);
   before(function () {
     if (!fs.existsSync(python)) this.skip();
   });
+  for (const name of ['g-lista', 'g-dict', 'g-matriz', 'g-texto']) it(name, () => py(name, 3));
   it('gigante', () => py('gigante', 12));
   it('hostil', () => py('hostil', 12));
   it('variado', () => py('variado', 40));
@@ -64,7 +81,9 @@ describe('Estresse Python', () => {
   it('caminho com espaço e acento', () => py('caminho com espaço ç/coração', 4));
 });
 
-describe('Estresse JavaScript', () => {
+describe('Estresse JavaScript', function () {
+  this.timeout(1_500_000);
+  for (const name of ['g-array', 'g-objeto', 'g-map', 'g-matriz', 'g-texto', 'g-nos']) it(name, () => js(name, 3));
   it('gigante', () => js('gigante', 12));
   it('hostil', () => js('hostil', 8));
   it('variado', () => js('variado', 30));
@@ -73,7 +92,8 @@ describe('Estresse JavaScript', () => {
   it('excecao', () => js('excecao', 5));
 });
 
-describe('Estresse Java', () => {
+describe('Estresse Java', function () {
+  this.timeout(1_500_000);
   it('tudo', async () => {
     const file = path.join(samplesRoot, 'java', 'Estresse.java');
     await run('java', file, { type: 'java', request: 'launch', name: 'Estresse', mainClass: 'Estresse' }, 16, undefined, async () => {
@@ -97,7 +117,8 @@ describe('Estresse C e C++', () => {
   }
 });
 
-describe('Estresse C#', () => {
+describe('Estresse C#', function () {
+  this.timeout(1_500_000);
   before(function () {
     if (!find('dotnet') || !vscode.extensions.getExtension('ms-dotnettools.csharp')) this.skip();
   });
@@ -112,7 +133,8 @@ describe('Estresse C#', () => {
   });
 });
 
-describe('Estresse Go', () => {
+describe('Estresse Go', function () {
+  this.timeout(1_500_000);
   before(function () {
     if (!find('dlv') || !vscode.extensions.getExtension('golang.go')) this.skip();
   });
