@@ -115,3 +115,17 @@ describe('C: struct em array', () => {
     assert.deepEqual(snap.arrays[0].values, ['{v: 1, prox: 0x0}', '{v: 2}']);
   });
 });
+
+describe('Go: textos do Delve', () => {
+  const format = (value: string) => goAdapter.formatElement({ name: '[0]', value, variablesReference: 0 });
+  it('interface, byte e slice', () => {
+    assert.equal(format('interface {}(int) 1'), '1');
+    assert.equal(format('interface {}(string) "dois"'), '"dois"');
+    assert.equal(format('interface {} nil'), 'nil');
+    assert.equal(format('97 = 0x61'), '97');
+    assert.equal(format('[]int len: 2, cap: 2, [1,2]'), '[1,2]');
+  });
+  it('valor de uma entrada de mapa', () => {
+    assert.deepEqual(goAdapter.mapEntry?.({ name: '"k"', value: '[]int len: 2, cap: 2, [1,2]', variablesReference: 3 }), { key: '"k"', value: '[1,2]' });
+  });
+});
