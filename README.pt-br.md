@@ -142,8 +142,8 @@ code --install-extension code-scope.code-scope
 ## Começar
 
 1. Rode **Code Scope: Abrir um exemplo** na paleta de comandos e escolha Java, JavaScript ou Python. O tour **Começando com o Code Scope**, em **Help > Get Started**, faz o mesmo.
-2. Abra um exemplo e coloque um breakpoint na linha indicada pelo comentário.
-3. Aperte F5. O painel abre sozinho na primeira parada.
+2. Abra um exemplo e aperte F5. Os exemplos param sozinhos na primeira linha, e o painel abre. Nos seus programas, coloque um breakpoint antes: sem ele, o programa roda até o fim e não há o que desenhar.
+3. Escolha o debugger da sua linguagem se o editor perguntar. O botão ▷ de extensões como o Code Runner só executa o código, sem o debugger.
 4. Avance com F10, ou F11 para entrar numa chamada, e acompanhe o painel.
 
 No IntelliJ, debugue qualquer arquivo Java. O painel abre à direita quando o debugger para; ande com F8 ou F7.

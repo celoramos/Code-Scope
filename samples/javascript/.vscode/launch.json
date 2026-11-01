@@ -6,7 +6,10 @@
       "name": "Arquivo aberto",
       "request": "launch",
       "program": "${file}",
-      "skipFiles": ["<node_internals>/**"]
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "stopOnEntry": true
     }
   ]
 }

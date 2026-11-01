@@ -9,6 +9,7 @@ samples/c/**
 samples/csharp/**
 samples/go/**
 samples/exemplos.code-workspace
+samples/.vscode/**
 samples/java/bin/**
 samples/**/*.class
 samples/**/__pycache__/**

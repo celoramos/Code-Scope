@@ -6,7 +6,8 @@
       "name": "Arquivo aberto",
       "request": "launch",
       "program": "${file}",
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "stopOnEntry": true
     }
   ]
 }

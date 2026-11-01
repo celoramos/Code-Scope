@@ -51,6 +51,21 @@ describe('Novidades Python real', () => {
     if (!fs.existsSync(python)) this.skip();
   });
 
+  it('stopOnEntry: o exemplo para sozinho sem breakpoint', async () => {
+    const cs = await api();
+    const file = path.join(samplesRoot, 'python', 'bubble_sort.py');
+    await vscode.window.showTextDocument(vscode.Uri.file(file));
+    vscode.debug.removeBreakpoints(vscode.debug.breakpoints);
+    const launch = JSON.parse(fs.readFileSync(path.join(samplesRoot, 'python', '.vscode', 'launch.json'), 'utf8')).configurations[0];
+    assert.equal(launch.stopOnEntry, true);
+    const ok = await vscode.debug.startDebugging(vscode.workspace.workspaceFolders?.[0], { ...launch, program: file, python, debugAdapterPython: python, debugLauncherPython: python, console: 'internalConsole' });
+    assert.ok(ok);
+    const start = Date.now();
+    while (cs.snapshots().length === 0 && Date.now() - start < 90_000) await new Promise((r) => setTimeout(r, 200));
+    assert.ok(cs.snapshots().length >= 1, 'não parou');
+    await vscode.debug.stopDebugging();
+  });
+
   it('fila_de_prioridade.py: heapq e deque pelas duas pontas', async () => {
     const file = path.join(samplesRoot, 'python', 'fila_de_prioridade.py');
     const snaps = await debugFile({
