@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "name": "JavaScript: arquivo aberto",
+      "request": "launch",
+      "program": "${file}",
+      "skipFiles": ["<node_internals>/**"],
+      "stopOnEntry": true
+    },
+    {
+      "type": "debugpy",
+      "name": "Python: arquivo aberto",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "stopOnEntry": true
+    },
+    {
+      "type": "java",
+      "name": "Java: arquivo aberto",
+      "request": "launch",
+      "mainClass": "${file}",
+      "stopOnEntry": true
+    }
+  ]
+}
