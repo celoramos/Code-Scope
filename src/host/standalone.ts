@@ -83,6 +83,9 @@ function receive(event: HostEvent) {
     case 'stopped':
       void onStopped(event.threadId, event.reason, event.debugType);
       break;
+    case 'present':
+      document.documentElement.classList.toggle('is-present', event.on);
+      break;
     case 'settings':
       if (event.maxElements) maxElements = Math.min(Math.max(Math.round(event.maxElements), 1), 500);
       if (event.animationSpeed) animationSpeed = readAnimationSpeed(event.animationSpeed);

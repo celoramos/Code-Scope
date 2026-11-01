@@ -29,6 +29,7 @@ export type HostEvent =
   | { type: 'session-start' }
   | { type: 'session-end' }
   | { type: 'stopped'; threadId?: number; reason?: string; debugType: string }
+  | { type: 'present'; on: boolean }
   | { type: 'settings'; animationSpeed?: string; maxElements?: number; beginnerMode?: boolean };
 
 type Send = (request: string, onSuccess: (response: string) => void, onFailure: (code: number, message: string) => void) => void;

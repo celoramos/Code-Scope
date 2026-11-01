@@ -54,6 +54,17 @@ class CodeScopeService(private val project: Project) : Disposable {
         return obj("type" to "settings", "animationSpeed" to s.animationSpeed, "maxElements" to s.maxElements, "beginnerMode" to s.beginnerMode)
     }
 
+    private var presenting = false
+
+    /** Modo apresentação: o painel maximizado, com letra maior e animações mais lentas. */
+    fun togglePresentation() {
+        presenting = !presenting
+        val manager = ToolWindowManager.getInstance(project)
+        val window = manager.getToolWindow("Code Scope") ?: return
+        window.show { manager.setMaximized(window, presenting) }
+        send(obj("type" to "present", "on" to presenting))
+    }
+
     /** Configurações mudaram em Settings > Tools > Code Scope. */
     fun sendSettings() = send(settingsEvent())
 

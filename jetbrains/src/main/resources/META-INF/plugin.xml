@@ -28,6 +28,16 @@
     <postStartupActivity implementation="io.github.celoramos.codescope.SelfTest"/>
   </extensions>
 
+  <actions>
+    <group id="CodeScope.Tools" text="Code Scope" popup="true">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+      <action id="CodeScope.Presentation" class="io.github.celoramos.codescope.PresentationAction"
+              text="Presentation Mode" description="Maximize the Code Scope panel, with larger text"/>
+      <action id="CodeScope.OpenSample" class="io.github.celoramos.codescope.OpenSampleAction"
+              text="Open a Sample" description="Copy the Java samples to a folder and open it"/>
+    </group>
+  </actions>
+
   <projectListeners>
     <listener class="io.github.celoramos.codescope.DebugListener"
               topic="com.intellij.xdebugger.XDebuggerManagerListener"/>

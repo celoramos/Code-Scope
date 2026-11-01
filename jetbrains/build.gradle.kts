@@ -42,7 +42,19 @@ val bundlePanel by tasks.registering(Exec::class) {
     inputs.dir(rootDir.parentFile.resolve("media"))
     outputs.dir(layout.projectDirectory.dir("src/main/resources/codescope"))
 }
-tasks.processResources { dependsOn(bundlePanel) }
+tasks.processResources {
+    dependsOn(bundlePanel)
+    // Os exemplos vão no plugin (comando "Open a Sample"), com a lista dos nomes: um jar não se lista.
+    val samples = rootDir.parentFile.resolve("samples/java")
+    from(samples) {
+        include("*.java")
+        into("samples/java")
+    }
+    doLast {
+        val names = samples.listFiles { f -> f.extension == "java" }!!.map { it.name }.sorted()
+        destinationDir.resolve("samples/java/index.txt").writeText(names.joinToString("\n"))
+    }
+}
 
 // Teste de ponta a ponta: ./gradlew runIde -PselfTest=BubbleSort:6:12 (com -PstepInto=true, F7) abre uma cópia de
 // samples/java no IntelliJ, debuga e grava os snapshots em build/self-test/<Classe>.json.
