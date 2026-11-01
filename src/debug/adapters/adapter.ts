@@ -13,8 +13,9 @@ export type VariableShape =
   /**
    * Coleção indexada a ser expandida. "list" cresce e encolhe; "array" tem tamanho
    * fixo. Sem length, o tamanho é contado pelas posições que o debugger devolver.
+   * grid: matriz guardada numa fileira só, como o int[,] do C#.
    */
-  | { kind: 'sequence'; length?: number; collection: 'array' | 'list' | 'set'; id?: string; role?: CollectionRole }
+  | { kind: 'sequence'; length?: number; collection: 'array' | 'list' | 'set'; id?: string; role?: CollectionRole; grid?: { rows: number; cols: number } }
   /**
    * Instância de uma classe. id é a identidade na memória quando o debugger
    * mostra uma ("@12" no Java, "0x..." no Python); sem ela, o coletor compara

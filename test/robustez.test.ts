@@ -84,3 +84,12 @@ describe('debugger que entrega em pedaços', () => {
     assert.deepEqual(snap.arrays[0].values, cells.slice(0, 50).map((c) => c.value));
   });
 });
+
+describe('C#: matriz retangular', () => {
+  it('int[,] vira matriz, lida por linhas', async () => {
+    const cells = Array.from({ length: 6 }, (_, k) => ({ name: `[${Math.floor(k / 3)}, ${k % 3}]`, value: String(k), type: 'int', variablesReference: 0 }));
+    const snap = await collect({ 1: [{ name: 'm', value: '{int[2, 3]}', type: 'int[,]', variablesReference: 2 }], 2: cells }, csharpAdapter);
+    assert.equal(snap.arrays[0].length, 2);
+    assert.deepEqual(snap.arrays[0].rows?.map((r) => r.values), [['0', '1', '2'], ['3', '4', '5']]);
+  });
+});

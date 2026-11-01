@@ -57,6 +57,11 @@ export const csharpAdapter: LanguageAdapter = {
 
   shape(v): VariableShape {
     const type = v.type ?? '';
+    const grid = /\[(\d+), (\d+)\]\}$/.exec(v.value);
+    if (grid && type.endsWith('[,]') && v.variablesReference > 0) {
+      const rows = Number(grid[1]);
+      return { kind: 'sequence', length: rows, collection: 'array', grid: { rows, cols: Number(grid[2]) } };
+    }
     if (type.endsWith('[]') && v.variablesReference > 0) {
       const n = /\[(\d+)\]\}$/.exec(v.value);
       return { kind: 'sequence', length: n ? Number(n[1]) : undefined, collection: 'array' };

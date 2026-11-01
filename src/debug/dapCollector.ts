@@ -328,6 +328,7 @@ async function readSequence(
   objects?: (c: DapVariable) => Promise<string | undefined>,
   frameId?: number,
 ): Promise<{ array: ArrayVar; children: DapVariable[] }> {
+  if (shape.grid) return { array: await readGrid(session, adapter, v, name, shape.grid, max), children: [] };
   let children: DapVariable[];
   const indirect = frameId !== undefined ? adapter.indirectSequence?.(v) : undefined;
   if (indirect) {
@@ -414,6 +415,16 @@ async function readSequence(
     }
   }
   return { array, children };
+}
+
+/** Matriz numa fileira só ("[0, 0]", "[0, 1]"...): cada linha é um trecho dela. */
+async function readGrid(session: Session, adapter: LanguageAdapter, v: DapVariable, name: string, grid: { rows: number; cols: number }, max: number): Promise<ArrayVar> {
+  const rows: ArrayVar[] = [];
+  for (let i = 0; i < Math.min(grid.rows, max); i++) {
+    const cells = await variables(session, v.variablesReference, { filter: 'indexed', start: i * grid.cols, count: Math.min(grid.cols, max) });
+    rows.push({ name: `${name}[${i}]`, values: cells.map((c) => adapter.formatElement(c)), length: grid.cols });
+  }
+  return { name, values: rows.map(() => ''), length: grid.rows, rows };
 }
 
 /** Primeiras posições de uma coleção. O vsdbg responde menos do que foi pedido: continua de onde parou. */
