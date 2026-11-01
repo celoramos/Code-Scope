@@ -398,11 +398,16 @@ async function readSequence(
   else if (shape.collection === 'set') array.kind = 'set';
 
   const rowShapes = byIndex.slice(0, count).map((c) => (c ? adapter.shape(c) : undefined));
-  const isMatrix = count > 0 && rowShapes.every((s) => s?.kind === 'sequence');
+  const isMatrix = rowShapes.some((s) => s?.kind === 'sequence') && rowShapes.every((s) => s?.kind === 'sequence' || s?.kind === 'empty-list' || s?.kind === 'null');
   if (depth > 0 && isMatrix) {
     array.rows = [];
     for (let i = 0; i < count; i++) {
-      const rowShape = rowShapes[i] as Sequence;
+      const rowShape = rowShapes[i];
+      // Linha vazia ou nula: comum numa lista de adjacência, e não muda que o resto é matriz.
+      if (rowShape?.kind !== 'sequence') {
+        array.rows.push({ name: `${name}[${i}]`, values: [], length: 0 });
+        continue;
+      }
       // Só as primeiras camadas de um cubo abrem: 50 x 50 x 50 posições travariam o F10.
       const below = i < MAX_LAYERS ? depth - 1 : 0;
       array.rows.push((await readSequence(session, adapter, byIndex[i], `${name}[${i}]`, rowShape, max, below, objects)).array);

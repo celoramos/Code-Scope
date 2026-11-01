@@ -63,3 +63,16 @@ describe('Python: objetos com texto próprio', () => {
     assert.equal(pythonAdapter.shape({ name: 'm', value: "<module 'os'>", type: 'module', variablesReference: 5 }).kind, 'skip');
   });
 });
+
+describe('matriz irregular', () => {
+  it('Python: linha vazia no meio, como numa lista de adjacência', async () => {
+    const row = (name: string, value: string, variablesReference: number) => ({ name, value, type: 'list', variablesReference });
+    const snap = await collect({ 1: [row('g', '[[1, 2], [], [3]]', 2)], 2: [row('0', '[1, 2]', 3), row('1', '[]', 4), row('2', '[3]', 5)], 3: items(2), 5: items(1) }, pythonAdapter);
+    assert.deepEqual(snap.arrays[0].rows?.map((r) => r.length), [2, 0, 1]);
+  });
+  it('Java: linha nula', async () => {
+    const row = (name: string, n: number, variablesReference: number) => ({ name, value: `int[${n}]@${variablesReference}`, type: 'int[]', variablesReference, indexedVariables: n });
+    const snap = await collect({ 1: [{ name: 'm', value: 'int[2][]@9', type: 'int[][]', variablesReference: 2, indexedVariables: 2 } as Var], 2: [row('0', 1, 3), { name: '1', value: 'null', variablesReference: 0 }], 3: items(1) }, javaAdapter);
+    assert.deepEqual(snap.arrays[0].rows?.map((r) => r.length), [1, 0]);
+  });
+});
