@@ -333,3 +333,12 @@ describe('painel (main.js num DOM)', () => {
     assert.equal(panel.sent.at(-1)?.type, 'compare-close');
   });
 });
+
+describe('programa que termina sem parar', () => {
+  it('a tela vazia explica o que fazer', () => {
+    const panel = openPanel();
+    panel.post({ type: 'session', state: 'ended' });
+    assert.equal(visible(panel.doc, 'empty'), true);
+    assert.match(panel.doc.getElementById('empty-title')?.textContent ?? '', /sem parar.*breakpoint/);
+  });
+});

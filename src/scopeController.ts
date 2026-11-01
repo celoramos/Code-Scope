@@ -53,7 +53,8 @@ export class ScopeController implements vscode.Disposable {
       vscode.commands.registerCommand('codeScope.clearHistory', () => {
         this.history.clear();
         this.view.post({ type: 'reset' });
-        this.view.post({ type: 'session', state: this.state });
+        // Sem passos e com a sessão encerrada, o painel diria que o programa não parou.
+        this.setState(this.state === 'ended' ? 'idle' : this.state);
       }),
     );
   }

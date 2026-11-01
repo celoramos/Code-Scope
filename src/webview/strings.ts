@@ -228,7 +228,7 @@ const pt: PanelStrings = {
   script: {
     idle: 'Pronto para visualizar',
     running: 'Aguardando um breakpoint',
-    ended: 'Sessão encerrada',
+    ended: 'O programa terminou sem parar. Coloque um breakpoint e rode de novo.',
     step: 'Passo {0} de {1}',
     noArrays: 'Nenhuma variável para desenhar neste ponto.',
     executed: 'Executou',
@@ -410,7 +410,7 @@ const en: PanelStrings = {
   script: {
     idle: 'Ready to visualize',
     running: 'Waiting for a breakpoint',
-    ended: 'Session ended',
+    ended: 'The program finished without stopping. Set a breakpoint and run it again.',
     step: 'Step {0} of {1}',
     noArrays: 'Nothing to draw at this point.',
     executed: 'Ran',
