@@ -1,3 +1,4 @@
+import type { DapVariable } from '../dap';
 import { asInteger, methodsCalledOn, numericIndex, type CollectionRole, type LanguageAdapter, type VariableShape } from './adapter';
 
 /*

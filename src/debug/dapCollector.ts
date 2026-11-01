@@ -455,7 +455,7 @@ async function readPages(session: Session, adapter: LanguageAdapter, reference: 
       return i !== undefined && !seen.has(i);
     });
     if (fresh.length === 0) break;
-    for (const c of fresh) seen.add(adapter.elementIndex(c.name));
+    for (const c of fresh) seen.add(adapter.elementIndex(c.name) as number);
     children.push(...fresh);
   }
   return children;
