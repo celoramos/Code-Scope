@@ -12,7 +12,9 @@ export type ToWebview =
   | { type: 'reset' }
   | { type: 'error'; text: string }
   /** Nenhum passo combina com a busca. */
-  | { type: 'find-miss'; query: string };
+  | { type: 'find-miss'; query: string }
+  /** O arquivo aberto precisa de um debugger que não está instalado. */
+  | { type: 'debugger'; missing?: { id: string; label: string } };
 
 /** Mensagens que o painel envia para a extensão. */
 export type FromWebview =
@@ -32,6 +34,7 @@ export type FromWebview =
   /** Abre uma sessão salva; com compare, ela só entra na comparação. */
   | { type: 'open-session'; compare: boolean }
   | { type: 'compare-close' }
+  | { type: 'install-debugger'; id: string }
   /** Próximo (dir 1) ou anterior (dir -1) passo que combina com a busca. */
   | { type: 'find'; query: string; dir: 1 | -1 };
 

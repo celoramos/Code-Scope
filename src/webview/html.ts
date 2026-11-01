@@ -39,6 +39,10 @@ export function panelHtml({ cspSource, cssUri: css, jsUri: js, nonce, present, l
       <ol class="empty-steps">
         ${t.emptySteps.map((s) => `<li><span>${s}</span></li>`).join('\n        ')}
       </ol>
+      <p id="missing-debugger" class="missing-debugger" hidden>
+        <span id="missing-debugger-text"></span>
+        <button id="install-debugger" class="link-button" type="button">${t.installDebugger}</button>
+      </p>
       <button id="open-session" class="toggle-button" type="button">${t.openSession}</button>
     </section>
 

@@ -5,7 +5,7 @@ import { renderCallTree, renderCalls } from './calls.js';
 import { renderCompare } from './compare.js';
 import { highlightCode, renderCode, renderCondition, renderError } from './code.js';
 import { renderStats } from './cost.js';
-import { arraysEl, backBtn, basename, callsEl, codeEl, counter, el, empty, emptyTitle, endedBadge, explanationEl, fileEl, forwardBtn, heapEl, isString, liveBtn, mapsEl, status, t, timeline, toolbar, traceEl, varsEl, vscode } from './dom.js';
+import { arraysEl, backBtn, byId, basename, callsEl, codeEl, counter, el, empty, emptyTitle, endedBadge, explanationEl, fileEl, forwardBtn, heapEl, isString, liveBtn, mapsEl, status, t, timeline, toolbar, traceEl, varsEl, vscode } from './dom.js';
 import { findMissed } from './find.js';
 import { renderHeap } from './heap.js';
 import { cssArrived } from './image.js';
@@ -46,6 +46,9 @@ window.addEventListener('message', (event) => {
   } else if (msg.type === 'css') {
     cssArrived(msg.text);
     return;
+  } else if (msg.type === 'debugger') {
+    showMissingDebugger(msg.missing);
+    return;
   } else if (msg.type === 'find-miss') {
     findMissed(msg.query);
     return;
@@ -69,6 +72,18 @@ document.addEventListener('keydown', (e) => {
   else return;
   e.preventDefault();
 });
+
+/** @type {string | undefined} */
+let missingId;
+const missingEl = byId('missing-debugger');
+byId('install-debugger').addEventListener('click', () => vscode.postMessage({ type: 'install-debugger', id: missingId }));
+
+/** @param {{ id: string, label: string } | undefined} missing */
+function showMissingDebugger(missing) {
+  missingId = missing?.id;
+  missingEl.hidden = !missing;
+  if (missing) byId('missing-debugger-text').textContent = t('missingDebugger', missing.label);
+}
 
 /** @param {number} step */
 export function gotoStep(step) {

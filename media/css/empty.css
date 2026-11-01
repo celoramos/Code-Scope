@@ -75,3 +75,13 @@ kbd {
   font-family: var(--vscode-font-family);
   font-size: var(--cs-small);
 }
+
+.missing-debugger {
+  margin: var(--cs-space-2) 0 0;
+  color: var(--cs-fg);
+}
+
+.missing-debugger button {
+  display: block;
+  margin-top: var(--cs-space-1);
+}

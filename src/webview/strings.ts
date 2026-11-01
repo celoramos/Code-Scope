@@ -28,6 +28,7 @@ export interface PanelStrings {
     predictSave: string;
     saveImage: string;
     saveGif: string;
+    installDebugger: string;
     saveSession: string;
     openSession: string;
     compareSession: string;
@@ -167,6 +168,7 @@ export interface PanelStrings {
     | 'notesTitle'
     | 'detailsTitle'
     | 'findMiss'
+    | 'missingDebugger'
     | 'gifProgress'
     | 'gifSampled'
     | 'compareTitle'
@@ -208,6 +210,7 @@ const pt: PanelStrings = {
     predictSave: 'Guardar palpite',
     saveImage: 'Salvar imagem',
     saveGif: 'Salvar GIF',
+    installDebugger: 'Ver a extensão',
     saveSession: 'Salvar sessão',
     openSession: 'Abrir sessão salva',
     compareSession: 'Comparar',
@@ -346,6 +349,7 @@ const pt: PanelStrings = {
     exerciseMissing: '{0}: esperado {1}, ainda não existe',
     notesTitle: 'Nota do professor',
     detailsTitle: 'Detalhes',
+    missingDebugger: 'Para debugar este arquivo, falta instalar a extensão {0}.',
     findMiss: 'Nenhum outro passo combina com "{0}".',
     gifProgress: 'Gerando o GIF: passo {0} de {1}',
     gifSampled: 'O GIF mostra {0} dos {1} passos.',
@@ -387,6 +391,7 @@ const en: PanelStrings = {
     predictSave: 'Save guess',
     saveImage: 'Save image',
     saveGif: 'Save GIF',
+    installDebugger: 'See the extension',
     saveSession: 'Save session',
     openSession: 'Open saved session',
     compareSession: 'Compare',
@@ -525,6 +530,7 @@ const en: PanelStrings = {
     exerciseMissing: '{0}: expected {1}, does not exist yet',
     notesTitle: 'Teacher note',
     detailsTitle: 'Details',
+    missingDebugger: 'To debug this file, install the {0} extension.',
     findMiss: 'No other step matches "{0}".',
     gifProgress: 'Building the GIF: step {0} of {1}',
     gifSampled: 'The GIF shows {0} of the {1} steps.',

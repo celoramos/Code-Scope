@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { readSettings, uiLanguage } from './config';
+import { missingDebugger } from './debuggers';
 import { collectStep, toSource, type Source } from './core/collectStep';
 import { registerPauseOnErrors } from './debug/pauseOnErrors';
 import { registerStopTracker } from './debug/trackerFactory';
@@ -43,6 +44,8 @@ export class ScopeController implements vscode.Disposable {
         this.sendSettings();
         this.showCurrent();
       }),
+      vscode.window.onDidChangeActiveTextEditor(() => this.sendMissingDebugger()),
+      vscode.extensions.onDidChange(() => this.sendMissingDebugger()),
       vscode.commands.registerCommand('codeScope.show', () => this.reveal()),
       vscode.commands.registerCommand('codeScope.present', () => this.view.openPresentation()),
       vscode.commands.registerCommand('codeScope.openSession', () => this.openSession(false)),
@@ -109,6 +112,7 @@ export class ScopeController implements vscode.Disposable {
       case 'ready':
         // Painel aberto (ou reaberto) depois dos eventos: manda o estado atual.
         this.sendSettings();
+        this.sendMissingDebugger();
         this.view.post({ type: 'session', state: this.state });
         this.showCurrent();
         break;
@@ -120,6 +124,9 @@ export class ScopeController implements vscode.Disposable {
         break;
       case 'goto':
         if (this.history.goto(msg.step)) this.showCurrent();
+        break;
+      case 'install-debugger':
+        void vscode.commands.executeCommand('extension.open', msg.id);
         break;
       case 'find':
         if (this.history.find(msg.query, msg.dir)) this.showCurrent();
@@ -170,6 +177,13 @@ export class ScopeController implements vscode.Disposable {
   private setState(state: SessionState) {
     this.state = state;
     this.view.post({ type: 'session', state });
+  }
+
+  /** Na tela inicial, avisa se o arquivo aberto precisa de um debugger que não está instalado. */
+  private sendMissingDebugger() {
+    const file = vscode.window.activeTextEditor?.document.fileName ?? '';
+    const need = missingDebugger(file, (id) => vscode.extensions.getExtension(id) !== undefined);
+    this.view.post({ type: 'debugger', missing: need && { id: need.install, label: need.label } });
   }
 
   private sendSettings() {
