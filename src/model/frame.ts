@@ -108,7 +108,9 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
   // a chamada, e as variáveis da função nova aparecem como estão.
   const switched = calls.length > 0;
   const changes = switched ? [] : diff(prev, snapshot, older);
-  const executed = prev && prev.file === snapshot.file ? { line: prev.line, code: prev.code } : undefined;
+  // F10 que cai num breakpoint na linha de baixo é só mais um passo.
+  const jumped = Boolean(snapshot.jumped && prev && snapshot.line !== prev.line + 1);
+  const executed = prev && prev.file === snapshot.file && !jumped ? { line: prev.line, code: prev.code } : undefined;
   const error = explainError(snapshot, options.language) ?? (switched ? undefined : explainHandled(prev, snapshot, options.language));
   let explanation: string[] = [];
   if (options.beginnerMode && switched) {
@@ -138,6 +140,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
         told,
         prev === undefined,
         [
+          ...(jumped ? [MESSAGES[options.language].jumped(snapshot.line)] : []),
           ...heapNotes,
           peekNote(executed?.code, snapshot, changes, options.language),
           returnNote(snapshot, prev, options.language),

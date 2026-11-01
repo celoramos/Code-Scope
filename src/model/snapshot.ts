@@ -128,6 +128,8 @@ export interface Snapshot {
   classes?: Record<string, ClassInfo>;
   /** O programa parou por um erro que ninguém tratou. */
   exception?: ExceptionInfo;
+  /** O programa parou num breakpoint: pode ter rodado muitas linhas desde o passo anterior. */
+  jumped?: boolean;
   /** Notas do professor na linha parada (comentários @note). */
   notes?: string[];
   /** Exercício declarado no arquivo (comentários @exercise e @expect). */

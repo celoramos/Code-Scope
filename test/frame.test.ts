@@ -1,6 +1,7 @@
 import * as assert from 'node:assert/strict';
 import { makeFrame, peekNote } from '../src/model/frame';
 import { History } from '../src/model/history';
+import { VALUE_NAMES } from '../src/model/pointers';
 import type { Snapshot } from '../src/model/snapshot';
 
 const snap = (values: number[], i: number): Snapshot => ({
@@ -61,5 +62,27 @@ describe('peekNote', () => {
     assert.equal(peekNote('pratos.pop();', stack(['"azul"']), []), undefined);
     const removed = [{ kind: 'remove' as const, array: 'pratos', index: 1, value: '"x"', shifted: false, structure: 'stack' as const }];
     assert.equal(peekNote('pratos.peek();', stack(['"azul"']), removed), undefined);
+  });
+});
+
+describe('F5 entre breakpoints', () => {
+  const step = (line: number, jumped?: boolean): Snapshot => ({ line, file: 'a.java', code: 'x', arrays: [], pointers: [{ name: 'x', value: line }], ...(jumped ? { jumped } : {}) });
+  const frameOf = (a: Snapshot, b: Snapshot) => {
+    const history = new History();
+    history.push(a);
+    history.push(b);
+    return makeFrame(history.current() as never, { valueNames: VALUE_NAMES, beginnerMode: true, language: 'pt' });
+  };
+
+  it('avisa que o painel não viu as linhas do meio', () => {
+    const frame = frameOf(step(3), step(20, true));
+    assert.equal(frame.executed, undefined);
+    assert.match(frame.explanation.join(' '), /breakpoint da linha 20/);
+  });
+
+  it('F10 que cai num breakpoint na linha de baixo é um passo comum', () => {
+    const frame = frameOf(step(3), step(4, true));
+    assert.equal(frame.executed?.line, 3);
+    assert.doesNotMatch(frame.explanation.join(' '), /breakpoint/);
   });
 });

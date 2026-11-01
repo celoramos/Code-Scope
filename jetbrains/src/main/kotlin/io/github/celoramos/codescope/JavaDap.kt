@@ -12,6 +12,8 @@ import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.xdebugger.XDebugSession
+import com.intellij.xdebugger.XDebuggerManager
+import com.intellij.xdebugger.breakpoints.XLineBreakpoint
 import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
 import com.intellij.xdebugger.frame.XValue
 import com.sun.jdi.ArrayReference
@@ -47,7 +49,16 @@ class JavaDap(
     }
 
     /** A parada foi um erro (breakpoint de exceção)? */
-    fun reason(): String = jdi { if (exceptionEvent() != null) "exception" else "breakpoint" }
+    /** "step" quando não há breakpoint na linha: o painel avisa quando o F9 pulou várias linhas. */
+    fun reason(): String = jdi { if (exceptionEvent() != null) "exception" else if (atBreakpoint()) "breakpoint" else "step" }
+
+    private fun atBreakpoint(): Boolean = ReadAction.compute<Boolean, Throwable> {
+        val position = session.currentPosition ?: return@compute false
+        XDebuggerManager.getInstance(project).breakpointManager.allBreakpoints.any {
+            val line = it as? XLineBreakpoint<*>
+            line != null && line.fileUrl == position.file.url && line.line == position.line
+        }
+    }
 
     fun handle(command: String, args: JsonObject?): JsonElement = when (command) {
         "threads" -> obj("threads" to JsonArray().apply { add(obj("id" to 1, "name" to "main")) })

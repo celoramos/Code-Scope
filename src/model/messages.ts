@@ -11,6 +11,8 @@ export type CollectionKind = 'list' | 'stack' | 'queue' | 'deque' | 'heap';
 export type ErrorKindName = 'index' | 'null' | 'zero' | 'key' | 'format' | 'recursion' | 'name' | 'type' | 'other';
 
 export interface Messages {
+  /** F5 entre breakpoints: o painel não viu as linhas do meio. */
+  jumped(line: number): string;
   /** Nível detalhado: a linha que rodou e a próxima. */
   detailLines(executed: number | undefined, next: number): string;
   /** Nível detalhado: chamadas em andamento. */
@@ -176,6 +178,7 @@ function joinList(vs: string[], and: string, more: string): string {
 const ptSize = (rows: number, cols: number) => `${count(rows, 'linha', 'linhas')} e ${count(cols, 'coluna', 'colunas')}`;
 
 const pt: Messages = {
+  jumped: (line) => `O programa correu até o breakpoint da linha ${line}. O que aparece abaixo é tudo que mudou desde a parada anterior, de uma vez.`,
   detailLines: (executed, next) => (executed === undefined ? `linha ${next}` : `linha ${executed} → ${next}`),
   detailDepth: (depth) => `${depth} chamadas em andamento`,
   priorityIn: (arr, v, root) => `${v} entrou em ${arr}. Quem sai primeiro agora é ${root}, na raiz.`,
@@ -359,6 +362,7 @@ const enItems = (n: number) => count(n, 'item', 'items');
 const enSize = (rows: number, cols: number) => `${count(rows, 'row', 'rows')} and ${count(cols, 'column', 'columns')}`;
 
 const en: Messages = {
+  jumped: (line) => `The program ran until the breakpoint on line ${line}. What follows is everything that changed since the last stop, all at once.`,
   detailLines: (executed, next) => (executed === undefined ? `line ${next}` : `line ${executed} → ${next}`),
   detailDepth: (depth) => `${depth} calls running`,
   priorityIn: (arr, v, root) => `${v} entered ${arr}. The next one out is now ${root}, at the root.`,

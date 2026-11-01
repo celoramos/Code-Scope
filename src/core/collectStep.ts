@@ -76,6 +76,7 @@ export async function collectStep(session: Session, threadId: number | undefined
     if (here?.length) snap.notes = here;
     if (exercise) snap.exercise = exercise;
   }
+  if (opts.reason === 'breakpoint' && opts.previous) snap.jumped = true;
   if (opts.reason === 'exception') snap.exception = await readException(session, thread);
   // A linha parada testa uma condição? Cada parte vira verdadeiro ou falso antes de rodar.
   const parsed = snap.exception ? undefined : parseCondition(snap.code, conditionSyntax(collected.adapter.id));
