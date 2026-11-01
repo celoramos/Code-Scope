@@ -24,9 +24,14 @@ async function main() {
   // C# e C/C++ só entram quando há com o que compilar: um .NET e um gcc portáteis em
   // .vscode-test (ou os do sistema, no CI). Sem eles, esses testes são pulados.
   const tools = path.join(root, '.vscode-test');
-  const extraPath = [path.join(tools, 'dotnet'), path.join(tools, 'w64devkit', 'bin')].filter((p) => fs.existsSync(p));
+  const extraPath = [path.join(tools, 'dotnet'), path.join(tools, 'w64devkit', 'bin'), path.join(tools, 'go', 'bin'), path.join(tools, 'gopath', 'bin')].filter((p) => fs.existsSync(p));
   if (extraPath.length > 0) process.env.PATH = [...extraPath, process.env.PATH].join(path.delimiter);
   if (fs.existsSync(path.join(tools, 'dotnet'))) process.env.DOTNET_ROOT = path.join(tools, 'dotnet');
+  if (fs.existsSync(path.join(tools, 'go'))) {
+    process.env.GOROOT = path.join(tools, 'go');
+    process.env.GOPATH = path.join(tools, 'gopath');
+    process.env.GOCACHE = path.join(tools, 'gocache');
+  }
   const has = (cmd: string) => cp.spawnSync(cmd, ['--version'], { shell: process.platform === 'win32' }).status === 0;
   // CODE_SCOPE_EXTENSIONS troca a lista (separada por vírgula; vazia instala nada), para rodar só
   // algumas linguagens sem baixar o Java Extension Pack.
