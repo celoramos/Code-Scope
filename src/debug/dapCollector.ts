@@ -341,7 +341,7 @@ async function readSequence(
   } else {
     try {
       const count = Math.min(shape.length, max);
-      children = await variables(session, v.variablesReference, { filter: 'indexed', start: 0, count });
+      children = await readPages(session, adapter, v.variablesReference, count);
     } catch {
       // Debugger sem suporte a paginação: pede tudo e corta aqui.
       children = await variables(session, v.variablesReference);
@@ -414,6 +414,23 @@ async function readSequence(
     }
   }
   return { array, children };
+}
+
+/** Primeiras posições de uma coleção. O vsdbg responde menos do que foi pedido: continua de onde parou. */
+async function readPages(session: Session, adapter: LanguageAdapter, reference: number, count: number): Promise<DapVariable[]> {
+  const children = await variables(session, reference, { filter: 'indexed', start: 0, count });
+  const seen = new Set(children.map((c) => adapter.elementIndex(c.name)).filter((i) => i !== undefined));
+  while (seen.size > 0 && seen.size < count) {
+    const page = await variables(session, reference, { filter: 'indexed', start: seen.size, count: count - seen.size });
+    const fresh = page.filter((c) => {
+      const i = adapter.elementIndex(c.name);
+      return i !== undefined && !seen.has(i);
+    });
+    if (fresh.length === 0) break;
+    for (const c of fresh) seen.add(adapter.elementIndex(c.name));
+    children.push(...fresh);
+  }
+  return children;
 }
 
 /** Camadas abertas de uma matriz de três dimensões. */

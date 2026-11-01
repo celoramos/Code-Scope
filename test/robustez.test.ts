@@ -76,3 +76,11 @@ describe('matriz irregular', () => {
     assert.deepEqual(snap.arrays[0].rows?.map((r) => r.length), [1, 0]);
   });
 });
+
+describe('debugger que entrega em pedaços', () => {
+  it('C#: array grande vem inteiro até o limite', async () => {
+    const cells = Array.from({ length: 200 }, (_, i) => ({ name: `[${i}]`, value: String(i), type: 'int', variablesReference: 0 }));
+    const snap = await collect({ 1: [{ name: 'a', value: '{int[1000000]}', type: 'int[]', variablesReference: 2 }], 2: cells }, csharpAdapter, 25);
+    assert.deepEqual(snap.arrays[0].values, cells.slice(0, 50).map((c) => c.value));
+  });
+});
