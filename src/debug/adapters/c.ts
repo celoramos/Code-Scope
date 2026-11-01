@@ -13,8 +13,8 @@ import { asInteger, numericIndex, type LanguageAdapter, type VariableShape } fro
  * O endereço é a identidade: dois ponteiros com o mesmo endereço apontam para
  * o mesmo struct.
  *
- * Coleções do C++. Observado no gdb real sem os pretty-printers do Python
- * (w64devkit): std::vector tem value "{...}" e só o _Vector_base como filho, mas
+ * Coleções do C++. Observado no cppdbg real com gdb sem os pretty-printers do
+ * Python (w64devkit, teste de integração vetor.cpp): std::vector tem value "{...}" e só o _Vector_base como filho, mas
  * as expressões em VECTOR_SIZE e VECTOR_ITEMS leem os itens; std::map é uma
  * árvore por dentro e fica de fora. Com os pretty-printers (o gdb do Linux), pelo
  * formato documentado, sem exemplo que confirme ainda: "std::vector of length 3,

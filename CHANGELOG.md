@@ -14,8 +14,8 @@
 - Fila de prioridade (`PriorityQueue`, `heapq`) com o array e a árvore, e deque usado pelas duas pontas.
 - Arrays de três dimensões: uma matriz por camada.
 - Objetos dentro de matrizes mostram o valor principal na célula.
-- `std::vector` com ou sem pretty-printers, e `std::map` com eles. Ainda não validados no VS Code.
-- Adaptador de Go: arrays, slices, matrizes, mapas, pilha, fila, structs, ponteiros, listas ligadas e condições, validados com o Delve real.
+- `std::vector` com ou sem pretty-printers, validado no VS Code com gdb sem eles. `std::map` com pretty-printers, ainda não validado.
+- Adaptador de Go: arrays, slices, matrizes, mapas, pilha, fila, structs, ponteiros, listas ligadas e condições, validados no VS Code com a extensão Go.
 
 ## 0.8.0
 
