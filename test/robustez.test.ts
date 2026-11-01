@@ -107,3 +107,11 @@ describe('C#: textos do vsdbg', () => {
     assert.deepEqual(functionName('Estresse.dll!Programa.Main() Linha 29'), { name: 'Main', program: false, owner: 'Programa' });
   });
 });
+
+describe('C: struct em array', () => {
+  it('a célula mostra os campos', async () => {
+    const cell = (name: string, ref: number) => ({ name, value: '', type: 'struct no', variablesReference: ref });
+    const snap = await collect({ 1: [{ name: 'v', value: '[2]', type: 'struct no [2]', variablesReference: 2 }], 2: [cell('[0]', 3), cell('[1]', 4)], 3: [{ name: 'v', value: '1', type: 'int', variablesReference: 0 }, { name: 'prox', value: '0x0', type: 'struct no *', variablesReference: 0 }], 4: [{ name: 'v', value: '2', type: 'int', variablesReference: 0 }] }, cAdapter);
+    assert.deepEqual(snap.arrays[0].values, ['{v: 1, prox: 0x0}', '{v: 2}']);
+  });
+});

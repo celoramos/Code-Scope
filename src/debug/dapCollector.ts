@@ -391,7 +391,9 @@ async function readSequence(
       const inner = fields.find((f) => f.name === 'value') ?? (fields.length === 1 ? fields[0] : undefined);
       values.push(inner ? unbox(inner) : adapter.formatElement(c));
     } else {
-      values.push(adapter.formatElement(c));
+      const text = adapter.formatElement(c);
+      const blank = (text === '' || text === '{...}') && c.variablesReference > 0 && adapter.shape(c).kind !== 'sequence';
+      values.push(blank ? await fieldsText(session, c) : text);
     }
   }
   const array: ArrayVar = { name, values, length };
@@ -417,6 +419,15 @@ async function readSequence(
   }
   return { array, children };
 }
+
+/** Struct sem texto no debugger (C e C++): os primeiros campos, para a célula não ficar em branco. */
+async function fieldsText(session: Session, v: DapVariable): Promise<string> {
+  const fields = await variables(session, v.variablesReference);
+  const shown = fields.slice(0, MAX_CELL_FIELDS).map((f) => `${f.name}: ${f.value}`);
+  return `{${shown.join(', ')}${fields.length > MAX_CELL_FIELDS ? ', …' : ''}}`;
+}
+
+const MAX_CELL_FIELDS = 3;
 
 /** Matriz numa fileira só ("[0, 0]", "[0, 1]"...): cada linha é um trecho dela. */
 async function readGrid(session: Session, adapter: LanguageAdapter, v: DapVariable, name: string, grid: { rows: number; cols: number }, max: number): Promise<ArrayVar> {
