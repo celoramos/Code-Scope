@@ -26,6 +26,7 @@ CONTRIBUTING.md
 CODE_OF_CONDUCT.md
 eslint.config.mjs
 media/src/**
+scripts/**
 media/css/**
 CONTRIBUTING.pt-br.md
 jetbrains/**

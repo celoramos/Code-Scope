@@ -34,6 +34,8 @@ export type FromWebview =
   /** Abre uma sessão salva; com compare, ela só entra na comparação. */
   | { type: 'open-session'; compare: boolean }
   | { type: 'compare-close' }
+  /** Abre no navegador a página de abrir uma issue. */
+  | { type: 'feedback' }
   | { type: 'install-debugger'; id: string }
   /** Próximo (dir 1) ou anterior (dir -1) passo que combina com a busca. */
   | { type: 'find'; query: string; dir: 1 | -1 };

@@ -145,6 +145,7 @@ export function panelHtml({ cspSource, cssUri: css, jsUri: js, nonce, present, l
       <p id="trace-hidden" class="trace-note" hidden></p>
       <div class="trace-scroll"><table id="trace-table" class="trace-table"></table></div>
     </details>
+    <p class="feedback"><button id="feedback" class="link-button" type="button">${t.feedback}</button></p>
   </main>
   <script id="strings" type="application/json">${strings}</script>
   <script nonce="${nonce}" src="${js}"></script>

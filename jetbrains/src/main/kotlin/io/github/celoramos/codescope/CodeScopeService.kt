@@ -1,6 +1,7 @@
 package io.github.celoramos.codescope
 
 import com.google.gson.JsonObject
+import com.intellij.ide.BrowserUtil
 import com.intellij.debugger.engine.JavaDebugProcess
 import com.intellij.debugger.engine.SuspendContextImpl
 import com.intellij.openapi.Disposable
@@ -113,6 +114,10 @@ class CodeScopeService(private val project: Project) : Disposable {
             null
         }
         "open-file" -> openFile()
+        "open-url" -> {
+            BrowserUtil.browse(req.get("url").asString)
+            null
+        }
         "log" -> {
             val text = req.get("text").asString
             if (text.startsWith("snapshot ")) onSnapshot?.invoke(text.removePrefix("snapshot "))

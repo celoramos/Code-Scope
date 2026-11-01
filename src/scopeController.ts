@@ -8,7 +8,7 @@ import { makeFrame } from './model/frame';
 import { History } from './model/history';
 import { parseSession, serializeSession, summarizeSession, type SessionSummary } from './model/session';
 import { saveFile, type FromWebview, type ScopeViewProvider } from './webview/scopeViewProvider';
-import { invalidSession, pickSession, readError } from './webview/strings';
+import { FEEDBACK_URL, invalidSession, pickSession, readError } from './webview/strings';
 
 type SessionState = 'idle' | 'running' | 'ended';
 
@@ -127,6 +127,9 @@ export class ScopeController implements vscode.Disposable {
         break;
       case 'install-debugger':
         void vscode.commands.executeCommand('extension.open', msg.id);
+        break;
+      case 'feedback':
+        void vscode.env.openExternal(vscode.Uri.parse(FEEDBACK_URL));
         break;
       case 'find':
         if (this.history.find(msg.query, msg.dir)) this.showCurrent();

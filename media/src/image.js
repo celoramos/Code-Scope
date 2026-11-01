@@ -55,7 +55,7 @@ async function drawPanel(css, scale) {
   const style =
     css.replace(/:root/g, '.cs-export').replace(/\bbody\b/g, '.cs-export') +
     // Sem animação: na imagem, quem estivesse no começo de uma entrada sairia invisível.
-    '*{animation:none!important;transition:none!important}.toolbar-actions,.predict-form,.find{display:none!important}';
+    '*{animation:none!important;transition:none!important}.toolbar-actions,.predict-form,.find,.feedback{display:none!important}';
   // O valor atual de um controle é propriedade, não atributo: sem isto a linha do tempo sairia no começo.
   timeline.setAttribute('value', timeline.value);
   const content = new XMLSerializer().serializeToString(app);

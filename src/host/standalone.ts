@@ -14,7 +14,7 @@ import { parseSession, serializeSession, summarizeSession, type SessionSummary }
 import type { Language } from '../model/messages';
 import { VALUE_NAMES } from '../model/pointers';
 import { readAnimationSpeed } from '../animationSpeed';
-import { invalidSession, readError } from '../webview/strings';
+import { FEEDBACK_URL, invalidSession, readError } from '../webview/strings';
 import { request, type HostEvent } from './bridge';
 
 const language: Language = document.documentElement.lang.startsWith('pt') ? 'pt' : 'en';
@@ -163,6 +163,9 @@ onPanelMessage((msg) => {
     case 'compare-close':
       compared = undefined;
       showCurrent();
+      break;
+    case 'feedback':
+      void request({ kind: 'open-url', url: FEEDBACK_URL });
       break;
     case 'find':
       if (history.find(msg.query, msg.dir)) showCurrent();

@@ -28,6 +28,7 @@ export interface PanelStrings {
     predictSave: string;
     saveImage: string;
     saveGif: string;
+    feedback: string;
     installDebugger: string;
     saveSession: string;
     openSession: string;
@@ -210,6 +211,7 @@ const pt: PanelStrings = {
     predictSave: 'Guardar palpite',
     saveImage: 'Salvar imagem',
     saveGif: 'Salvar GIF',
+    feedback: 'Achou algo confuso? Conte para a gente',
     installDebugger: 'Ver a extensão',
     saveSession: 'Salvar sessão',
     openSession: 'Abrir sessão salva',
@@ -391,6 +393,7 @@ const en: PanelStrings = {
     predictSave: 'Save guess',
     saveImage: 'Save image',
     saveGif: 'Save GIF',
+    feedback: 'Something confusing? Tell us',
     installDebugger: 'See the extension',
     saveSession: 'Save session',
     openSession: 'Open saved session',
@@ -544,6 +547,9 @@ const en: PanelStrings = {
     compareSame: 'Both made the same number of comparisons.',
   },
 };
+
+/** Onde a pessoa conta o que achou. O painel nunca envia nada sozinho. */
+export const FEEDBACK_URL = 'https://github.com/celoramos/Code-Scope/issues/new/choose';
 
 export const PANEL_STRINGS: Record<Language, PanelStrings> = { pt, en };
 

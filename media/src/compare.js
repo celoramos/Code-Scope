@@ -12,6 +12,7 @@ const noteEl = byId('compare-note');
 byId('compare-session').addEventListener('click', () => vscode.postMessage({ type: 'open-session', compare: true }));
 byId('open-session').addEventListener('click', () => vscode.postMessage({ type: 'open-session', compare: false }));
 byId('save-session').addEventListener('click', () => vscode.postMessage({ type: 'save-session' }));
+byId('feedback').addEventListener('click', () => vscode.postMessage({ type: 'feedback' }));
 byId('compare-close').addEventListener('click', () => vscode.postMessage({ type: 'compare-close' }));
 
 /** @param {Frame['compare']} compare */

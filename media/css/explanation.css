@@ -44,3 +44,8 @@
   font-family: var(--cs-mono);
   font-size: 0.95em;
 }
+
+.feedback {
+  margin: var(--cs-space-2) 0 0;
+  font-size: var(--cs-small);
+}
