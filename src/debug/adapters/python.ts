@@ -37,7 +37,7 @@ export function pythonRole(source: string, name: string): CollectionRole | undef
 
 /** Filhos que o debugpy acrescenta a uma coleção e que não são itens dela. */
 function notAnItem(c: DapVariable): boolean {
-  return /^(special|function|class) variables$/.test(c.name) || c.name === 'len()' || c.name.startsWith('Too large to show');
+  return /^(special|function|class) variables$/.test(c.name) || c.name === 'len()' || c.name.startsWith('Too large to show') || c.value.startsWith('<bound method ');
 }
 
 export const pythonAdapter: LanguageAdapter = {

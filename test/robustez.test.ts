@@ -43,3 +43,10 @@ describe('Python: o debugpy só entrega 100 filhos', () => {
     assert.equal(pythonAdapter.setItem?.(tooLarge), false);
   });
 });
+
+describe('Python: Counter', () => {
+  it('o método que o debugpy lista junto não vira entrada', () => {
+    assert.equal(pythonAdapter.mapEntry?.({ name: '_keep_positive', value: "<bound method Counter._keep_positive of Counter({'a': 5})>", variablesReference: 3 }), undefined);
+    assert.deepEqual(pythonAdapter.mapEntry?.({ name: "'a'", value: '5', variablesReference: 0 }), { key: "'a'", value: '5' });
+  });
+});
