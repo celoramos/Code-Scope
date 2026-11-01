@@ -25,6 +25,12 @@ function findTool(name: string): string | undefined {
   return undefined;
 }
 
+/** Encerra e espera acabar: a sessão que termina atrasada confundiria o teste seguinte. */
+async function stopSession() {
+  await vscode.debug.stopDebugging();
+  while (vscode.debug.activeDebugSession) await new Promise((r) => setTimeout(r, 100));
+}
+
 const arrayOf = (s: Snapshot | undefined, name: string) => s?.arrays.find((a) => a.name === name);
 
 describe('Novidades JavaScript real', () => {
@@ -63,7 +69,7 @@ describe('Novidades Python real', () => {
     const start = Date.now();
     while (cs.snapshots().length === 0 && Date.now() - start < 90_000) await new Promise((r) => setTimeout(r, 200));
     assert.ok(cs.snapshots().length >= 1, 'não parou');
-    await vscode.debug.stopDebugging();
+    await stopSession();
   });
 
   it('fila_de_prioridade.py: heapq e deque pelas duas pontas', async () => {
@@ -105,7 +111,7 @@ describe('Novidades Java real', () => {
     const start = Date.now();
     while (cs.snapshots().length === 0 && Date.now() - start < 120_000) await new Promise((r) => setTimeout(r, 200));
     assert.ok(cs.snapshots().length >= 1, 'o exemplo terminou sem parar');
-    await vscode.debug.stopDebugging();
+    await stopSession();
   });
 
   it('Cubo: cada camada vira uma matriz', async () => {
