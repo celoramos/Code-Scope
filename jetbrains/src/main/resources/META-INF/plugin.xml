@@ -7,12 +7,25 @@
     pointers, objects, trees, graphs and recursion, step by step, with a plain-language
     explanation of what each line changed.
     <br><br>
-    Desenha as estruturas de dados enquanto você debuga: arrays, listas, pilhas, filas,
-    matrizes, ponteiros, objetos, árvores, grafos e recursão, passo a passo, com uma
-    explicação do que cada linha mudou.
+    Debug any Java file. The panel opens on the right when the debugger stops; step with F8 or F7.
+    The panel and its explanations follow the system language (English or Portuguese).
+    <br><br>
+    Runs locally: no account, no browser, nothing sent to the internet.
     <br><br>
     Open source (MIT): <a href="https://github.com/celoramos/Code-Scope">github.com/celoramos/Code-Scope</a>
   ]]></description>
+
+  <change-notes><![CDATA[
+    <b>0.9.0</b>
+    <ul>
+      <li>Tools &gt; Code Scope: Presentation Mode (larger panel and text) and Open a Sample.</li>
+      <li>Warns when you resume (F9) between breakpoints and steps were skipped.</li>
+      <li>Details button: each step as a memory change, like <code>v[1]: 5 &rarr; 3</code>.</li>
+      <li>Guided exercises and teacher notes in comments (<code>@exercise</code>, <code>@expect</code>, <code>@note</code>).</li>
+      <li>Save a GIF, save and reopen a session, compare sessions and search the history.</li>
+      <li>Priority queues as trees, deques, 3D arrays and objects inside matrices.</li>
+    </ul>
+  ]]></change-notes>
 
   <depends>com.intellij.modules.platform</depends>
   <depends>com.intellij.modules.xdebugger</depends>
