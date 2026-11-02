@@ -3,10 +3,11 @@ import { cAdapter } from '../src/debug/adapters/c';
 import { csharpAdapter } from '../src/debug/adapters/csharp';
 import { goAdapter } from '../src/debug/adapters/go';
 import { javaAdapter, pythonAdapter } from '../src/debug/adapters';
+import { javascriptAdapter } from '../src/debug/adapters/javascript';
 import type { LanguageAdapter } from '../src/debug/adapters/adapter';
 import { collectSnapshot, functionName, type Session } from '../src/debug/dapCollector';
 
-type Var = { name: string; value: string; type?: string; variablesReference: number; evaluateName?: string };
+type Var = { name: string; value: string; type?: string; variablesReference: number; evaluateName?: string; indexedVariables?: number };
 
 /** Sessão falsa: a referência 1 são as locais; page corta cada resposta, como o vsdbg. */
 function session(vars: Record<number, Var[]>, page = Infinity): Session {
@@ -137,5 +138,39 @@ describe('texto muito longo', () => {
     assert.ok((snap.scalars?.[0].value.length ?? 0) <= 501);
     assert.ok(snap.scalars?.[0].value.endsWith('…'));
     assert.ok(snap.arrays[0].values[0].length <= 501);
+  });
+});
+
+describe('JavaScript: Map e Set grandes', () => {
+  /** O js-debug, sem filtro, devolve todos os itens: a sessão falha nesse caso, como lembrete do custo (3 a 4 s com 50 mil). */
+  function paged(vars: Record<number, Var[]>, big: number): Session {
+    const inner = session(vars);
+    return {
+      async customRequest(command: string, args?: any) {
+        // O js-debug chama o escopo de "Local".
+        if (command === 'scopes') return { scopes: [{ name: 'Local', variablesReference: 1 }] };
+        if (command === 'variables' && args.variablesReference === big && args.filter !== 'indexed') throw new Error('pediu todos os itens');
+        return inner.customRequest(command, args);
+      },
+    };
+  }
+  const n = 50000;
+  const tail = [{ name: 'size', value: String(n), variablesReference: 0 }, { name: '[[Prototype]]', value: 'Map', variablesReference: 9 }];
+
+  it('Map de 50 mil pede só as primeiras entradas', async () => {
+    const entries = Array.from({ length: n }, (_, i) => ({ name: String(i), value: `{'k${i}' => ${i}}`, variablesReference: 0 }));
+    const vars = { 1: [{ name: 'tabela', value: `Map(${n}) {'k0' => 0, …}`, type: 'Map', variablesReference: 2, indexedVariables: n }], 2: [...entries, ...tail] };
+    const snap = (await collectSnapshot(paged(vars, 2), 1, javascriptAdapter))!.snapshot;
+    assert.equal(snap.maps?.[0].length, n);
+    assert.equal(snap.maps?.[0].entries.length, 50);
+    assert.deepEqual(snap.maps?.[0].entries[0], { key: "'k0'", value: '0' });
+  });
+
+  it('Set de 50 mil pede só os primeiros itens', async () => {
+    const vars = { 1: [{ name: 'vistos', value: `Set(${n}) {size: ${n}, 0, 1, …}`, type: 'Set', variablesReference: 2, indexedVariables: n }], 2: [...items(n, 'number'), ...tail] };
+    const snap = (await collectSnapshot(paged(vars, 2), 1, javascriptAdapter))!.snapshot;
+    assert.equal(snap.arrays[0].length, n);
+    assert.equal(snap.arrays[0].values.length, 50);
+    assert.equal(snap.arrays[0].kind, 'set');
   });
 });

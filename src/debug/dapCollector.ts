@@ -337,7 +337,7 @@ async function readSequence(
     children = read.children;
     shape = { ...shape, length: read.length };
   } else if (shape.collection === 'set' && adapter.setItem) {
-    children = (await variables(session, v.variablesReference)).filter((c) => adapter.setItem?.(c)).map((c, i) => ({ ...c, name: String(i) }));
+    children = (await firstChildren(session, v, max)).filter((c) => adapter.setItem?.(c)).map((c, i) => ({ ...c, name: String(i) }));
   } else if (shape.length === undefined) {
     children = await variables(session, v.variablesReference);
   } else {
@@ -484,7 +484,7 @@ async function readIndirect(
  */
 async function readMap(session: Session, adapter: LanguageAdapter, v: DapVariable, max: number): Promise<{ entries: MapVar['entries']; size?: number }> {
   if (v.variablesReference <= 0 || !adapter.mapEntry) return { entries: [] };
-  let children = await variables(session, v.variablesReference);
+  let children = await firstChildren(session, v, max);
   const size = adapter.reportedSize?.(children);
   const inner = children.find((c) => c.name === '[[Entries]]') ?? children.find((c) => isRangeGroup(c.name));
   if (inner) children = await variables(session, inner.variablesReference);
@@ -543,6 +543,23 @@ async function entryList(session: Session, adapter: LanguageAdapter, c: DapVaria
   const shape = list ? adapter.shape(list) : undefined;
   if (!list || shape?.kind !== 'sequence') return undefined;
   return (await readSequence(session, adapter, list, '', shape, max, 0)).array.values;
+}
+
+/**
+ * Filhos de um Map ou Set que o debugger pagina (indexedVariables): só as
+ * primeiras posições. Sem filtro, o js-debug devolve todos os itens, e um Map
+ * de 50 mil levava de 3 a 4 s por passo. Coleção pequena segue como antes.
+ */
+async function firstChildren(session: Session, v: DapVariable, max: number): Promise<DapVariable[]> {
+  if ((v.indexedVariables ?? 0) > max) {
+    try {
+      const page = await variables(session, v.variablesReference, { filter: 'indexed', start: 0, count: max });
+      if (page.length > 0) return page;
+    } catch {
+      // Debugger sem paginação: pede tudo, logo abaixo.
+    }
+  }
+  return variables(session, v.variablesReference);
 }
 
 async function variables(session: Session, variablesReference: number, extra: object = {}): Promise<DapVariable[]> {
