@@ -133,13 +133,20 @@ async function probeLocals(): Promise<unknown> {
   const out: Record<string, unknown> = { scopes };
   for (const scope of scopes.slice(0, 2) as { name: string; variablesReference: number }[]) {
     const { variables } = await s.customRequest('variables', { variablesReference: scope.variablesReference });
-    for (const v of variables as { name: string; variablesReference: number }[]) {
+    for (const v of variables as { name: string; variablesReference: number; indexedVariables?: number }[]) {
       if (v.variablesReference <= 0) continue;
-      const children = await s.customRequest('variables', { variablesReference: v.variablesReference });
+      // Sem filtro, o js-debug devolve todas as posições: num array de 1 milhão, a sonda levava 20 minutos.
+      const page = v.indexedVariables ? { filter: 'indexed', start: 0, count: 6 } : {};
+      const children = await s.customRequest('variables', { variablesReference: v.variablesReference, ...page });
       const first = children.variables[0];
       const nested =
         first?.variablesReference > 0
-          ? (await s.customRequest('variables', { variablesReference: first.variablesReference })).variables.slice(0, 4)
+          ? (
+              await s.customRequest('variables', {
+                variablesReference: first.variablesReference,
+                ...(first.indexedVariables ? { filter: 'indexed', start: 0, count: 4 } : {}),
+              })
+            ).variables.slice(0, 4)
           : undefined;
       out[`${scope.name}/${v.name}`] = { variable: v, children: children.variables.slice(0, 6), nested };
     }
