@@ -86,3 +86,31 @@ describe('F5 entre breakpoints', () => {
     assert.doesNotMatch(frame.explanation.join(' '), /breakpoint/);
   });
 });
+
+describe('F10 mais rápido que a leitura', () => {
+  const step = (line: number, skipped?: number): Snapshot => ({ line, file: 'a.java', code: 'x', arrays: [], pointers: [{ name: 'x', value: line }], ...(skipped ? { skipped } : {}) });
+  const frameOf = (a: Snapshot, b: Snapshot, language: 'pt' | 'en' = 'pt') => {
+    const history = new History();
+    history.push(a);
+    history.push(b);
+    return makeFrame(history.current() as never, { valueNames: VALUE_NAMES, beginnerMode: true, language });
+  };
+
+  it('diz quantos passos ficaram de fora e não inventa a linha que rodou', () => {
+    const frame = frameOf(step(3), step(5, 2));
+    assert.equal(frame.executed, undefined);
+    assert.match(frame.explanation.join(' '), /2 passos ficaram de fora/);
+  });
+
+  it('no singular e em inglês', () => {
+    assert.match(frameOf(step(3), step(4, 1)).explanation.join(' '), /1 passo ficou de fora/);
+    assert.match(frameOf(step(3), step(4, 1), 'en').explanation.join(' '), /1 step was left out/);
+  });
+
+  it('o primeiro passo não tem com o que comparar', () => {
+    const history = new History();
+    history.push(step(5, 3));
+    const frame = makeFrame(history.current() as never, { valueNames: VALUE_NAMES, beginnerMode: true, language: 'pt' });
+    assert.doesNotMatch(frame.explanation.join(' '), /ficaram de fora/);
+  });
+});

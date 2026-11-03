@@ -15,6 +15,7 @@ import type { Language } from '../model/messages';
 import { VALUE_NAMES } from '../model/pointers';
 import { readAnimationSpeed } from '../animationSpeed';
 import { FEEDBACK_URL, invalidSession, readError } from '../webview/strings';
+import { StopSequence } from '../core/stopSequence';
 import { request, type HostEvent } from './bridge';
 
 const language: Language = document.documentElement.lang.startsWith('pt') ? 'pt' : 'en';
@@ -25,7 +26,7 @@ let animationSpeed = readAnimationSpeed(undefined);
 const history = new History();
 let state: 'idle' | 'running' | 'ended' = 'idle';
 /** Cada parada ganha um número; uma coleta só publica se ainda for a mais recente. */
-let generation = 0;
+const stops = new StopSequence();
 /** Sessão salva ao lado da atual, depois de "Comparar". */
 let compared: SessionSummary | undefined;
 
@@ -46,7 +47,7 @@ function setState(s: typeof state) {
 }
 
 async function onStopped(threadId: number | undefined, reason: string | undefined, debugType: string) {
-  const gen = ++generation;
+  const gen = stops.start();
   try {
     const step = await collectStep(session, threadId, {
       debugType,
@@ -58,26 +59,31 @@ async function onStopped(threadId: number | undefined, reason: string | undefine
       previous: history.last(),
       reason,
     });
-    if (!step || gen !== generation) return;
+    if (!step || !stops.isCurrent(gen)) return;
+    const lost = stops.takeLost();
+    if (lost > 0) step.snapshot.skipped = lost;
     void request({ kind: 'log', level: 'debug', text: `snapshot ${JSON.stringify(step.snapshot)}` });
     history.push(step.snapshot);
     showCurrent();
   } catch (err) {
-    if (gen !== generation) return;
+    if (!stops.isCurrent(gen)) return;
     void request({ kind: 'log', level: 'error', text: String(err instanceof Error ? err.stack : err) });
     postToPanel({ type: 'error', text: readError(language, err) });
+  } finally {
+    stops.finish(gen);
   }
 }
 
 function receive(event: HostEvent) {
   switch (event.type) {
     case 'session-start':
+      stops.reset();
       history.clear();
       postToPanel({ type: 'reset' });
       setState('running');
       break;
     case 'session-end':
-      generation++;
+      stops.reset();
       setState('ended');
       break;
     case 'stopped':
@@ -108,7 +114,7 @@ async function openSession(compare: boolean) {
   if (compare) {
     compared = summarizeSession(snapshots);
   } else {
-    generation++;
+    stops.reset();
     history.load(snapshots);
     postToPanel({ type: 'reset' });
     setState('ended');
