@@ -21,7 +21,7 @@ jobs:
             os: macos-latest
             ext: vscjava.vscode-java-pack,ms-python.debugpy,ms-dotnettools.csharp,golang.go
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 50
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

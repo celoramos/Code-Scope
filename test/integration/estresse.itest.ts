@@ -103,6 +103,13 @@ describe('Estresse Java', function () {
   });
 });
 
+/**
+ * Pretty-printers ligados quando o gdb tem Python (o do Linux): std::map,
+ * std::string e std::stack de verdade. O gdb do w64devkit não tem, e segue
+ * pelo caminho das expressões (indirectSequence).
+ */
+const PRETTY = [{ description: 'pretty-printers', text: '-enable-pretty-printing', ignoreFailures: true }];
+
 describe('Estresse C e C++', () => {
   before(function () {
     if (!find('gdb') || !find('gcc') || !vscode.extensions.getExtension('ms-vscode.cpptools')) this.skip();
@@ -112,7 +119,7 @@ describe('Estresse C e C++', () => {
       const dir = path.join(base, 'c');
       const out = path.join(dir, `${name.replace('.', '-')}.exe`);
       cp.execFileSync(find(compiler)!, ['-g', '-O0', name, '-o', out], { cwd: dir });
-      await run(name, path.join(dir, name), { type: 'cppdbg', request: 'launch', name, program: out, cwd: dir, MIMode: 'gdb', miDebuggerPath: find('gdb'), externalConsole: false }, 8);
+      await run(name, path.join(dir, name), { type: 'cppdbg', request: 'launch', name, program: out, cwd: dir, MIMode: 'gdb', miDebuggerPath: find('gdb'), externalConsole: false, setupCommands: PRETTY }, 8);
     });
   }
 });
