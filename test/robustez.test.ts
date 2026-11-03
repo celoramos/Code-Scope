@@ -297,3 +297,23 @@ describe('C++: std::vector<bool> sem pretty-printers', () => {
     assert.deepEqual(ind?.bits, { width: 'sizeof(*bits._M_impl._M_start._M_p)' });
   });
 });
+
+describe('C#: erro tratado no catch', () => {
+  const e = (value: string) => ({ name: 'e', value, type: 'System.FormatException', variablesReference: 4 });
+  it('mensagem entre aspas, como o Visual Studio mostra', () => {
+    assert.deepEqual(csharpAdapter.caughtError?.(e('{"The input string \'abc\' was not in a correct format."}')), {
+      type: 'FormatException',
+      message: "The input string 'abc' was not in a correct format.",
+    });
+  });
+  it('mensagem depois do tipo, sem a pilha', () => {
+    assert.deepEqual(csharpAdapter.caughtError?.(e('{System.FormatException: Bad.\n   at Program.Main()}')), { type: 'FormatException', message: 'Bad.' });
+  });
+  it('sem mensagem no valor, lê a propriedade Message', async () => {
+    const snap = await collect({ 1: [e('{System.FormatException}')], 4: [{ name: 'Message [string]', value: '"Bad."', type: 'string', variablesReference: 0 }] }, csharpAdapter);
+    assert.deepEqual(snap.caught, { name: 'e', type: 'FormatException', message: 'Bad.' });
+  });
+  it('objeto comum não é erro', () => {
+    assert.equal(csharpAdapter.caughtError?.({ name: 'a', value: '{Exemplos.Aluno}', type: 'Exemplos.Aluno', variablesReference: 4 }), undefined);
+  });
+});

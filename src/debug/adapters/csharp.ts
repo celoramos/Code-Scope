@@ -99,6 +99,17 @@ export const csharpAdapter: LanguageAdapter = {
   },
   identityExpr: (a, b) => `object.ReferenceEquals(${a}, ${b})`,
 
+  // O "e" de um catch. A mensagem vem no valor ('{"Input string was not in a correct format."}'
+  // ou '{System.FormatException: ...}') ou, se não vier, na propriedade Message.
+  caughtError(v) {
+    const type = simpleType(v.type ?? '');
+    if (v.variablesReference <= 0 || !/(?:Exception|Error)$/.test(type)) return undefined;
+    const quoted = /^\{"(.*)"\}$/s.exec(v.value)?.[1];
+    const described = /^\{[\w.]+(?:Exception|Error): (.*?)(?:\r?\n|\}$)/s.exec(v.value)?.[1];
+    const message = quoted ?? described;
+    return message !== undefined ? { type, message } : { type, messageField: 'Message' };
+  },
+
   mapEntry(child): MapEntry | undefined {
     // KeyValuePair: "{[sol, 1]}".
     const m = /^\{\[(.*), (.*)\]\}$/.exec(child.value);
