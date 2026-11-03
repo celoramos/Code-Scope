@@ -511,9 +511,17 @@ const MAX_CELL_FIELDS = 3;
 /** Matriz numa fileira só ("[0, 0]", "[0, 1]"...): cada linha é um trecho dela. */
 async function readGrid(session: Session, adapter: LanguageAdapter, v: DapVariable, name: string, grid: { rows: number; cols: number }, max: number): Promise<ArrayVar> {
   const rows: ArrayVar[] = [];
+  const want = Math.min(grid.cols, max);
   for (let i = 0; i < Math.min(grid.rows, max); i++) {
-    const cells = await variables(session, v.variablesReference, { filter: 'indexed', start: i * grid.cols, count: Math.min(grid.cols, max) });
-    rows.push({ name: `${name}[${i}]`, values: cells.map((c) => adapter.formatElement(c)), length: grid.cols });
+    // O vsdbg responde no máximo 25 posições por vez e junta outro filho à página: só valem as "[i, j]".
+    const values: string[] = [];
+    while (values.length < want) {
+      const page = await variables(session, v.variablesReference, { filter: 'indexed', start: i * grid.cols + values.length, count: want - values.length });
+      const cells = page.filter((c) => /^\[\d+, \d+\]$/.test(c.name));
+      if (cells.length === 0) break;
+      values.push(...cells.slice(0, want - values.length).map((c) => adapter.formatElement(c)));
+    }
+    rows.push({ name: `${name}[${i}]`, values, length: grid.cols });
   }
   return { name, values: rows.map(() => ''), length: grid.rows, rows };
 }

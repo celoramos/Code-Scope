@@ -93,6 +93,13 @@ describe('C#: matriz retangular', () => {
     assert.equal(snap.arrays[0].length, 2);
     assert.deepEqual(snap.arrays[0].rows?.map((r) => r.values), [['0', '1', '2'], ['3', '4', '5']]);
   });
+  it('linha com mais de 25 colunas continua de onde o vsdbg parou', async () => {
+    // Estresse: int[300, 300] vinha com 25 posições por linha e uma célula vazia no fim.
+    const cells = Array.from({ length: 80 }, (_, k) => ({ name: `[${Math.floor(k / 40)}, ${k % 40}]`, value: String(k), type: 'int', variablesReference: 0 }));
+    const snap = await collect({ 1: [{ name: 'm', value: '{int[2, 40]}', type: 'int[,]', variablesReference: 2 }], 2: cells }, csharpAdapter, 25);
+    assert.deepEqual(snap.arrays[0].rows?.map((r) => r.values.length), [40, 40]);
+    assert.equal(snap.arrays[0].rows?.[1].values[39], '79');
+  });
 });
 
 describe('C#: textos do vsdbg', () => {
