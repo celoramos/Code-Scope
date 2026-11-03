@@ -21,6 +21,18 @@
 - IntelliJ: modo apresentação e "Open a Sample" em Tools > Code Scope.
 - Adaptador de Go: arrays, slices, matrizes, mapas, pilha, fila, structs, ponteiros, listas ligadas e condições, validados no VS Code com a extensão Go.
 
+### Corrigido
+
+Achados com programas difíceis nos debuggers reais (branch `estresse`):
+
+- Python: listas e dicionários com mais de 100 itens mostram o tamanho real; `Counter` não mostra métodos como entradas; `dataclass` e classes com `__repr__` são desenhadas como objeto, e `enum` como valor.
+- Java: enum declarado no arquivo aparece como a constante (`Cor.VERMELHO`), na variável, no array e no campo de um objeto.
+- C#: posições depois da 25 não viram mais `?`; `int[,]` é desenhado como matriz; `HashSet` como conjunto; o valor devolvido e o nome da função aparecem como o aluno escreveu; `Stack` e `Queue` vazias continuam pilha e fila; lista dentro de `Dictionary` mostra os itens.
+- C++: `std::vector<bool>` mostra o tamanho e os itens.
+- Go: valores aparecem como o aluno escreve, sem o texto interno do Delve.
+- Matriz com linha vazia ou nula continua sendo matriz, e struct dentro de array mostra os campos.
+- Texto muito longo é cortado na coleta, e `Map` e `Set` grandes do JavaScript são lidos só nas primeiras posições.
+
 ## 0.8.0
 
 ### Novo
