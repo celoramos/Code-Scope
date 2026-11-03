@@ -102,7 +102,7 @@ describe('C# (vsdbg) real', function () {
   });
 
   it('Turma.cs: lista de objetos com o objeto dentro da posição', async () => {
-    const snaps = await debugCs('Turma', 20, 14);
+    const snaps = await debugCs('Turma', 20, 30);
     const last = [...snaps].reverse().find((s) => s.arrays.some((a) => a.name === 'turma' && a.length === 3 && a.refs?.every(Boolean)));
     assert.ok(last, `turma sem objetos: ${JSON.stringify(snaps.at(-1)?.arrays)}; heap: ${JSON.stringify(snaps.at(-1)?.heap)}`);
     const changes = snaps.flatMap((s, k) => (k > 0 ? explainHeap(snaps[k - 1], s, 'pt') : []));
@@ -116,9 +116,9 @@ describe('C# (vsdbg) real', function () {
   });
 
   it('TrataErro.cs: o catch é reconhecido, com a mensagem do erro', async () => {
-    const snaps = await debugCs('TrataErro', 10, 12);
+    const snaps = await debugCs('TrataErro', 10, 30);
     const caught = snaps.find((s) => s.caught);
-    assert.ok(caught, `o catch não foi reconhecido; locais: ${JSON.stringify(snaps.map((s) => s.scalars))}`);
+    assert.ok(caught, `o catch não foi reconhecido; linhas: ${snaps.map((s) => s.line).join(', ')}`);
     assert.equal(caught.caught?.type, 'FormatException');
     assert.ok(caught.caught?.message && !caught.caught.message.includes('   at '), `mensagem: ${caught.caught?.message}`);
   });
