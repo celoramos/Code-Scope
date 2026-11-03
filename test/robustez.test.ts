@@ -4,7 +4,7 @@ import { csharpAdapter } from '../src/debug/adapters/csharp';
 import { goAdapter } from '../src/debug/adapters/go';
 import { javaAdapter, pythonAdapter } from '../src/debug/adapters';
 import { javascriptAdapter } from '../src/debug/adapters/javascript';
-import type { LanguageAdapter } from '../src/debug/adapters/adapter';
+import { declaredEnums, type LanguageAdapter } from '../src/debug/adapters/adapter';
 import { collectSnapshot, functionName, type Session } from '../src/debug/dapCollector';
 
 type Var = { name: string; value: string; type?: string; variablesReference: number; evaluateName?: string; indexedVariables?: number };
@@ -172,5 +172,38 @@ describe('JavaScript: Map e Set grandes', () => {
     assert.equal(snap.arrays[0].length, n);
     assert.equal(snap.arrays[0].values.length, 50);
     assert.equal(snap.arrays[0].kind, 'set');
+  });
+});
+
+describe('Java: enum do arquivo', () => {
+  // Formato do java-debug no estresse: a variável é "lazy" e o único filho traz o nome entre aspas.
+  const vars = {
+    1: [
+      { name: 'cor', value: 'Estresse$Cor@40', type: 'Estresse$Cor', variablesReference: 2 },
+      { name: 'misto', value: 'Object[2]@41', type: 'Object[]', variablesReference: 3, indexedVariables: 2 },
+      { name: 'carro', value: 'Estresse$Carro@42', type: 'Estresse$Carro', variablesReference: 5 },
+    ],
+    2: [{ name: '', value: 'Estresse$Cor@40 "VERMELHO"', variablesReference: 6 }],
+    3: [
+      { name: '0', value: '1', type: 'Integer', variablesReference: 0 },
+      { name: '1', value: 'Estresse$Cor@43', type: 'Estresse$Cor', variablesReference: 4 },
+    ],
+    // Sem lazy: os campos do próprio enum.
+    4: [
+      { name: 'name', value: '"AZUL"', type: 'String', variablesReference: 7 },
+      { name: 'ordinal', value: '1', type: 'int', variablesReference: 0 },
+    ],
+    5: [{ name: 'cor', value: 'Estresse$Cor@43', type: 'Estresse$Cor', variablesReference: 4 }],
+  };
+  const opts = { userTypes: async () => new Set(['Carro']), enumTypes: async () => new Set(['Cor']) };
+
+  it('variável, posição de array e campo mostram a constante', async () => {
+    const snap = (await collectSnapshot(session(vars), 1, javaAdapter, undefined, opts))!.snapshot;
+    assert.deepEqual(snap.scalars?.find((s) => s.name === 'cor'), { name: 'cor', value: 'Cor.VERMELHO' });
+    assert.deepEqual(snap.arrays.find((a) => a.name === 'misto')?.values, ['1', 'Cor.AZUL']);
+    assert.deepEqual(snap.heap?.find((o) => o.type === 'Carro')?.fields, [{ name: 'cor', value: 'Cor.AZUL' }]);
+  });
+  it('declaredEnums acha enum Cor', () => {
+    assert.deepEqual([...declaredEnums('public class A {\n  enum Cor { VERMELHO, AZUL }\n}')], ['Cor']);
   });
 });

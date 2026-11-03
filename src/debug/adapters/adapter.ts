@@ -161,6 +161,11 @@ export function declaredClasses(source: string): Set<string> {
   return new Set([...declared, ...go]);
 }
 
+/** Enums declarados no arquivo (Java: enum Cor): o valor é a constante, não um objeto. */
+export function declaredEnums(source: string): Set<string> {
+  return new Set([...source.matchAll(/\benum\s+([A-Za-z_$][\w$]*)/g)].map((m) => m[1]));
+}
+
 export interface ReturnedValue {
   /** Função que devolveu, quando o debugger diz. */
   function?: string;

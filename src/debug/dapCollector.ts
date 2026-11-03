@@ -39,6 +39,8 @@ export interface Session {
 export interface CollectOptions {
   /** Classes declaradas no arquivo parado: só objetos delas são desenhados. */
   userTypes?: (file: string) => Promise<ReadonlySet<string> | undefined>;
+  /** Enums declarados no arquivo parado: aparecem como a constante (Cor.AZUL). */
+  enumTypes?: (file: string) => Promise<ReadonlySet<string> | undefined>;
   /** Passo anterior: objetos sem identidade no debugger herdam o id pelos caminhos. */
   previous?: Snapshot;
 }
@@ -72,8 +74,11 @@ export async function collectSnapshot(
   }
 
   // Objetos dos arrays e das variáveis passam pelo mesmo leitor: o mesmo objeto tem o mesmo id nos dois.
-  const heapReader = new HeapCollector(session, adapter, { frameId: frame.id, userTypes: await opts.userTypes?.(file) });
-  const objectsOf = (c: DapVariable) => heapReader.objectId(c);
+  const heapReader = new HeapCollector(session, adapter, {
+    frameId: frame.id,
+    userTypes: await opts.userTypes?.(file),
+    enums: await opts.enumTypes?.(file),
+  });
   const arrays: ArrayVar[] = [];
   const arrayVars: { array: ArrayVar; v: DapVariable }[] = [];
   const pointers: Pointer[] = [];
@@ -88,6 +93,12 @@ export async function collectSnapshot(
       caught = { name: v.name, type: error.type, ...(await caughtMessage(session, v, error, frame.id)) };
       continue;
     }
+    // Enum do aluno: para ele, Cor.AZUL é um valor, como um número.
+    const constant = await heapReader.enumText(v);
+    if (constant !== undefined) {
+      scalars.push({ name: v.name, value: clip(constant) });
+      continue;
+    }
     const shape = adapter.shape(v);
     switch (shape.kind) {
       case 'empty-list':
@@ -96,7 +107,7 @@ export async function collectSnapshot(
         break;
       case 'sequence': {
         if (arrays.length >= limits.maxArrays) break;
-        const { array, children } = await readSequence(session, adapter, v, v.name, shape, limits.maxElements, 2, objectsOf, frame.id);
+        const { array, children } = await readSequence(session, adapter, v, v.name, shape, limits.maxElements, 2, heapReader, frame.id);
         // Matriz de três dimensões: cada camada é uma matriz, com desenho próprio.
         const layers = array.rows?.filter((r) => r.rows) ?? [];
         if (layers.length > 0) {
@@ -318,6 +329,12 @@ function summarize(adapter: LanguageAdapter, v: DapVariable): Scalar[] {
  * são coleções vira matriz: cada linha é lida uma vez, até depth níveis abaixo.
  * Depois disso, os níveis ficam só como texto.
  */
+/** Posições que guardam objetos: a referência, se é classe do aluno, ou a constante, se é enum. */
+interface ElementReader {
+  objectId(c: DapVariable): Promise<string | undefined>;
+  enumText(c: DapVariable): Promise<string | undefined>;
+}
+
 async function readSequence(
   session: Session,
   adapter: LanguageAdapter,
@@ -326,7 +343,7 @@ async function readSequence(
   shape: Sequence,
   max: number,
   depth: number,
-  objects?: (c: DapVariable) => Promise<string | undefined>,
+  objects?: ElementReader,
   frameId?: number,
 ): Promise<{ array: ArrayVar; children: DapVariable[] }> {
   if (shape.grid) return { array: await readGrid(session, adapter, v, name, shape.grid, max), children: [] };
@@ -378,10 +395,15 @@ async function readSequence(
       continue;
     }
     // Objeto de uma classe do aluno: a posição guarda a referência, e o rótulo vem depois.
-    const ref = objects ? await objects(c) : undefined;
+    const ref = objects ? await objects.objectId(c) : undefined;
     if (ref) {
       refs[i] = ref;
       values.push(clip(adapter.formatElement(c)));
+      continue;
+    }
+    const constant = objects ? await objects.enumText(c) : undefined;
+    if (constant !== undefined) {
+      values.push(clip(constant));
       continue;
     }
     const unbox = adapter.unbox?.(c);
