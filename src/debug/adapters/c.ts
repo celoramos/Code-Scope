@@ -26,6 +26,12 @@ const SCALAR = /^(?:const )?(?:float|double|long double|bool|_Bool|char|unsigned
 const ARRAY = /\[(\d+)\]$/;
 const VECTOR = /^(?:const )?std::(?:__\w+::)?vector</;
 const VECTOR_BOOL = /^(?:const )?std::(?:__\w+::)?vector<bool\b/;
+/**
+ * Outros contêineres, só com os pretty-printers (gdb do w64devkit no estresse):
+ * "std::set with 2 elements" e "std::stack wrapping: std::deque with 1 element",
+ * com os itens em "[0]", "[1]"... Na pilha, [0] é o fundo; na fila, a frente.
+ */
+const CONTAINER = /^(?:const )?std::(?:__\w+::)?(stack|queue|priority_queue|deque|list|forward_list|set|multiset|unordered_set|unordered_multiset)</;
 /** std::string: "std::string" no topo, "std::__cxx11::basic_string<char, ...>" dentro de um vector. */
 const STRING = /^(?:const )?std::(?:__\w+::)?(?:string|basic_string<char\b)/;
 const MAP = /^(?:const )?std::(?:__\w+::)?(?:unordered_)?map</;
@@ -75,6 +81,24 @@ export const cAdapter: LanguageAdapter = {
       const count = COUNT.exec(v.value);
       if (count?.[1] === '0') return { kind: 'empty-list' };
       return { kind: 'sequence', ...(count ? { length: Number(count[1]) } : {}), collection: 'list' };
+    }
+    const container = CONTAINER.exec(type);
+    if (container) {
+      const count = COUNT.exec(v.value);
+      // Sem os pretty-printers, o gdb só mostra os campos internos: fica de fora.
+      if (!count) return { kind: 'skip' };
+      const kind = container[1];
+      const role =
+        kind === 'stack'
+          ? { role: 'stack' as const, topFirst: false }
+          : kind === 'queue'
+            ? { role: 'queue' as const, topFirst: false }
+            : kind === 'priority_queue'
+              ? { role: 'heap' as const, topFirst: false }
+              : undefined;
+      const set = /set$/.test(kind);
+      if (count[1] === '0') return { kind: 'empty-list', ...(role && role.role !== 'heap' ? { collection: role.role } : set ? { collection: 'set' as const } : {}) };
+      return { kind: 'sequence', length: Number(count[1]), collection: set ? 'set' : 'list', ...(role ? { role } : {}) };
     }
     if (MAP.test(type)) {
       const count = COUNT.exec(v.value);

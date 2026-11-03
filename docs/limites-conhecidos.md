@@ -9,7 +9,7 @@ O que o Code Scope ainda não faz, ou faz diferente do que você poderia esperar
 - Variáveis escondidas (um nome escondendo outro) são reconhecidas em blocos do JavaScript e em parâmetros com o nome de um campo. Java e Python não têm escopo de bloco para variáveis locais.
 - No modo genérico, só aparecem coleções que o debugger marca como indexadas ou cujo tamanho está escrito no valor.
 - Arrays de três dimensões mostram as 8 primeiras camadas, cada uma como matriz. Da quarta dimensão em diante, o resto aparece como texto.
-- `std::map` precisa de um gdb com os pretty-printers do Python; sem eles, fica de fora. `std::vector`, inclusive `std::vector<bool>`, funciona com ou sem eles.
+- `std::map`, `std::set`, `std::stack`, `std::queue`, `std::deque`, `std::list` e `std::priority_queue` precisam de um gdb com os pretty-printers (`-enable-pretty-printing` em `setupCommands`); sem eles, ficam de fora. `std::vector`, inclusive `std::vector<bool>`, funciona com ou sem eles.
 - Em Go, entrar no `fmt` ou passar do fim do `main` mostra código de biblioteca. Um ponteiro aparece de novo como objeto novo depois que uma chamada volta.
 - Texto com mais de 500 caracteres é cortado. Um objeto do JavaScript com dezenas de milhares de chaves com nome leva segundos por passo, porque o js-debug não pagina propriedades com nome; arrays, `Map` e `Set` são lidos uma página por vez.
 - Um GIF mostra no máximo 80 passos, espalhados pela execução. Um `@expect` passa assim que um passo tem todos os valores certos, mesmo que eles mudem depois.

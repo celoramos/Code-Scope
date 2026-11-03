@@ -437,3 +437,33 @@ describe('Chamadas de baixo com objetos', () => {
     assert.deepEqual(top.vars.find((v) => v.name === 'valor'), { name: 'valor', value: '7' });
   });
 });
+
+describe('C++: contêineres com pretty-printers', () => {
+  const t = (s: string) => `std::${s}<int, std::deque<int, std::allocator<int> > >`;
+  const items = (n: number, ref: number) => ({ [ref]: Array.from({ length: n }, (_, i) => ({ name: `[${i}]`, value: String(i + 1), type: 'int', variablesReference: 0 })) });
+  // Formatos do gdb do w64devkit com -enable-pretty-printing, no estresse.
+  it('stack, queue e set viram pilha, fila e conjunto', async () => {
+    const snap = await collect(
+      {
+        1: [
+          { name: 'pilha', value: 'std::stack wrapping: std::deque with 2 elements', type: t('stack'), variablesReference: 2 },
+          { name: 'fila', value: 'std::queue wrapping: std::deque with 1 element', type: t('queue'), variablesReference: 3 },
+          { name: 'conjunto', value: 'std::set with 2 elements', type: 'std::set<int, std::less<int>, std::allocator<int> >', variablesReference: 4 },
+          { name: 'vazia', value: 'std::stack wrapping: std::deque with 0 elements', type: t('stack'), variablesReference: 5 },
+        ],
+        ...items(2, 2),
+        ...items(1, 3),
+        ...items(2, 4),
+      },
+      cAdapter,
+    );
+    const by = (n: string) => snap.arrays.find((a) => a.name === n);
+    assert.deepEqual([by('pilha')?.kind, by('pilha')?.values], ['stack', ['1', '2']]);
+    assert.deepEqual([by('fila')?.kind, by('fila')?.values], ['queue', ['1']]);
+    assert.deepEqual([by('conjunto')?.kind, by('conjunto')?.values], ['set', ['1', '2']]);
+    assert.deepEqual(by('vazia'), { name: 'vazia', values: [], length: 0, kind: 'stack' });
+  });
+  it('sem os pretty-printers, a pilha fica de fora em vez de mostrar campos internos', () => {
+    assert.deepEqual(cAdapter.shape({ name: 'pilha', value: '{...}', type: t('stack'), variablesReference: 2 }), { kind: 'skip' });
+  });
+});

@@ -9,6 +9,7 @@ A 0.9.0 só saiu no Marketplace da JetBrains. No VS Code, a 0.9.1 vem logo depoi
 - Pilha de chamadas: objetos e `null` aparecem nas chamadas de baixo (`No {valor: 5, esq: No, dir: null}`). Na recursão sobre uma árvore, dá para ver o nó de cada chamada.
 - F10 mais rápido que a leitura: o painel diz quantos passos ficaram de fora, em vez de comparar dois passos distantes como se fossem vizinhos.
 - C#: o erro tratado no `catch` é explicado, e a herança (`class Cachorro : Animal`) entra na explicação de polimorfismo, como no C++. Exemplos novos: `Turma`, `Heranca`, `TrataErro` e `Fatorial`.
+- C++ com os pretty-printers: `std::stack` e `std::queue` viram pilha e fila, `std::set` vira conjunto, e `std::deque`, `std::list` e `std::priority_queue` também aparecem. `std::map` foi validado no gdb real.
 - Go nos testes de integração do CI, nos três sistemas.
 
 ### Corrigido
