@@ -10,7 +10,7 @@ export interface ClassInfo {
 }
 
 /** Palavras que parecem chamada de método mas não são declaração. */
-const NOT_METHODS = new Set(['if', 'for', 'while', 'switch', 'catch', 'return', 'new', 'super', 'this', 'function', 'synchronized']);
+const NOT_METHODS = new Set(['if', 'for', 'while', 'switch', 'catch', 'return', 'new', 'super', 'base', 'this', 'function', 'synchronized', 'foreach', 'using', 'lock']);
 
 export function parseClasses(source: string): Record<string, ClassInfo> {
   // Herança: class Gato(Animal) no Python, extends no Java e no JavaScript, class Gato : Animal no C#

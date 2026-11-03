@@ -3,7 +3,8 @@ import * as cp from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { heapView } from '../../src/model/heap';
+import { callChanges, polymorphismNote } from '../../src/model/calls';
+import { explainHeap, heapView } from '../../src/model/heap';
 import type { Snapshot } from '../../src/model/snapshot';
 import { allChanges, debugFile, samplesRoot } from './helpers';
 
@@ -28,8 +29,9 @@ function printCsharpLog(): void {
   console.warn(tail ? `log da extensão C#:\n${tail}` : `sem log da extensão C# em ${dir}`);
 }
 
-function debugCs(name: string, breakpointLine: number, steps: number): Promise<Snapshot[]> {
+function debugCs(name: string, breakpointLine: number, steps: number, step: 'stepOver' | 'stepInto' = 'stepOver'): Promise<Snapshot[]> {
   return debugFile({
+    step,
     file: path.join(dir, `${name}.cs`),
     breakpointLine,
     steps,
@@ -97,5 +99,38 @@ describe('C# (vsdbg) real', function () {
     assert.deepEqual(heapView(full).lists[0]?.nodes.map((n) => n.value), ['10', '20', '30']);
     const heads = new Set(snaps.map((s) => s.refs?.find((r) => r.name === 'inicio')?.ref).filter(Boolean));
     assert.equal(heads.size, 1, `o nó do começo mudou de id: ${[...heads].join(', ')}`);
+  });
+
+  it('Turma.cs: lista de objetos com o objeto dentro da posição', async () => {
+    const snaps = await debugCs('Turma', 20, 14);
+    const last = [...snaps].reverse().find((s) => s.arrays.some((a) => a.name === 'turma' && a.length === 3 && a.refs?.every(Boolean)));
+    assert.ok(last, `turma sem objetos: ${JSON.stringify(snaps.at(-1)?.arrays)}; heap: ${JSON.stringify(snaps.at(-1)?.heap)}`);
+    const changes = snaps.flatMap((s, k) => (k > 0 ? explainHeap(snaps[k - 1], s, 'pt') : []));
+    assert.ok(changes.some((c) => c.startsWith('turma[1].Nota mudou de 6')), `frases: ${changes.join(' | ')}`);
+  });
+
+  it('Heranca.cs: o Falar que roda é o da classe do objeto', async () => {
+    const snaps = await debugCs('Heranca', 48, 8, 'stepInto');
+    const notes = snaps.flatMap((s, k) => (k > 0 ? callChanges(snaps[k - 1], s).map((c) => polymorphismNote(c, s.classes, 'pt')) : [])).filter(Boolean);
+    assert.ok(notes.some((n) => n?.includes('rodou o Falar de Cachorro')), `frases: ${notes.join(' | ')}; donos: ${JSON.stringify(snaps.map((s) => s.calls?.at(-1)?.owner))}`);
+  });
+
+  it('TrataErro.cs: o catch é reconhecido, com a mensagem do erro', async () => {
+    const snaps = await debugCs('TrataErro', 10, 12);
+    const caught = snaps.find((s) => s.caught);
+    assert.ok(caught, `o catch não foi reconhecido; locais: ${JSON.stringify(snaps.map((s) => s.scalars))}`);
+    assert.equal(caught.caught?.type, 'FormatException');
+    assert.ok(caught.caught?.message && !caught.caught.message.includes('   at '), `mensagem: ${caught.caught?.message}`);
+  });
+
+  it('Fatorial.cs: recursão empilha uma chamada por nível, cada uma com o próprio n', async () => {
+    const snaps = await debugCs('Fatorial', 18, 12, 'stepInto');
+    const deepest = snaps.reduce((a, s) => ((s.calls?.length ?? 0) > (a.calls?.length ?? 0) ? s : a), snaps[0]);
+    const calc = (deepest.calls ?? []).filter((c) => c.name === 'Calcular');
+    assert.ok(calc.length >= 3, `pilha: ${JSON.stringify(deepest.calls)}`);
+    assert.deepEqual(
+      calc.slice(0, -1).map((c) => c.vars.find((v) => v.name === 'n')?.value),
+      ['4', '3', '2', '1'].slice(0, calc.length - 1),
+    );
   });
 });
