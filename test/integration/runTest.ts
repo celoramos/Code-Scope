@@ -42,12 +42,18 @@ async function main() {
 
   // Sem extensão para instalar, o CLI abriria uma janela do VS Code; com ela aberta,
   // versões antigas (1.90) se recusam a rodar os testes.
-  if (extensions.length > 0) {
-    cp.spawnSync(cli, [...cliArgs, '--extensions-dir', extensionsDir, ...extensions.flatMap((e) => ['--install-extension', e])], {
-      encoding: 'utf-8',
-      stdio: 'inherit',
-      shell: process.platform === 'win32',
-    });
+  // O Marketplace às vezes responde 503: tenta de novo só as que faltam, em vez de rodar sem o debugger.
+  const opts = { encoding: 'utf-8' as const, shell: process.platform === 'win32' };
+  let missing = extensions;
+  for (let attempt = 1; missing.length > 0 && attempt <= 4; attempt++) {
+    if (attempt > 1) {
+      console.log(`Extensões que faltam (${missing.join(', ')}): tentativa ${attempt} em ${attempt * 15} s.`);
+      await new Promise((r) => setTimeout(r, attempt * 15000));
+    }
+    cp.spawnSync(cli, [...cliArgs, '--extensions-dir', extensionsDir, ...missing.flatMap((e) => ['--install-extension', e])], { ...opts, stdio: 'inherit' });
+    const listed = cp.spawnSync(cli, [...cliArgs, '--extensions-dir', extensionsDir, '--list-extensions'], opts).stdout ?? '';
+    const installed = new Set(listed.split(/\r?\n/).map((l) => l.trim().toLowerCase()));
+    missing = missing.filter((e) => !installed.has(e.toLowerCase()));
   }
 
   await runTests({
