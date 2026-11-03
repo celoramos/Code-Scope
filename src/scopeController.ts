@@ -8,6 +8,7 @@ import { makeFrame } from './model/frame';
 import { History } from './model/history';
 import { parseSession, serializeSession, summarizeSession, type SessionSummary } from './model/session';
 import { saveFile, type FromWebview, type ScopeViewProvider } from './webview/scopeViewProvider';
+import { StopSequence } from './core/stopSequence';
 import { FEEDBACK_URL, invalidSession, pickSession, readError } from './webview/strings';
 
 type SessionState = 'idle' | 'running' | 'ended';
@@ -20,7 +21,7 @@ export class ScopeController implements vscode.Disposable {
   lastRaw: unknown;
   private state: SessionState = 'idle';
   /** Cada parada ganha um número; uma coleta só publica se ainda for a mais recente. */
-  private generation = 0;
+  private readonly stops = new StopSequence();
   /** Abrir o painel na próxima parada (configuração codeScope.revealOnDebug). */
   private revealPending = false;
   /** Sessão salva ao lado da atual, depois de "Comparar". */
@@ -36,7 +37,7 @@ export class ScopeController implements vscode.Disposable {
       view.onMessage((msg) => this.onMessage(msg)),
       vscode.debug.onDidStartDebugSession((s) => void this.onSessionStart(s)),
       vscode.debug.onDidTerminateDebugSession(() => {
-        this.generation++;
+        this.stops.reset();
         this.setState('ended');
       }),
       vscode.workspace.onDidChangeConfiguration((e) => {
@@ -62,6 +63,7 @@ export class ScopeController implements vscode.Disposable {
   private async onSessionStart(session: vscode.DebugSession) {
     this.log.info(`sessão iniciada: ${session.name} (type=${session.type})`);
     // O histórico da sessão anterior fica disponível até aqui.
+    this.stops.reset();
     this.history.clear();
     this.setState('running');
     this.view.post({ type: 'reset' });
@@ -80,7 +82,7 @@ export class ScopeController implements vscode.Disposable {
   }
 
   private async onStopped(session: vscode.DebugSession, threadId: number | undefined, reason?: string) {
-    const gen = ++this.generation;
+    const gen = this.stops.start();
     const started = Date.now();
     try {
       const step = await collectStep(session, threadId, {
@@ -92,7 +94,9 @@ export class ScopeController implements vscode.Disposable {
       });
       if (!step) return;
       const collected = step.collected;
-      if (gen !== this.generation) return;
+      if (!this.stops.isCurrent(gen)) return;
+      const lost = this.stops.takeLost();
+      if (lost > 0) collected.snapshot.skipped = lost;
       this.log.debug(`adaptador: ${collected.adapter.id} (sessão ${session.type}), coleta em ${Date.now() - started} ms`);
       this.log.debug('scopes', JSON.stringify(collected.raw.scopes));
       this.log.debug('locals', JSON.stringify(collected.raw.locals));
@@ -102,9 +106,11 @@ export class ScopeController implements vscode.Disposable {
       this.showCurrent();
       await this.revealOnFirstStop();
     } catch (err) {
-      if (gen !== this.generation) return;
+      if (!this.stops.isCurrent(gen)) return;
       this.log.error('falha ao ler variáveis', err instanceof Error ? err : String(err));
       this.view.post({ type: 'error', text: readError(uiLanguage(), err) });
+    } finally {
+      this.stops.finish(gen);
     }
   }
 
@@ -165,7 +171,7 @@ export class ScopeController implements vscode.Disposable {
     if (compare) {
       this.compared = summarizeSession(snapshots);
     } else {
-      this.generation++;
+      this.stops.reset();
       this.history.load(snapshots);
       this.view.post({ type: 'reset' });
       this.setState('ended');

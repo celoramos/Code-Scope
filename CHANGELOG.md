@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.9.1
+
+A 0.9.0 só saiu no Marketplace da JetBrains. No VS Code, a 0.9.1 vem logo depois da 0.8.0 e traz também tudo o que está na 0.9.0.
+
+### Novo
+
+- Pilha de chamadas: objetos e `null` aparecem nas chamadas de baixo (`No {valor: 5, esq: No, dir: null}`). Na recursão sobre uma árvore, dá para ver o nó de cada chamada.
+- F10 mais rápido que a leitura: o painel diz quantos passos ficaram de fora, em vez de comparar dois passos distantes como se fossem vizinhos.
+- C#: o erro tratado no `catch` é explicado, e a herança (`class Cachorro : Animal`) entra na explicação de polimorfismo, como no C++. Exemplos novos: `Turma`, `Heranca`, `TrataErro` e `Fatorial`.
+- C++ com os pretty-printers: `std::stack` e `std::queue` viram pilha e fila, `std::set` vira conjunto, e `std::deque`, `std::list` e `std::priority_queue` também aparecem. `std::map` foi validado no gdb real.
+- Go nos testes de integração do CI, nos três sistemas.
+
+### Corrigido
+
+- Java: enum declarado no arquivo aparece como a constante (`Cor.VERMELHO`), na variável, no array e no campo de um objeto; `record` e classes com `toString` próprio mostram os campos.
+- C#: `Stack` e `Queue` vazias continuam pilha e fila; lista dentro de `Dictionary` mostra os itens; `int[,]` com mais de 25 colunas mostra a linha inteira.
+- C++: `std::vector<bool>` mostra o tamanho e os itens; sem pretty-printers, `std::string` e `vector<vector<int>>` também aparecem.
+- JavaScript: `Map` e `Set` grandes são lidos só nas primeiras posições.
+
 ## 0.9.0
 
 ### Novo
@@ -20,6 +39,16 @@
 - F5 entre breakpoints é avisado, e pilha e fila são reconhecidas pelo uso na função parada.
 - IntelliJ: modo apresentação e "Open a Sample" em Tools > Code Scope.
 - Adaptador de Go: arrays, slices, matrizes, mapas, pilha, fila, structs, ponteiros, listas ligadas e condições, validados no VS Code com a extensão Go.
+
+### Corrigido
+
+Achados com programas difíceis nos debuggers reais (branch `estresse`):
+
+- Python: listas e dicionários com mais de 100 itens mostram o tamanho real; `Counter` não mostra métodos como entradas; `dataclass` e classes com `__repr__` são desenhadas como objeto, e `enum` como valor.
+- C#: posições depois da 25 não viram mais `?`; `int[,]` é desenhado como matriz; `HashSet` como conjunto; o valor devolvido e o nome da função aparecem como o aluno escreveu.
+- Go: valores aparecem como o aluno escreve, sem o texto interno do Delve.
+- Matriz com linha vazia ou nula continua sendo matriz, e struct dentro de array mostra os campos.
+- Texto muito longo é cortado na coleta.
 
 ## 0.8.0
 

@@ -16,6 +16,12 @@
   ]]></description>
 
   <change-notes><![CDATA[
+    <b>0.9.1</b>
+    <ul>
+      <li>Call stack: objects and <code>null</code> show in earlier calls, so a recursion over a tree shows the node of each call.</li>
+      <li>Stepping faster than the panel reads: it says how many steps were left out instead of comparing distant steps.</li>
+      <li>Enums show as the constant (<code>Cor.VERMELHO</code>); records and classes with their own <code>toString</code> show their fields.</li>
+    </ul>
     <b>0.9.0</b>
     <ul>
       <li>Tools &gt; Code Scope: Presentation Mode (larger panel and text) and Open a Sample.</li>

@@ -60,6 +60,54 @@
       "cwd": "${workspaceFolder}",
       "console": "internalConsole",
       "preLaunchTask": "compilar"
+    },
+    {
+      "type": "coreclr",
+      "request": "launch",
+      "name": "Turma",
+      "program": "${workspaceFolder}/bin/Debug/net8.0/Exemplos.dll",
+      "args": [
+        "Turma"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "preLaunchTask": "compilar"
+    },
+    {
+      "type": "coreclr",
+      "request": "launch",
+      "name": "Heranca",
+      "program": "${workspaceFolder}/bin/Debug/net8.0/Exemplos.dll",
+      "args": [
+        "Heranca"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "preLaunchTask": "compilar"
+    },
+    {
+      "type": "coreclr",
+      "request": "launch",
+      "name": "TrataErro",
+      "program": "${workspaceFolder}/bin/Debug/net8.0/Exemplos.dll",
+      "args": [
+        "TrataErro"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "preLaunchTask": "compilar"
+    },
+    {
+      "type": "coreclr",
+      "request": "launch",
+      "name": "Fatorial",
+      "program": "${workspaceFolder}/bin/Debug/net8.0/Exemplos.dll",
+      "args": [
+        "Fatorial"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "preLaunchTask": "compilar"
     }
   ]
 }

@@ -88,6 +88,8 @@ export interface LanguageAdapter {
    * itens (std::vector num gdb sem os pretty-printers do Python).
    */
   indirectSequence?(v: DapVariable): IndirectSequence | undefined;
+  /** Expressão com o texto de um valor que o debugger não mostra (std::string sem pretty-printers). */
+  indirectText?(v: DapVariable): string | undefined;
   /** Pilha ou fila, pelo uso no código-fonte. */
   collectionRole?(source: string, name: string): CollectionRole | undefined;
   /**

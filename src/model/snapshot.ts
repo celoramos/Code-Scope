@@ -130,6 +130,8 @@ export interface Snapshot {
   exception?: ExceptionInfo;
   /** O programa parou num breakpoint: pode ter rodado muitas linhas desde o passo anterior. */
   jumped?: boolean;
+  /** Paradas que o painel não leu: o F10 veio antes de a leitura terminar. */
+  skipped?: number;
   /** Notas do professor na linha parada (comentários @note). */
   notes?: string[];
   /** Exercício declarado no arquivo (comentários @exercise e @expect). */

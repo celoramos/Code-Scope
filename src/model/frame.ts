@@ -110,7 +110,9 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
   const changes = switched ? [] : diff(prev, snapshot, older);
   // F10 que cai num breakpoint na linha de baixo é só mais um passo.
   const jumped = Boolean(snapshot.jumped && prev && snapshot.line !== prev.line + 1);
-  const executed = prev && prev.file === snapshot.file && !jumped ? { line: prev.line, code: prev.code } : undefined;
+  // Passos que o painel não leu: a linha anterior não é a que acabou de rodar.
+  const skipped = prev ? (snapshot.skipped ?? 0) : 0;
+  const executed = prev && prev.file === snapshot.file && !jumped && skipped === 0 ? { line: prev.line, code: prev.code } : undefined;
   const error = explainError(snapshot, options.language) ?? (switched ? undefined : explainHandled(prev, snapshot, options.language));
   let explanation: string[] = [];
   if (options.beginnerMode && switched) {
@@ -140,7 +142,7 @@ export function makeFrame(step: Step, options: FrameOptions = DEFAULT_FRAME_OPTI
         told,
         prev === undefined,
         [
-          ...(jumped ? [MESSAGES[options.language].jumped(snapshot.line)] : []),
+          ...(skipped > 0 ? [MESSAGES[options.language].skipped(skipped)] : jumped ? [MESSAGES[options.language].jumped(snapshot.line)] : []),
           ...heapNotes,
           peekNote(executed?.code, snapshot, changes, options.language),
           returnNote(snapshot, prev, options.language),

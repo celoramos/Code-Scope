@@ -7,5 +7,9 @@ switch (exemplo)
     case "Fila": Exemplos.Fila.Rodar(); break;
     case "Dicionario": Exemplos.Dicionario.Rodar(); break;
     case "ListaLigada": Exemplos.ListaLigada.Rodar(); break;
+    case "Turma": Exemplos.Turma.Rodar(); break;
+    case "Heranca": Exemplos.Heranca.Rodar(); break;
+    case "TrataErro": Exemplos.TrataErro.Rodar(); break;
+    case "Fatorial": Exemplos.Fatorial.Rodar(); break;
     default: Console.WriteLine($"Exemplo desconhecido: {exemplo}"); break;
 }

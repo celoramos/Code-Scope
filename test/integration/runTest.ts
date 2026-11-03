@@ -39,6 +39,8 @@ async function main() {
   const extensions = only !== undefined ? only.split(',').filter(Boolean) : ['vscjava.vscode-java-pack', 'ms-python.debugpy'];
   if (only === undefined && has('dotnet')) extensions.push('ms-dotnettools.csharp');
   if (only === undefined && has('gcc') && has('gdb')) extensions.push('ms-vscode.cpptools');
+  // Go: o dlv responde a 'dlv version', não a --version.
+  if (only === undefined && cp.spawnSync('dlv', ['version'], { shell: process.platform === 'win32' }).status === 0) extensions.push('golang.go');
 
   // Sem extensão para instalar, o CLI abriria uma janela do VS Code; com ela aberta,
   // versões antigas (1.90) se recusam a rodar os testes.

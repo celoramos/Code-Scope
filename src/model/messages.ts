@@ -13,6 +13,8 @@ export type ErrorKindName = 'index' | 'null' | 'zero' | 'key' | 'format' | 'recu
 export interface Messages {
   /** F5 entre breakpoints: o painel não viu as linhas do meio. */
   jumped(line: number): string;
+  /** F10 mais rápido que a leitura: passos ficaram de fora do histórico. */
+  skipped(steps: number): string;
   /** Nível detalhado: a linha que rodou e a próxima. */
   detailLines(executed: number | undefined, next: number): string;
   /** Nível detalhado: chamadas em andamento. */
@@ -179,6 +181,8 @@ const ptSize = (rows: number, cols: number) => `${count(rows, 'linha', 'linhas')
 
 const pt: Messages = {
   jumped: (line) => `O programa correu até o breakpoint da linha ${line}. O que aparece abaixo é tudo que mudou desde a parada anterior, de uma vez.`,
+  skipped: (steps) =>
+    `O F10 veio antes de o painel terminar de ler, e ${steps === 1 ? '1 passo ficou' : `${steps} passos ficaram`} de fora. O que aparece abaixo é tudo que mudou desde o último passo lido, de uma vez.`,
   detailLines: (executed, next) => (executed === undefined ? `linha ${next}` : `linha ${executed} → ${next}`),
   detailDepth: (depth) => `${depth} chamadas em andamento`,
   priorityIn: (arr, v, root) => `${v} entrou em ${arr}. Quem sai primeiro agora é ${root}, na raiz.`,
@@ -363,6 +367,8 @@ const enSize = (rows: number, cols: number) => `${count(rows, 'row', 'rows')} an
 
 const en: Messages = {
   jumped: (line) => `The program ran until the breakpoint on line ${line}. What follows is everything that changed since the last stop, all at once.`,
+  skipped: (steps) =>
+    `F10 came before the panel finished reading, so ${steps === 1 ? '1 step was' : `${steps} steps were`} left out. What follows is everything that changed since the last step it read, all at once.`,
   detailLines: (executed, next) => (executed === undefined ? `line ${next}` : `line ${executed} → ${next}`),
   detailDepth: (depth) => `${depth} calls running`,
   priorityIn: (arr, v, root) => `${v} entered ${arr}. The next one out is now ${root}, at the root.`,

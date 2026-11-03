@@ -26,6 +26,14 @@ const SCALAR = /^(?:const )?(?:float|double|long double|bool|_Bool|char|unsigned
 const ARRAY = /\[(\d+)\]$/;
 const VECTOR = /^(?:const )?std::(?:__\w+::)?vector</;
 const VECTOR_BOOL = /^(?:const )?std::(?:__\w+::)?vector<bool\b/;
+/**
+ * Outros contêineres, só com os pretty-printers (gdb do w64devkit no estresse):
+ * "std::set with 2 elements" e "std::stack wrapping: std::deque with 1 element",
+ * com os itens em "[0]", "[1]"... Na pilha, [0] é o fundo; na fila, a frente.
+ */
+const CONTAINER = /^(?:const )?std::(?:__\w+::)?(stack|queue|priority_queue|deque|list|forward_list|set|multiset|unordered_set|unordered_multiset)</;
+/** std::string: "std::string" no topo, "std::__cxx11::basic_string<char, ...>" dentro de um vector. */
+const STRING = /^(?:const )?std::(?:__\w+::)?(?:string|basic_string<char\b)/;
 const MAP = /^(?:const )?std::(?:__\w+::)?(?:unordered_)?map</;
 /** Quantos itens o valor diz ter: "of length 3", "with 2 elements", "{ size=3 }". */
 const COUNT = /(?:of length |with |size=)(\d+)/;
@@ -67,10 +75,30 @@ export const cAdapter: LanguageAdapter = {
 
   shape(v): VariableShape {
     const type = (v.type ?? '').trim();
+    // Com os pretty-printers, o texto já vem entre aspas; sem eles, indirectText lê.
+    if (STRING.test(type)) return v.value.startsWith('"') ? { kind: 'scalar', value: v.value } : { kind: 'skip' };
     if (VECTOR.test(type)) {
       const count = COUNT.exec(v.value);
       if (count?.[1] === '0') return { kind: 'empty-list' };
       return { kind: 'sequence', ...(count ? { length: Number(count[1]) } : {}), collection: 'list' };
+    }
+    const container = CONTAINER.exec(type);
+    if (container) {
+      const count = COUNT.exec(v.value);
+      // Sem os pretty-printers, o gdb só mostra os campos internos: fica de fora.
+      if (!count) return { kind: 'skip' };
+      const kind = container[1];
+      const role =
+        kind === 'stack'
+          ? { role: 'stack' as const, topFirst: false }
+          : kind === 'queue'
+            ? { role: 'queue' as const, topFirst: false }
+            : kind === 'priority_queue'
+              ? { role: 'heap' as const, topFirst: false }
+              : undefined;
+      const set = /set$/.test(kind);
+      if (count[1] === '0') return { kind: 'empty-list', ...(role && role.role !== 'heap' ? { collection: role.role } : set ? { collection: 'set' as const } : {}) };
+      return { kind: 'sequence', length: Number(count[1]), collection: set ? 'set' : 'list', ...(role ? { role } : {}) };
     }
     if (MAP.test(type)) {
       const count = COUNT.exec(v.value);
@@ -109,6 +137,11 @@ export const cAdapter: LanguageAdapter = {
       };
     }
     return { length: `${e}._M_impl._M_finish - ${e}._M_impl._M_start`, items: (n) => `*${e}._M_impl._M_start@${n}` };
+  },
+  // std::string sem pretty-printers: "{...}" no valor, e o texto no ponteiro _M_p ('0x5ffb10 "abc"').
+  indirectText(v) {
+    if (!STRING.test((v.type ?? '').trim()) || v.value.startsWith('"')) return undefined;
+    return `${v.evaluateName ?? v.name}._M_dataplus._M_p`;
   },
   // Entrada de std::map: o nome é a chave, entre colchetes.
   mapEntry(child) {

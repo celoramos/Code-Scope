@@ -235,5 +235,9 @@ export const javaAdapter: LanguageAdapter = {
     return isBoxed(v) ? (inner) => unboxedValue(inner.value, v.type) : undefined;
   },
 
+  // Classe com toString próprio (record, por exemplo) vem "lazy": um filho sem nome,
+  // 'Estresse$Par@39 "Par[a=1, b=x]"', e os campos estão um nível abaixo dele.
+  pointee: (fields) => (fields.length === 1 && fields[0].name === '' && fields[0].variablesReference > 0 ? fields[0] : undefined),
+
   collectionRole,
 };
