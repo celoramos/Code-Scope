@@ -371,3 +371,21 @@ describe('C++: std::string e vector<vector<int>> sem pretty-printers', () => {
     assert.equal(cAdapter.indirectText?.(v), undefined);
   });
 });
+
+describe('Java: objeto com toString próprio', () => {
+  it('record mostra os campos, que vêm um nível abaixo do filho lazy', async () => {
+    const vars = {
+      1: [{ name: 'par', value: 'Estresse$Par@39', type: 'Estresse$Par', variablesReference: 2 }],
+      2: [{ name: '', value: 'Estresse$Par@39 "Par[a=1, b=x]"', variablesReference: 3 }],
+      3: [
+        { name: 'a', value: '1', type: 'int', variablesReference: 0 },
+        { name: 'b', value: '"x"', type: 'String', variablesReference: 4 },
+      ],
+    };
+    const snap = (await collectSnapshot(session(vars), 1, javaAdapter, undefined, { userTypes: async () => new Set(['Par']) }))!.snapshot;
+    assert.deepEqual(snap.heap?.[0].fields, [
+      { name: 'a', value: '1' },
+      { name: 'b', value: '"x"' },
+    ]);
+  });
+});
