@@ -554,13 +554,17 @@ const MAX_LIST_ENTRIES = 20;
  * Itens da lista guardada numa entrada. No JavaScript e no Python a própria
  * entrada é a lista; no Java a entrada é um nó com "key" e "value", e a lista
  * está em "value" ('"A":ImmutableCollections$List12@38' não mostra os itens).
+ * No C# a entrada é um KeyValuePair, e a lista está em "Value"
+ * ('{[k, System.Collections.Generic.List`1[System.Int32]]}').
  */
 async function entryList(session: Session, adapter: LanguageAdapter, c: DapVariable, value: string, max: number): Promise<string[] | undefined> {
   let list: DapVariable | undefined;
   if (adapter.shape(c).kind === 'sequence') list = c;
-  else if (c.variablesReference > 0 && /@\d+$/.test(value)) {
-    const inner = (await variables(session, c.variablesReference)).find((k) => k.name === 'value');
-    if (inner && adapter.shape(inner).kind === 'sequence') list = inner;
+  else if (c.variablesReference > 0 && (/@\d+$/.test(value) || /`\d+\[/.test(c.value))) {
+    const inner = (await variables(session, c.variablesReference)).find((k) => k.name === 'value' || k.name === 'Value');
+    const kind = inner ? adapter.shape(inner).kind : undefined;
+    if (kind === 'empty-list') return [];
+    if (inner && kind === 'sequence') list = inner;
   }
   const shape = list ? adapter.shape(list) : undefined;
   if (!list || shape?.kind !== 'sequence') return undefined;

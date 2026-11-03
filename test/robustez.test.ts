@@ -223,3 +223,41 @@ describe('C#: coleções vazias', () => {
     assert.deepEqual(snap.arrays[0], { name: 'pilha', values: [], length: 0, kind: 'stack' });
   });
 });
+
+describe('C#: Dictionary com lista no valor', () => {
+  const list = 'System.Collections.Generic.List<int>';
+  const entry = (i: number, key: string, ref: number) => ({
+    name: `[${i}] [KeyValuePair]`,
+    value: `{[${key}, System.Collections.Generic.List\`1[System.Int32]]}`,
+    type: `System.Collections.Generic.KeyValuePair<string, ${list}>`,
+    variablesReference: ref,
+  });
+  // Formato do vsdbg no estresse: a entrada abre em Key e Value.
+  const vars = {
+    1: [{ name: 'mapa [Dictionary]', value: 'Count = 2', type: `System.Collections.Generic.Dictionary<string, ${list}>`, variablesReference: 2 }],
+    2: [entry(0, 'k', 3), entry(1, 'vazio', 5), { name: 'Raw View', value: '', variablesReference: 9, evaluateName: 'mapa, raw' }],
+    3: [
+      { name: 'Key [string]', value: '"k"', type: 'string', variablesReference: 0 },
+      { name: 'Value [List]', value: 'Count = 2', type: list, variablesReference: 4 },
+    ],
+    4: [
+      { name: '[0] [int]', value: '1', type: 'int', variablesReference: 0 },
+      { name: '[1] [int]', value: '2', type: 'int', variablesReference: 0 },
+    ],
+    5: [
+      { name: 'Key [string]', value: '"vazio"', type: 'string', variablesReference: 0 },
+      { name: 'Value [List]', value: 'Count = 0', type: list, variablesReference: 6 },
+    ],
+  };
+  it('mostra os itens da lista, não o nome interno do tipo', async () => {
+    const snap = await collect(vars, csharpAdapter);
+    assert.deepEqual(snap.maps?.[0].entries, [
+      { key: 'k', value: '[1, 2]', items: ['1', '2'] },
+      { key: 'vazio', value: '[]', items: [] },
+    ]);
+  });
+  it('coleção que não abre aparece pelo nome curto', () => {
+    const v = 'System.Collections.Generic.Dictionary`2[System.String,System.Int32]';
+    assert.deepEqual(csharpAdapter.mapEntry?.({ name: '[0]', value: `{[k, ${v}]}`, variablesReference: 3 }), { key: 'k', value: 'Dictionary' });
+  });
+});

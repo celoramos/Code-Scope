@@ -102,6 +102,7 @@ export const csharpAdapter: LanguageAdapter = {
   mapEntry(child): MapEntry | undefined {
     // KeyValuePair: "{[sol, 1]}".
     const m = /^\{\[(.*), (.*)\]\}$/.exec(child.value);
-    return m ? { key: m[1], value: m[2] } : undefined;
+    // Coleção como valor vem com o nome interno do .NET: "System.Collections.Generic.List`1[System.Int32]" vira "List".
+    return m ? { key: m[1], value: m[2].replace(/^(?:\w+\.)*(\w+)`\d+\[.*\]$/, '$1') } : undefined;
   },
 };
