@@ -94,7 +94,7 @@ export async function collectSnapshot(
       continue;
     }
     // Enum do aluno: para ele, Cor.AZUL é um valor, como um número.
-    const constant = await heapReader.enumText(v);
+    const constant = (await heapReader.enumText(v)) ?? (await indirectText(session, adapter, v, frame.id));
     if (constant !== undefined) {
       scalars.push({ name: v.name, value: clip(constant) });
       continue;
@@ -413,7 +413,8 @@ async function readSequence(
       const inner = fields.find((f) => f.name === 'value') ?? (fields.length === 1 ? fields[0] : undefined);
       values.push(clip(inner ? unbox(inner) : adapter.formatElement(c)));
     } else {
-      const text = adapter.formatElement(c);
+      const indirect = frameId !== undefined ? await indirectText(session, adapter, c, frameId) : undefined;
+      const text = indirect ?? adapter.formatElement(c);
       const blank = (text === '' || text === '{...}') && c.variablesReference > 0 && adapter.shape(c).kind !== 'sequence';
       values.push(clip(blank ? await fieldsText(session, c) : text));
     }
@@ -436,7 +437,8 @@ async function readSequence(
       }
       // Só as primeiras camadas de um cubo abrem: 50 x 50 x 50 posições travariam o F10.
       const below = i < MAX_LAYERS ? depth - 1 : 0;
-      array.rows.push((await readSequence(session, adapter, byIndex[i], `${name}[${i}]`, rowShape, max, below, objects)).array);
+      // frameId vai junto: no gdb sem pretty-printers, cada linha de um vector<vector<int>> também é lida por expressões.
+      array.rows.push((await readSequence(session, adapter, byIndex[i], `${name}[${i}]`, rowShape, max, below, objects, frameId)).array);
     }
   }
   return { array, children };
@@ -446,6 +448,21 @@ async function readSequence(
 const MAX_TEXT = 500;
 
 const clip = (text: string) => (text.length > MAX_TEXT ? `${text.slice(0, MAX_TEXT)}…` : text);
+
+/**
+ * Texto que o debugger não mostra, lido por uma expressão: std::string no gdb
+ * sem pretty-printers. A resposta ('0x5ffb10 "abc"') passa pelo formatElement.
+ */
+async function indirectText(session: Session, adapter: LanguageAdapter, v: DapVariable, frameId: number): Promise<string | undefined> {
+  const expression = adapter.indirectText?.(v);
+  if (!expression) return undefined;
+  try {
+    const res = (await session.customRequest('evaluate', { expression, frameId, context: 'watch' })) as { result?: string };
+    return res.result ? adapter.formatElement({ ...v, value: res.result, variablesReference: 0 }) : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /** Struct sem texto no debugger (C e C++): os primeiros campos, para a célula não ficar em branco. */
 async function fieldsText(session: Session, v: DapVariable): Promise<string> {

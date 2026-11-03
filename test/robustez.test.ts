@@ -317,3 +317,57 @@ describe('C#: erro tratado no catch', () => {
     assert.equal(csharpAdapter.caughtError?.({ name: 'a', value: '{Exemplos.Aluno}', type: 'Exemplos.Aluno', variablesReference: 4 }), undefined);
   });
 });
+
+describe('C++: std::string e vector<vector<int>> sem pretty-printers', () => {
+  const str = 'std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >';
+  const row = 'std::vector<int, std::allocator<int> >';
+  // Formatos do gdb do w64devkit no estresse: "{...}" no topo, "" dentro do vector, evaluateName em cada item.
+  const locals = [
+    { name: 'texto', value: '{...}', type: 'std::string', evaluateName: 'texto', variablesReference: 5 },
+    { name: 'nomes', value: '{...}', type: `std::vector<${str}, std::allocator<${str}> >`, evaluateName: 'nomes', variablesReference: 6 },
+    { name: 'matriz', value: '{...}', type: `std::vector<${row}, std::allocator<${row}> >`, evaluateName: 'matriz', variablesReference: 7 },
+  ];
+  const item = (array: string, n: number, i: number, type: string, ref: number) => ({ name: `[${i}]`, value: '', type, evaluateName: `(*${array}._M_impl._M_start@${n})[${i}]`, variablesReference: ref });
+  const results: Record<string, { result: string; variablesReference?: number }> = {
+    'texto._M_dataplus._M_p': { result: '0x5ffb10 "abc"' },
+    'nomes._M_impl._M_finish - nomes._M_impl._M_start': { result: '2' },
+    '*nomes._M_impl._M_start@2': { result: '{...}', variablesReference: 20 },
+    '(*nomes._M_impl._M_start@2)[0]._M_dataplus._M_p': { result: '0x1 "a"' },
+    '(*nomes._M_impl._M_start@2)[1]._M_dataplus._M_p': { result: '0x2 ""' },
+    'matriz._M_impl._M_finish - matriz._M_impl._M_start': { result: '2' },
+    '*matriz._M_impl._M_start@2': { result: '{...}', variablesReference: 30 },
+    '(*matriz._M_impl._M_start@2)[0]._M_impl._M_finish - (*matriz._M_impl._M_start@2)[0]._M_impl._M_start': { result: '2' },
+    '*(*matriz._M_impl._M_start@2)[0]._M_impl._M_start@2': { result: '{1, 2}', variablesReference: 31 },
+    '(*matriz._M_impl._M_start@2)[1]._M_impl._M_finish - (*matriz._M_impl._M_start@2)[1]._M_impl._M_start': { result: '2' },
+    '*(*matriz._M_impl._M_start@2)[1]._M_impl._M_start@2': { result: '{3, 4}', variablesReference: 32 },
+  };
+  const children: Record<number, Var[]> = {
+    1: locals,
+    20: [item('nomes', 2, 0, str, 21), item('nomes', 2, 1, str, 22)],
+    30: [item('matriz', 2, 0, row, 33), item('matriz', 2, 1, row, 34)],
+    31: [{ name: '[0]', value: '1', type: 'int', variablesReference: 0 }, { name: '[1]', value: '2', type: 'int', variablesReference: 0 }],
+    32: [{ name: '[0]', value: '3', type: 'int', variablesReference: 0 }, { name: '[1]', value: '4', type: 'int', variablesReference: 0 }],
+  };
+  const gdb: Session = {
+    async customRequest(command: string, args?: any) {
+      if (command === 'stackTrace') return { stackFrames: [{ id: 10, name: 'main', line: 1, source: { path: '/x/a.cpp' } }] };
+      if (command === 'scopes') return { scopes: [{ name: 'Locals', variablesReference: 1 }] };
+      if (command === 'variables') return { variables: children[args.variablesReference] ?? [] };
+      const r = results[args.expression];
+      if (!r) throw new Error(`expressão inesperada: ${args.expression}`);
+      return r;
+    },
+  };
+
+  it('o texto vem do ponteiro, e cada linha da matriz é lida por expressões', async () => {
+    const snap = (await collectSnapshot(gdb, 1, cAdapter))!.snapshot;
+    assert.deepEqual(snap.scalars?.find((s) => s.name === 'texto'), { name: 'texto', value: '"abc"' });
+    assert.deepEqual(snap.arrays.find((a) => a.name === 'nomes')?.values, ['"a"', '""']);
+    assert.deepEqual(snap.arrays.find((a) => a.name === 'matriz')?.rows?.map((r) => r.values), [['1', '2'], ['3', '4']]);
+  });
+  it('com os pretty-printers, o texto já vem entre aspas', () => {
+    const v = { name: 'texto', value: '"abc"', type: 'std::string', variablesReference: 0 };
+    assert.deepEqual(cAdapter.shape(v), { kind: 'scalar', value: '"abc"' });
+    assert.equal(cAdapter.indirectText?.(v), undefined);
+  });
+});

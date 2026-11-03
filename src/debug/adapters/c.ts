@@ -26,6 +26,8 @@ const SCALAR = /^(?:const )?(?:float|double|long double|bool|_Bool|char|unsigned
 const ARRAY = /\[(\d+)\]$/;
 const VECTOR = /^(?:const )?std::(?:__\w+::)?vector</;
 const VECTOR_BOOL = /^(?:const )?std::(?:__\w+::)?vector<bool\b/;
+/** std::string: "std::string" no topo, "std::__cxx11::basic_string<char, ...>" dentro de um vector. */
+const STRING = /^(?:const )?std::(?:__\w+::)?(?:string|basic_string<char\b)/;
 const MAP = /^(?:const )?std::(?:__\w+::)?(?:unordered_)?map</;
 /** Quantos itens o valor diz ter: "of length 3", "with 2 elements", "{ size=3 }". */
 const COUNT = /(?:of length |with |size=)(\d+)/;
@@ -67,6 +69,8 @@ export const cAdapter: LanguageAdapter = {
 
   shape(v): VariableShape {
     const type = (v.type ?? '').trim();
+    // Com os pretty-printers, o texto já vem entre aspas; sem eles, indirectText lê.
+    if (STRING.test(type)) return v.value.startsWith('"') ? { kind: 'scalar', value: v.value } : { kind: 'skip' };
     if (VECTOR.test(type)) {
       const count = COUNT.exec(v.value);
       if (count?.[1] === '0') return { kind: 'empty-list' };
@@ -109,6 +113,11 @@ export const cAdapter: LanguageAdapter = {
       };
     }
     return { length: `${e}._M_impl._M_finish - ${e}._M_impl._M_start`, items: (n) => `*${e}._M_impl._M_start@${n}` };
+  },
+  // std::string sem pretty-printers: "{...}" no valor, e o texto no ponteiro _M_p ('0x5ffb10 "abc"').
+  indirectText(v) {
+    if (!STRING.test((v.type ?? '').trim()) || v.value.startsWith('"')) return undefined;
+    return `${v.evaluateName ?? v.name}._M_dataplus._M_p`;
   },
   // Entrada de std::map: o nome é a chave, entre colchetes.
   mapEntry(child) {
