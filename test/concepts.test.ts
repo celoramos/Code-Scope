@@ -100,6 +100,17 @@ describe('herança', () => {
     assert.equal(overriddenIn(c, 'Gato', 'falar'), undefined);
     assert.equal(overriddenIn(parseClasses(python), 'Cachorro', 'falar'), 'Animal');
   });
+
+  it('C# e C++ herdam com dois pontos, e o Python sem base não pega o corpo', () => {
+    const cs = 'class Animal {\n  public virtual string Falar()\n  {\n    return "...";\n  }\n}\nclass Cachorro : Animal {\n  public override string Falar()\n  {\n    return "Au";\n  }\n}';
+    assert.equal(overriddenIn(parseClasses(cs), 'Cachorro', 'Falar'), 'Animal');
+    const cpp = 'class Animal { };\nclass Gato : public Animal { };\nclass Erro : public std::exception { };';
+    assert.equal(parseClasses(cpp).Gato.parent, 'Animal');
+    assert.equal(parseClasses(cpp).Erro.parent, 'exception');
+    const py = 'class Animal:\n    def falar(self):\n        pass\nclass Vazio: pass\n';
+    assert.equal(parseClasses(py).Animal.parent, undefined);
+    assert.equal(parseClasses(py).Vazio.parent, undefined);
+  });
 });
 
 describe('erro tratado', () => {

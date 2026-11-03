@@ -13,12 +13,20 @@ export interface ClassInfo {
 const NOT_METHODS = new Set(['if', 'for', 'while', 'switch', 'catch', 'return', 'new', 'super', 'this', 'function', 'synchronized']);
 
 export function parseClasses(source: string): Record<string, ClassInfo> {
-  const decls = [...source.matchAll(/\bclass\s+([A-Za-z_$][\w$]*)\s*(?:\(\s*([A-Za-z_$][\w$.]*)\s*\)|(?:extends\s+([A-Za-z_$][\w$.]*)))?/g)];
+  // Herança: class Gato(Animal) no Python, extends no Java e no JavaScript, class Gato : Animal no C#
+  // e class Gato : public Animal no C++. Depois do ":", a base precisa estar na mesma linha: no
+  // Python, "class Animal:" tem o corpo na linha de baixo.
+  const decls = [
+    ...source.matchAll(
+      /\bclass\s+([A-Za-z_$][\w$]*)\s*(?:\(\s*([A-Za-z_$][\w$.]*)\s*\)|(?:extends\s+([A-Za-z_$][\w$.]*))|:[ \t]*(?:(?:public|protected|private|virtual)[ \t]+)*([A-Za-z_][\w.:]*))?/g,
+    ),
+  ];
   const out: Record<string, ClassInfo> = {};
   decls.forEach((d, k) => {
     // O corpo vai até a próxima classe: aproximação boa para os exemplos e exercícios de aula.
     const body = source.slice((d.index ?? 0) + d[0].length, decls[k + 1]?.index ?? source.length);
-    const parent = (d[2] ?? d[3])?.split('.').pop();
+    const base = d[4] === 'pass' ? undefined : d[4];
+    const parent = (d[2] ?? d[3] ?? base)?.split(/[.:]/).pop();
     const methods = new Set<string>();
     for (const m of body.matchAll(/\bdef\s+([A-Za-z_]\w*)\s*\(/g)) methods.add(m[1]);
     for (const m of body.matchAll(/(?:^|[\s;{}])([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*(?:throws\s+[\w., ]+)?\{/gm)) {
