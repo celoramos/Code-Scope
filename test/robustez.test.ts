@@ -261,3 +261,39 @@ describe('C#: Dictionary com lista no valor', () => {
     assert.deepEqual(csharpAdapter.mapEntry?.({ name: '[0]', value: `{[k, ${v}]}`, variablesReference: 3 }), { key: 'k', value: 'Dictionary' });
   });
 });
+
+describe('C++: std::vector<bool> sem pretty-printers', () => {
+  const bits = { name: 'bits', value: '{...}', type: 'std::vector<bool, std::allocator<bool> >', evaluateName: 'bits', variablesReference: 2 };
+  /** gdb falso: palavra de 4 bytes (unsigned long do Windows); itens 1, 0, 1, 1 e o item 33 ligado. */
+  function gdb(words: string[], length: number): Session {
+    return {
+      async customRequest(command: string, args?: any) {
+        if (command === 'stackTrace') return { stackFrames: [{ id: 10, name: 'main', line: 1, source: { path: '/x/a.cpp' } }] };
+        if (command === 'scopes') return { scopes: [{ name: 'Locals', variablesReference: 1 }] };
+        if (command === 'variables') {
+          if (args.variablesReference === 1) return { variables: [bits] };
+          if (args.variablesReference === 9) return { variables: words.slice(0, 2).map((w, i) => ({ name: `[${i}]`, value: w, variablesReference: 0 })) };
+          return { variables: [] };
+        }
+        const e: string = args.expression;
+        if (e.startsWith('sizeof(')) return { result: '4' };
+        if (e.startsWith('(bits._M_impl._M_finish._M_p')) return { result: String(length) };
+        if (e === '*bits._M_impl._M_start._M_p@2') return { result: '{13, 2}', variablesReference: 9 };
+        return { result: '' };
+      },
+    };
+  }
+  it('lê o tamanho pelos iteradores de bit e cada item pelo bit da palavra', async () => {
+    const snap = (await collectSnapshot(gdb(['13', '2'], 34), 1, cAdapter))!.snapshot;
+    const arr = snap.arrays[0];
+    assert.equal(arr.length, 34);
+    assert.deepEqual(arr.values.slice(0, 4), ['true', 'false', 'true', 'true']);
+    assert.equal(arr.values[33], 'true');
+    assert.equal(arr.values[32], 'false');
+  });
+  it('a expressão do tamanho usa _M_p e _M_offset', () => {
+    const ind = cAdapter.indirectSequence?.(bits);
+    assert.equal(ind?.length, '(bits._M_impl._M_finish._M_p - bits._M_impl._M_start._M_p) * 8 * sizeof(*bits._M_impl._M_start._M_p) + bits._M_impl._M_finish._M_offset');
+    assert.deepEqual(ind?.bits, { width: 'sizeof(*bits._M_impl._M_start._M_p)' });
+  });
+});

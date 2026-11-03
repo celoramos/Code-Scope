@@ -42,6 +42,19 @@ export interface CollectionRole {
   topFirst: boolean;
 }
 
+/** Coleção lida por expressões: o tamanho, e depois os itens de uma vez. */
+export interface IndirectSequence {
+  length: string;
+  /** Expressão com os itens; com bits, com as palavras que guardam os bits. */
+  items: (count: number) => string;
+  /**
+   * std::vector<bool> guarda um bit por item em palavras de máquina. width é
+   * a expressão com o tamanho da palavra em bytes: unsigned long tem 4 no
+   * Windows e 8 no Linux.
+   */
+  bits?: { width: string };
+}
+
 export interface LanguageAdapter {
   /** Identificador estável, usado no log e nos testes. */
   readonly id: string;
@@ -74,7 +87,7 @@ export interface LanguageAdapter {
    * Coleção que o debugger não abre sozinho, lida por expressões: o tamanho e os
    * itens (std::vector num gdb sem os pretty-printers do Python).
    */
-  indirectSequence?(v: DapVariable): { length: string; items: (length: number) => string } | undefined;
+  indirectSequence?(v: DapVariable): IndirectSequence | undefined;
   /** Pilha ou fila, pelo uso no código-fonte. */
   collectionRole?(source: string, name: string): CollectionRole | undefined;
   /**

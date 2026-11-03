@@ -1,7 +1,7 @@
 import type { DapScope, DapStackFrame, DapVariable } from './dap';
 import type { ArrayVar, CallFrame, HeapObject, MapVar, Pointer, Scalar, Snapshot } from '../model/snapshot';
 import { alignHeap } from '../model/heapIdentity';
-import { isRangeGroup, type LanguageAdapter, type VariableShape } from './adapters/adapter';
+import { isRangeGroup, type IndirectSequence, type LanguageAdapter, type VariableShape } from './adapters/adapter';
 import { HeapCollector, linkSameArrays } from './heapCollector';
 import { nodeValue } from '../model/heap';
 
@@ -489,15 +489,34 @@ export const MAX_LAYERS = 8;
 /** Coleção lida por expressões: pede o tamanho e depois os itens. */
 async function readIndirect(
   session: Session,
-  indirect: NonNullable<ReturnType<NonNullable<LanguageAdapter['indirectSequence']>>>,
+  indirect: IndirectSequence,
   max: number,
   frameId: number,
 ): Promise<{ children: DapVariable[]; length: number }> {
   const size = (await session.customRequest('evaluate', { expression: indirect.length, frameId, context: 'watch' })) as { result?: string };
   const length = Number(size.result);
   if (!Number.isInteger(length) || length <= 0) return { children: [], length: 0 };
-  const items = (await session.customRequest('evaluate', { expression: indirect.items(Math.min(length, max)), frameId, context: 'watch' })) as { variablesReference?: number };
+  const count = Math.min(length, max);
+  if (indirect.bits) return { children: await readBits(session, indirect, count, frameId), length };
+  const items = (await session.customRequest('evaluate', { expression: indirect.items(count), frameId, context: 'watch' })) as { variablesReference?: number };
   return { children: items.variablesReference ? await variables(session, items.variablesReference) : [], length };
+}
+
+/** Itens de um std::vector<bool>: as palavras de máquina, e o bit i de cada uma, do menos significativo. */
+async function readBits(session: Session, indirect: IndirectSequence, count: number, frameId: number): Promise<DapVariable[]> {
+  const size = (await session.customRequest('evaluate', { expression: indirect.bits?.width, frameId, context: 'watch' })) as { result?: string };
+  const width = Number(size.result) * 8;
+  if (!Number.isInteger(width) || width <= 0) return [];
+  const res = (await session.customRequest('evaluate', { expression: indirect.items(Math.ceil(count / width)), frameId, context: 'watch' })) as { variablesReference?: number };
+  const words = res.variablesReference ? await variables(session, res.variablesReference) : [];
+  const out: DapVariable[] = [];
+  for (let i = 0; i < count; i++) {
+    const word = words[Math.floor(i / width)];
+    if (!word || !/^(?:0x[0-9a-f]+|\d+)$/i.test(word.value)) break;
+    const bit = (BigInt(word.value) >> BigInt(i % width)) & 1n;
+    out.push({ name: `[${i}]`, value: bit === 1n ? 'true' : 'false', type: 'bool', variablesReference: 0 });
+  }
+  return out;
 }
 
 /**
