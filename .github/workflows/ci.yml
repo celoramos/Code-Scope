@@ -27,7 +27,7 @@ jobs:
 
   integration:
     name: Integração com os debuggers reais (${{ matrix.name }})
-    # Todas as linguagens nos três sistemas. O C precisa de gcc e gdb: o macOS não tem gdb,
+    # Todas as linguagens nos três sistemas, Go inclusive. O C precisa de gcc e gdb: o macOS não tem gdb,
     # então lá o runTest.ts não instala a extensão C/C++ e os testes de C são pulados.
     strategy:
       fail-fast: false
@@ -59,6 +59,14 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '8.0.x'
+      # Go: o dlv vem do código-fonte, e o runTest.ts instala a extensão golang.go quando acha o dlv.
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache: false
+      - run: go install github.com/go-delve/delve/cmd/dlv@latest
+      - shell: bash
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y gdb
       - run: npm ci
