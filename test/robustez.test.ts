@@ -207,3 +207,19 @@ describe('Java: enum do arquivo', () => {
     assert.deepEqual([...declaredEnums('public class A {\n  enum Cor { VERMELHO, AZUL }\n}')], ['Cor']);
   });
 });
+
+describe('C#: coleções vazias', () => {
+  const t = (name: string) => `System.Collections.Generic.${name}<int>`;
+  it('Stack e Queue vazias continuam pilha e fila', () => {
+    assert.deepEqual(csharpAdapter.shape({ name: 'pilha', value: 'Count = 0', type: t('Stack'), variablesReference: 3 }), { kind: 'empty-list', collection: 'stack' });
+    assert.deepEqual(csharpAdapter.shape({ name: 'fila', value: 'Count = 0', type: t('Queue'), variablesReference: 3 }), { kind: 'empty-list', collection: 'queue' });
+  });
+  it('HashSet vazio é conjunto e List vazia é lista', () => {
+    assert.deepEqual(csharpAdapter.shape({ name: 'c', value: 'Count = 0', type: t('HashSet'), variablesReference: 3 }), { kind: 'empty-list', collection: 'set' });
+    assert.deepEqual(csharpAdapter.shape({ name: 'l', value: 'Count = 0', type: t('List'), variablesReference: 3 }), { kind: 'empty-list' });
+  });
+  it('a pilha vazia chega ao painel como pilha', async () => {
+    const snap = await collect({ 1: [{ name: 'pilha [Stack]', value: 'Count = 0', type: t('Stack'), variablesReference: 3 }] }, csharpAdapter);
+    assert.deepEqual(snap.arrays[0], { name: 'pilha', values: [], length: 0, kind: 'stack' });
+  });
+});

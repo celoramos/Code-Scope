@@ -71,9 +71,10 @@ export const csharpAdapter: LanguageAdapter = {
     const coll = COLLECTION.exec(type);
     if (count && coll) {
       const n = Number(count[1]);
-      if (n === 0) return { kind: 'empty-list' };
       const role = coll[1] === 'Stack' ? { role: 'stack' as const, topFirst: true } : coll[1] === 'Queue' ? { role: 'queue' as const, topFirst: false } : undefined;
       const collection = coll[1].endsWith('Set') ? ('set' as const) : ('list' as const);
+      // Pilha e fila vazias continuam pilha e fila: o aluno vê a torre nascer antes do primeiro Push.
+      if (n === 0) return { kind: 'empty-list', ...(role ? { collection: role.role } : collection === 'set' ? { collection } : {}) };
       return { kind: 'sequence', length: n, collection, ...(role ? { role } : {}) };
     }
     if (INTEGERS.has(type)) {

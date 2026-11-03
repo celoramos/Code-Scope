@@ -28,7 +28,7 @@ export type VariableShape =
   /** Dicionário: HashMap, dict, objeto literal ou Map do JavaScript. */
   | { kind: 'map'; length?: number; id?: string }
   /** Coleção vazia que o debugger não deixa expandir, mas que o aluno precisa ver nascer. */
-  | { kind: 'empty-list'; collection?: 'set' }
+  | { kind: 'empty-list'; collection?: 'set' | 'stack' | 'queue' }
   /** Inteiro que pode servir de índice (i, j, inicio...). */
   | { kind: 'integer'; value: number }
   /** Qualquer outro valor simples: texto, booleano, número com vírgula, caractere. */
