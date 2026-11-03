@@ -1,3 +1,4 @@
+import type { DapVariable } from '../dap';
 import { asInteger, methodsCalledOn, numericIndex, type CollectionRole, type LanguageAdapter, type VariableShape } from './adapter';
 
 /*
@@ -35,6 +36,14 @@ export function pythonRole(source: string, name: string): CollectionRole | undef
   return undefined;
 }
 
+/** Tipos com filhos que não são objetos de uma classe do aluno. */
+const NOT_OBJECTS = new Set(['function', 'builtin_function_or_method', 'method', 'module', 'type', 'generator', 'coroutine', 'range', 'bytes', 'bytearray']);
+
+/** Filhos que o debugpy acrescenta a uma coleção e que não são itens dela. */
+function notAnItem(c: DapVariable): boolean {
+  return /^(special|function|class) variables$/.test(c.name) || c.name === 'len()' || c.name.startsWith('Too large to show') || c.value.startsWith('<bound method ');
+}
+
 export const pythonAdapter: LanguageAdapter = {
   id: 'python',
   label: 'Python',
@@ -66,6 +75,10 @@ export const pythonAdapter: LanguageAdapter = {
     if (v.type && SCALARS.has(v.type)) return { kind: 'scalar', value: v.value };
     const obj = PY_OBJECT.exec(v.value);
     if (obj && v.variablesReference > 0) return { kind: 'object', type: obj[1].split('.').pop() ?? obj[1], id: obj[2].toLowerCase() };
+    const member = /^<(\w+\.\w+): .*>$/.exec(v.value);
+    if (member && v.type && member[1].startsWith(`${v.type}.`)) return { kind: 'scalar', value: member[1] };
+    // dataclass e __repr__ próprio trocam o texto, então o endereço some do valor; quem compara é "is".
+    if (v.variablesReference > 0 && v.type && !NOT_OBJECTS.has(v.type)) return { kind: 'object', type: v.type };
     return { kind: 'skip' };
   },
 
@@ -80,10 +93,14 @@ export const pythonAdapter: LanguageAdapter = {
     if (!m || v.type !== m[1]) return undefined;
     return { type: m[1], message: m[2].replace(/^(["'])(.*)\1$/s, '$2') };
   },
-  mapEntry: (child) =>
-    /^(special|function|class) variables$/.test(child.name) || child.name === 'len()' ? undefined : { key: child.name, value: child.value },
+  mapEntry: (child) => (notAnItem(child) ? undefined : { key: child.name, value: child.value }),
 
-  setItem: (c) => !/^(special|function|class) variables$/.test(c.name) && c.name !== 'len()',
+  setItem: (c) => !notAnItem(c),
+  // A partir de 100 itens o debugpy para de listar, e só o "len()" diz o tamanho.
+  reportedSize(children) {
+    const n = children.find((c) => c.name === 'len()')?.value;
+    return n === undefined ? undefined : asInteger(n);
+  },
   elementIndex: numericIndex,
   formatElement: (v) => v.value,
   collectionRole: pythonRole,

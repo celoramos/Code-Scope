@@ -1,6 +1,6 @@
 import { collectSnapshot, type Collected, type Limits, type Session } from '../debug/dapCollector';
 import { applyCollectionRoles, pickAdapter } from '../debug/adapters';
-import { declaredClasses } from '../debug/adapters/adapter';
+import { declaredClasses, declaredEnums } from '../debug/adapters/adapter';
 import { evaluateCondition } from '../debug/conditionEval';
 import { readExceptionInfo, type ExceptionInfoBody } from '../debug/exceptionFilters';
 import { parseAnnotations } from '../model/annotations';
@@ -50,6 +50,10 @@ export async function collectStep(session: Session, threadId: number | undefined
     userTypes: async (file) => {
       const s = await sourceOf(file);
       return s ? declaredClasses(s.text) : undefined;
+    },
+    enumTypes: async (file) => {
+      const s = await sourceOf(file);
+      return s ? declaredEnums(s.text) : undefined;
     },
     previous: opts.previous,
   });

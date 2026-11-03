@@ -124,6 +124,15 @@ async function stopAll() {
 }
 
 /** Abre um nível de cada variável local na parada atual, para documentar formatos novos. */
+/**
+ * Primeira página de uma variável com posições. O java-debug recusa count
+ * maior que o tamanho ("Attempted to get more values from array than length
+ * of array"), então count nunca passa de indexedVariables.
+ */
+function firstPage(indexed: number | undefined, count: number): object {
+  return indexed ? { filter: 'indexed', start: 0, count: Math.min(count, indexed) } : {};
+}
+
 async function probeLocals(): Promise<unknown> {
   const s = vscode.debug.activeDebugSession;
   const thread = vscode.debug.activeStackItem;
@@ -133,13 +142,19 @@ async function probeLocals(): Promise<unknown> {
   const out: Record<string, unknown> = { scopes };
   for (const scope of scopes.slice(0, 2) as { name: string; variablesReference: number }[]) {
     const { variables } = await s.customRequest('variables', { variablesReference: scope.variablesReference });
-    for (const v of variables as { name: string; variablesReference: number }[]) {
+    for (const v of variables as { name: string; variablesReference: number; indexedVariables?: number }[]) {
       if (v.variablesReference <= 0) continue;
-      const children = await s.customRequest('variables', { variablesReference: v.variablesReference });
+      // Sem filtro, o js-debug devolve todas as posições: num array de 1 milhão, a sonda levava 20 minutos.
+      const children = await s.customRequest('variables', { variablesReference: v.variablesReference, ...firstPage(v.indexedVariables, 6) });
       const first = children.variables[0];
       const nested =
         first?.variablesReference > 0
-          ? (await s.customRequest('variables', { variablesReference: first.variablesReference })).variables.slice(0, 4)
+          ? (
+              await s.customRequest('variables', {
+                variablesReference: first.variablesReference,
+                ...firstPage(first.indexedVariables, 4),
+              })
+            ).variables.slice(0, 4)
           : undefined;
       out[`${scope.name}/${v.name}`] = { variable: v, children: children.variables.slice(0, 6), nested };
     }

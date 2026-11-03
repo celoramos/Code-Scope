@@ -1,0 +1,299 @@
+import * as assert from 'node:assert/strict';
+import { cAdapter } from '../src/debug/adapters/c';
+import { csharpAdapter } from '../src/debug/adapters/csharp';
+import { goAdapter } from '../src/debug/adapters/go';
+import { javaAdapter, pythonAdapter } from '../src/debug/adapters';
+import { javascriptAdapter } from '../src/debug/adapters/javascript';
+import { declaredEnums, type LanguageAdapter } from '../src/debug/adapters/adapter';
+import { collectSnapshot, functionName, type Session } from '../src/debug/dapCollector';
+
+type Var = { name: string; value: string; type?: string; variablesReference: number; evaluateName?: string; indexedVariables?: number };
+
+/** Sessão falsa: a referência 1 são as locais; page corta cada resposta, como o vsdbg. */
+function session(vars: Record<number, Var[]>, page = Infinity): Session {
+  return {
+    async customRequest(command: string, args?: any) {
+      if (command === 'stackTrace') return { stackFrames: [{ id: 10, name: 'main', line: 1, source: { path: '/x/a' } }] };
+      if (command === 'scopes') return { scopes: [{ name: 'Locals', variablesReference: 1 }] };
+      if (command === 'evaluate') return { result: 'false' };
+      const all = vars[args.variablesReference] ?? [];
+      if (args.filter !== 'indexed') return { variables: all };
+      const indexed = all.filter((v) => /^\[?\d/.test(v.name));
+      return { variables: indexed.slice(args.start ?? 0, (args.start ?? 0) + Math.min(args.count ?? Infinity, page)) };
+    },
+  };
+}
+
+const collect = async (vars: Record<number, Var[]>, adapter: LanguageAdapter, page?: number) => (await collectSnapshot(session(vars, page), 1, adapter))!.snapshot;
+const items = (n: number, type = 'int') => Array.from({ length: n }, (_, i) => ({ name: String(i), value: String(i), type, variablesReference: 0 }));
+
+describe('Python: o debugpy só entrega 100 filhos', () => {
+  const tooLarge = { name: 'Too large to show contents. Max items to show: 100', value: '', variablesReference: 0 };
+  it('lista de um milhão mostra o tamanho que tem', async () => {
+    const snap = await collect({ 1: [{ name: 'numeros', value: '[0, 1, 2]', type: 'list', variablesReference: 2 }], 2: [...items(100), tooLarge, { name: 'len()', value: '1000000', type: 'int', variablesReference: 0 }] }, pythonAdapter);
+    assert.equal(snap.arrays[0].length, 1000000);
+    assert.equal(snap.arrays[0].values.length, 50);
+  });
+  it('dicionário grande mostra o tamanho que tem', async () => {
+    const entries = Array.from({ length: 100 }, (_, i) => ({ name: `'k${i}'`, value: String(i), type: 'int', variablesReference: 0 }));
+    const snap = await collect({ 1: [{ name: 'tabela', value: "{'k0': 0}", type: 'dict', variablesReference: 2 }], 2: [...entries, tooLarge, { name: 'len()', value: '50000', type: 'int', variablesReference: 0 }] }, pythonAdapter);
+    assert.equal(snap.maps?.[0].length, 50000);
+  });
+  it('o aviso de "too large" não vira item', () => {
+    assert.equal(pythonAdapter.mapEntry?.(tooLarge), undefined);
+    assert.equal(pythonAdapter.setItem?.(tooLarge), false);
+  });
+});
+
+describe('Python: Counter', () => {
+  it('o método que o debugpy lista junto não vira entrada', () => {
+    assert.equal(pythonAdapter.mapEntry?.({ name: '_keep_positive', value: "<bound method Counter._keep_positive of Counter({'a': 5})>", variablesReference: 3 }), undefined);
+    assert.deepEqual(pythonAdapter.mapEntry?.({ name: "'a'", value: '5', variablesReference: 0 }), { key: "'a'", value: '5' });
+  });
+});
+
+describe('Python: objetos com texto próprio', () => {
+  it('dataclass e __repr__ continuam sendo objetos', () => {
+    assert.deepEqual(pythonAdapter.shape({ name: 'p', value: 'Ponto(x=1, y=0)', type: 'Ponto', variablesReference: 5 }), { kind: 'object', type: 'Ponto' });
+  });
+  it('enum é um valor', () => {
+    assert.deepEqual(pythonAdapter.shape({ name: 'c', value: '<Cor.VERMELHO: 1>', type: 'Cor', variablesReference: 5 }), { kind: 'scalar', value: 'Cor.VERMELHO' });
+  });
+  it('função e módulo seguem de fora', () => {
+    assert.equal(pythonAdapter.shape({ name: 'f', value: '<function f at 0x1>', type: 'function', variablesReference: 5 }).kind, 'skip');
+    assert.equal(pythonAdapter.shape({ name: 'm', value: "<module 'os'>", type: 'module', variablesReference: 5 }).kind, 'skip');
+  });
+});
+
+describe('matriz irregular', () => {
+  it('Python: linha vazia no meio, como numa lista de adjacência', async () => {
+    const row = (name: string, value: string, variablesReference: number) => ({ name, value, type: 'list', variablesReference });
+    const snap = await collect({ 1: [row('g', '[[1, 2], [], [3]]', 2)], 2: [row('0', '[1, 2]', 3), row('1', '[]', 4), row('2', '[3]', 5)], 3: items(2), 5: items(1) }, pythonAdapter);
+    assert.deepEqual(snap.arrays[0].rows?.map((r) => r.length), [2, 0, 1]);
+  });
+  it('Java: linha nula', async () => {
+    const row = (name: string, n: number, variablesReference: number) => ({ name, value: `int[${n}]@${variablesReference}`, type: 'int[]', variablesReference, indexedVariables: n });
+    const snap = await collect({ 1: [{ name: 'm', value: 'int[2][]@9', type: 'int[][]', variablesReference: 2, indexedVariables: 2 } as Var], 2: [row('0', 1, 3), { name: '1', value: 'null', variablesReference: 0 }], 3: items(1) }, javaAdapter);
+    assert.deepEqual(snap.arrays[0].rows?.map((r) => r.length), [1, 0]);
+  });
+});
+
+describe('debugger que entrega em pedaços', () => {
+  it('C#: array grande vem inteiro até o limite', async () => {
+    const cells = Array.from({ length: 200 }, (_, i) => ({ name: `[${i}]`, value: String(i), type: 'int', variablesReference: 0 }));
+    const snap = await collect({ 1: [{ name: 'a', value: '{int[1000000]}', type: 'int[]', variablesReference: 2 }], 2: cells }, csharpAdapter, 25);
+    assert.deepEqual(snap.arrays[0].values, cells.slice(0, 50).map((c) => c.value));
+  });
+});
+
+describe('C#: matriz retangular', () => {
+  it('int[,] vira matriz, lida por linhas', async () => {
+    const cells = Array.from({ length: 6 }, (_, k) => ({ name: `[${Math.floor(k / 3)}, ${k % 3}]`, value: String(k), type: 'int', variablesReference: 0 }));
+    const snap = await collect({ 1: [{ name: 'm', value: '{int[2, 3]}', type: 'int[,]', variablesReference: 2 }], 2: cells }, csharpAdapter);
+    assert.equal(snap.arrays[0].length, 2);
+    assert.deepEqual(snap.arrays[0].rows?.map((r) => r.values), [['0', '1', '2'], ['3', '4', '5']]);
+  });
+});
+
+describe('C#: textos do vsdbg', () => {
+  it('"... returned" é o valor devolvido, não uma variável', () => {
+    assert.deepEqual(csharpAdapter.returnValue?.({ name: 'Programa.Soma returned', value: '3', variablesReference: 0 }), { function: 'Soma', value: '3' });
+  });
+  it('HashSet é conjunto', () => {
+    const v = { name: 's', value: 'Count = 2', type: 'System.Collections.Generic.HashSet<int>', variablesReference: 3 };
+    assert.equal((csharpAdapter.shape(v) as { collection?: string }).collection, 'set');
+  });
+  it('nome da pilha sem módulo nem linha, em qualquer idioma', () => {
+    assert.deepEqual(functionName('Estresse.dll!Programa.Main() Line 29'), { name: 'Main', program: false, owner: 'Programa' });
+    assert.deepEqual(functionName('Estresse.dll!Programa.Main() Linha 29'), { name: 'Main', program: false, owner: 'Programa' });
+  });
+});
+
+describe('C: struct em array', () => {
+  it('a célula mostra os campos', async () => {
+    const cell = (name: string, ref: number) => ({ name, value: '', type: 'struct no', variablesReference: ref });
+    const snap = await collect({ 1: [{ name: 'v', value: '[2]', type: 'struct no [2]', variablesReference: 2 }], 2: [cell('[0]', 3), cell('[1]', 4)], 3: [{ name: 'v', value: '1', type: 'int', variablesReference: 0 }, { name: 'prox', value: '0x0', type: 'struct no *', variablesReference: 0 }], 4: [{ name: 'v', value: '2', type: 'int', variablesReference: 0 }] }, cAdapter);
+    assert.deepEqual(snap.arrays[0].values, ['{v: 1, prox: 0x0}', '{v: 2}']);
+  });
+});
+
+describe('Go: textos do Delve', () => {
+  const format = (value: string) => goAdapter.formatElement({ name: '[0]', value, variablesReference: 0 });
+  it('interface, byte e slice', () => {
+    assert.equal(format('interface {}(int) 1'), '1');
+    assert.equal(format('interface {}(string) "dois"'), '"dois"');
+    assert.equal(format('interface {} nil'), 'nil');
+    assert.equal(format('97 = 0x61'), '97');
+    assert.equal(format('[]int len: 2, cap: 2, [1,2]'), '[1,2]');
+  });
+  it('valor de uma entrada de mapa', () => {
+    assert.deepEqual(goAdapter.mapEntry?.({ name: '"k"', value: '[]int len: 2, cap: 2, [1,2]', variablesReference: 3 }), { key: '"k"', value: '[1,2]' });
+  });
+});
+
+describe('texto muito longo', () => {
+  it('corta variáveis e posições, para o histórico não crescer sem limite', async () => {
+    const long = `'${'x'.repeat(100000)}'`;
+    const snap = await collect({ 1: [{ name: 't', value: long, type: 'str', variablesReference: 0 }, { name: 'l', value: '[...]', type: 'list', variablesReference: 2 }], 2: [{ name: '0', value: long, type: 'str', variablesReference: 0 }] }, pythonAdapter);
+    assert.ok((snap.scalars?.[0].value.length ?? 0) <= 501);
+    assert.ok(snap.scalars?.[0].value.endsWith('…'));
+    assert.ok(snap.arrays[0].values[0].length <= 501);
+  });
+});
+
+describe('JavaScript: Map e Set grandes', () => {
+  /** O js-debug, sem filtro, devolve todos os itens: a sessão falha nesse caso, como lembrete do custo (3 a 4 s com 50 mil). */
+  function paged(vars: Record<number, Var[]>, big: number): Session {
+    const inner = session(vars);
+    return {
+      async customRequest(command: string, args?: any) {
+        // O js-debug chama o escopo de "Local".
+        if (command === 'scopes') return { scopes: [{ name: 'Local', variablesReference: 1 }] };
+        if (command === 'variables' && args.variablesReference === big && args.filter !== 'indexed') throw new Error('pediu todos os itens');
+        return inner.customRequest(command, args);
+      },
+    };
+  }
+  const n = 50000;
+  const tail = [{ name: 'size', value: String(n), variablesReference: 0 }, { name: '[[Prototype]]', value: 'Map', variablesReference: 9 }];
+
+  it('Map de 50 mil pede só as primeiras entradas', async () => {
+    const entries = Array.from({ length: n }, (_, i) => ({ name: String(i), value: `{'k${i}' => ${i}}`, variablesReference: 0 }));
+    const vars = { 1: [{ name: 'tabela', value: `Map(${n}) {'k0' => 0, …}`, type: 'Map', variablesReference: 2, indexedVariables: n }], 2: [...entries, ...tail] };
+    const snap = (await collectSnapshot(paged(vars, 2), 1, javascriptAdapter))!.snapshot;
+    assert.equal(snap.maps?.[0].length, n);
+    assert.equal(snap.maps?.[0].entries.length, 50);
+    assert.deepEqual(snap.maps?.[0].entries[0], { key: "'k0'", value: '0' });
+  });
+
+  it('Set de 50 mil pede só os primeiros itens', async () => {
+    const vars = { 1: [{ name: 'vistos', value: `Set(${n}) {size: ${n}, 0, 1, …}`, type: 'Set', variablesReference: 2, indexedVariables: n }], 2: [...items(n, 'number'), ...tail] };
+    const snap = (await collectSnapshot(paged(vars, 2), 1, javascriptAdapter))!.snapshot;
+    assert.equal(snap.arrays[0].length, n);
+    assert.equal(snap.arrays[0].values.length, 50);
+    assert.equal(snap.arrays[0].kind, 'set');
+  });
+});
+
+describe('Java: enum do arquivo', () => {
+  // Formato do java-debug no estresse: a variável é "lazy" e o único filho traz o nome entre aspas.
+  const vars = {
+    1: [
+      { name: 'cor', value: 'Estresse$Cor@40', type: 'Estresse$Cor', variablesReference: 2 },
+      { name: 'misto', value: 'Object[2]@41', type: 'Object[]', variablesReference: 3, indexedVariables: 2 },
+      { name: 'carro', value: 'Estresse$Carro@42', type: 'Estresse$Carro', variablesReference: 5 },
+    ],
+    2: [{ name: '', value: 'Estresse$Cor@40 "VERMELHO"', variablesReference: 6 }],
+    3: [
+      { name: '0', value: '1', type: 'Integer', variablesReference: 0 },
+      { name: '1', value: 'Estresse$Cor@43', type: 'Estresse$Cor', variablesReference: 4 },
+    ],
+    // Sem lazy: os campos do próprio enum.
+    4: [
+      { name: 'name', value: '"AZUL"', type: 'String', variablesReference: 7 },
+      { name: 'ordinal', value: '1', type: 'int', variablesReference: 0 },
+    ],
+    5: [{ name: 'cor', value: 'Estresse$Cor@43', type: 'Estresse$Cor', variablesReference: 4 }],
+  };
+  const opts = { userTypes: async () => new Set(['Carro']), enumTypes: async () => new Set(['Cor']) };
+
+  it('variável, posição de array e campo mostram a constante', async () => {
+    const snap = (await collectSnapshot(session(vars), 1, javaAdapter, undefined, opts))!.snapshot;
+    assert.deepEqual(snap.scalars?.find((s) => s.name === 'cor'), { name: 'cor', value: 'Cor.VERMELHO' });
+    assert.deepEqual(snap.arrays.find((a) => a.name === 'misto')?.values, ['1', 'Cor.AZUL']);
+    assert.deepEqual(snap.heap?.find((o) => o.type === 'Carro')?.fields, [{ name: 'cor', value: 'Cor.AZUL' }]);
+  });
+  it('declaredEnums acha enum Cor', () => {
+    assert.deepEqual([...declaredEnums('public class A {\n  enum Cor { VERMELHO, AZUL }\n}')], ['Cor']);
+  });
+});
+
+describe('C#: coleções vazias', () => {
+  const t = (name: string) => `System.Collections.Generic.${name}<int>`;
+  it('Stack e Queue vazias continuam pilha e fila', () => {
+    assert.deepEqual(csharpAdapter.shape({ name: 'pilha', value: 'Count = 0', type: t('Stack'), variablesReference: 3 }), { kind: 'empty-list', collection: 'stack' });
+    assert.deepEqual(csharpAdapter.shape({ name: 'fila', value: 'Count = 0', type: t('Queue'), variablesReference: 3 }), { kind: 'empty-list', collection: 'queue' });
+  });
+  it('HashSet vazio é conjunto e List vazia é lista', () => {
+    assert.deepEqual(csharpAdapter.shape({ name: 'c', value: 'Count = 0', type: t('HashSet'), variablesReference: 3 }), { kind: 'empty-list', collection: 'set' });
+    assert.deepEqual(csharpAdapter.shape({ name: 'l', value: 'Count = 0', type: t('List'), variablesReference: 3 }), { kind: 'empty-list' });
+  });
+  it('a pilha vazia chega ao painel como pilha', async () => {
+    const snap = await collect({ 1: [{ name: 'pilha [Stack]', value: 'Count = 0', type: t('Stack'), variablesReference: 3 }] }, csharpAdapter);
+    assert.deepEqual(snap.arrays[0], { name: 'pilha', values: [], length: 0, kind: 'stack' });
+  });
+});
+
+describe('C#: Dictionary com lista no valor', () => {
+  const list = 'System.Collections.Generic.List<int>';
+  const entry = (i: number, key: string, ref: number) => ({
+    name: `[${i}] [KeyValuePair]`,
+    value: `{[${key}, System.Collections.Generic.List\`1[System.Int32]]}`,
+    type: `System.Collections.Generic.KeyValuePair<string, ${list}>`,
+    variablesReference: ref,
+  });
+  // Formato do vsdbg no estresse: a entrada abre em Key e Value.
+  const vars = {
+    1: [{ name: 'mapa [Dictionary]', value: 'Count = 2', type: `System.Collections.Generic.Dictionary<string, ${list}>`, variablesReference: 2 }],
+    2: [entry(0, 'k', 3), entry(1, 'vazio', 5), { name: 'Raw View', value: '', variablesReference: 9, evaluateName: 'mapa, raw' }],
+    3: [
+      { name: 'Key [string]', value: '"k"', type: 'string', variablesReference: 0 },
+      { name: 'Value [List]', value: 'Count = 2', type: list, variablesReference: 4 },
+    ],
+    4: [
+      { name: '[0] [int]', value: '1', type: 'int', variablesReference: 0 },
+      { name: '[1] [int]', value: '2', type: 'int', variablesReference: 0 },
+    ],
+    5: [
+      { name: 'Key [string]', value: '"vazio"', type: 'string', variablesReference: 0 },
+      { name: 'Value [List]', value: 'Count = 0', type: list, variablesReference: 6 },
+    ],
+  };
+  it('mostra os itens da lista, não o nome interno do tipo', async () => {
+    const snap = await collect(vars, csharpAdapter);
+    assert.deepEqual(snap.maps?.[0].entries, [
+      { key: 'k', value: '[1, 2]', items: ['1', '2'] },
+      { key: 'vazio', value: '[]', items: [] },
+    ]);
+  });
+  it('coleção que não abre aparece pelo nome curto', () => {
+    const v = 'System.Collections.Generic.Dictionary`2[System.String,System.Int32]';
+    assert.deepEqual(csharpAdapter.mapEntry?.({ name: '[0]', value: `{[k, ${v}]}`, variablesReference: 3 }), { key: 'k', value: 'Dictionary' });
+  });
+});
+
+describe('C++: std::vector<bool> sem pretty-printers', () => {
+  const bits = { name: 'bits', value: '{...}', type: 'std::vector<bool, std::allocator<bool> >', evaluateName: 'bits', variablesReference: 2 };
+  /** gdb falso: palavra de 4 bytes (unsigned long do Windows); itens 1, 0, 1, 1 e o item 33 ligado. */
+  function gdb(words: string[], length: number): Session {
+    return {
+      async customRequest(command: string, args?: any) {
+        if (command === 'stackTrace') return { stackFrames: [{ id: 10, name: 'main', line: 1, source: { path: '/x/a.cpp' } }] };
+        if (command === 'scopes') return { scopes: [{ name: 'Locals', variablesReference: 1 }] };
+        if (command === 'variables') {
+          if (args.variablesReference === 1) return { variables: [bits] };
+          if (args.variablesReference === 9) return { variables: words.slice(0, 2).map((w, i) => ({ name: `[${i}]`, value: w, variablesReference: 0 })) };
+          return { variables: [] };
+        }
+        const e: string = args.expression;
+        if (e.startsWith('sizeof(')) return { result: '4' };
+        if (e.startsWith('(bits._M_impl._M_finish._M_p')) return { result: String(length) };
+        if (e === '*bits._M_impl._M_start._M_p@2') return { result: '{13, 2}', variablesReference: 9 };
+        return { result: '' };
+      },
+    };
+  }
+  it('lê o tamanho pelos iteradores de bit e cada item pelo bit da palavra', async () => {
+    const snap = (await collectSnapshot(gdb(['13', '2'], 34), 1, cAdapter))!.snapshot;
+    const arr = snap.arrays[0];
+    assert.equal(arr.length, 34);
+    assert.deepEqual(arr.values.slice(0, 4), ['true', 'false', 'true', 'true']);
+    assert.equal(arr.values[33], 'true');
+    assert.equal(arr.values[32], 'false');
+  });
+  it('a expressão do tamanho usa _M_p e _M_offset', () => {
+    const ind = cAdapter.indirectSequence?.(bits);
+    assert.equal(ind?.length, '(bits._M_impl._M_finish._M_p - bits._M_impl._M_start._M_p) * 8 * sizeof(*bits._M_impl._M_start._M_p) + bits._M_impl._M_finish._M_offset');
+    assert.deepEqual(ind?.bits, { width: 'sizeof(*bits._M_impl._M_start._M_p)' });
+  });
+});

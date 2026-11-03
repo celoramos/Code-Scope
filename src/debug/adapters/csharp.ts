@@ -57,6 +57,11 @@ export const csharpAdapter: LanguageAdapter = {
 
   shape(v): VariableShape {
     const type = v.type ?? '';
+    const grid = /\[(\d+), (\d+)\]\}$/.exec(v.value);
+    if (grid && type.endsWith('[,]') && v.variablesReference > 0) {
+      const rows = Number(grid[1]);
+      return { kind: 'sequence', length: rows, collection: 'array', grid: { rows, cols: Number(grid[2]) } };
+    }
     if (type.endsWith('[]') && v.variablesReference > 0) {
       const n = /\[(\d+)\]\}$/.exec(v.value);
       return { kind: 'sequence', length: n ? Number(n[1]) : undefined, collection: 'array' };
@@ -66,9 +71,11 @@ export const csharpAdapter: LanguageAdapter = {
     const coll = COLLECTION.exec(type);
     if (count && coll) {
       const n = Number(count[1]);
-      if (n === 0) return { kind: 'empty-list' };
       const role = coll[1] === 'Stack' ? { role: 'stack' as const, topFirst: true } : coll[1] === 'Queue' ? { role: 'queue' as const, topFirst: false } : undefined;
-      return { kind: 'sequence', length: n, collection: 'list', ...(role ? { role } : {}) };
+      const collection = coll[1].endsWith('Set') ? ('set' as const) : ('list' as const);
+      // Pilha e fila vazias continuam pilha e fila: o aluno vê a torre nascer antes do primeiro Push.
+      if (n === 0) return { kind: 'empty-list', ...(role ? { collection: role.role } : collection === 'set' ? { collection } : {}) };
+      return { kind: 'sequence', length: n, collection, ...(role ? { role } : {}) };
     }
     if (INTEGERS.has(type)) {
       const n = asInteger(v.value);
@@ -85,11 +92,17 @@ export const csharpAdapter: LanguageAdapter = {
   elementIndex: numericIndex,
   formatElement: formatValue,
   isNull: (v) => v.value === 'null',
+  // O vsdbg guarda o que uma função devolveu como "Programa.Soma returned" nas locais de quem chamou.
+  returnValue(v) {
+    const m = /^(.+) returned$/.exec(v.name);
+    return m ? { function: m[1].replace(/\(.*$/, '').split('.').pop(), value: v.value } : undefined;
+  },
   identityExpr: (a, b) => `object.ReferenceEquals(${a}, ${b})`,
 
   mapEntry(child): MapEntry | undefined {
     // KeyValuePair: "{[sol, 1]}".
     const m = /^\{\[(.*), (.*)\]\}$/.exec(child.value);
-    return m ? { key: m[1], value: m[2] } : undefined;
+    // Coleção como valor vem com o nome interno do .NET: "System.Collections.Generic.List`1[System.Int32]" vira "List".
+    return m ? { key: m[1], value: m[2].replace(/^(?:\w+\.)*(\w+)`\d+\[.*\]$/, '$1') } : undefined;
   },
 };

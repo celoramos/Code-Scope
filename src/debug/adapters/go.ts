@@ -35,6 +35,14 @@ export function goRole(source: string, name: string): CollectionRole | undefined
   return undefined;
 }
 
+/** "interface {}(int) 1", "97 = 0x61" e "[]int len: 2, cap: 2, [1,2]" como o aluno escreveria. */
+export function goValue(value: string): string {
+  return value
+    .replace(/^interface \{\}(?:\([^)]*\))? /, '')
+    .replace(/^(\d+) = 0x[0-9a-f]+$/, '$1')
+    .replace(/^\[\].*? len: \d+, cap: \d+, (\[.*\])$/s, '$1');
+}
+
 export const goAdapter: LanguageAdapter = {
   id: 'go',
   label: 'Go',
@@ -82,8 +90,8 @@ export const goAdapter: LanguageAdapter = {
   identityExpr: (a, b) => `${a} == ${b}`,
   // "a == b" compara o conteúdo de um array; dois slices são o mesmo quando começam no mesmo lugar.
   sameArrayExpr: (a, b) => `&${a}[0] == &${b}[0]`,
-  mapEntry: (child) => (child.name === 'len()' || /^\[(?:key|val) \d+\]$/.test(child.name) ? undefined : { key: child.name, value: child.value }),
+  mapEntry: (child) => (child.name === 'len()' || /^\[(?:key|val) \d+\]$/.test(child.name) ? undefined : { key: child.name, value: goValue(child.value) }),
   elementIndex: numericIndex,
-  formatElement: (v) => v.value,
+  formatElement: (v) => goValue(v.value),
   collectionRole: goRole,
 };

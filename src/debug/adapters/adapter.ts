@@ -13,8 +13,9 @@ export type VariableShape =
   /**
    * Coleção indexada a ser expandida. "list" cresce e encolhe; "array" tem tamanho
    * fixo. Sem length, o tamanho é contado pelas posições que o debugger devolver.
+   * grid: matriz guardada numa fileira só, como o int[,] do C#.
    */
-  | { kind: 'sequence'; length?: number; collection: 'array' | 'list' | 'set'; id?: string; role?: CollectionRole }
+  | { kind: 'sequence'; length?: number; collection: 'array' | 'list' | 'set'; id?: string; role?: CollectionRole; grid?: { rows: number; cols: number } }
   /**
    * Instância de uma classe. id é a identidade na memória quando o debugger
    * mostra uma ("@12" no Java, "0x..." no Python); sem ela, o coletor compara
@@ -27,7 +28,7 @@ export type VariableShape =
   /** Dicionário: HashMap, dict, objeto literal ou Map do JavaScript. */
   | { kind: 'map'; length?: number; id?: string }
   /** Coleção vazia que o debugger não deixa expandir, mas que o aluno precisa ver nascer. */
-  | { kind: 'empty-list'; collection?: 'set' }
+  | { kind: 'empty-list'; collection?: 'set' | 'stack' | 'queue' }
   /** Inteiro que pode servir de índice (i, j, inicio...). */
   | { kind: 'integer'; value: number }
   /** Qualquer outro valor simples: texto, booleano, número com vírgula, caractere. */
@@ -39,6 +40,19 @@ export interface CollectionRole {
   role: 'stack' | 'queue' | 'deque' | 'heap';
   /** O debugger entrega o topo da pilha na posição 0 (o painel inverte para o topo ficar no fim). */
   topFirst: boolean;
+}
+
+/** Coleção lida por expressões: o tamanho, e depois os itens de uma vez. */
+export interface IndirectSequence {
+  length: string;
+  /** Expressão com os itens; com bits, com as palavras que guardam os bits. */
+  items: (count: number) => string;
+  /**
+   * std::vector<bool> guarda um bit por item em palavras de máquina. width é
+   * a expressão com o tamanho da palavra em bytes: unsigned long tem 4 no
+   * Windows e 8 no Linux.
+   */
+  bits?: { width: string };
 }
 
 export interface LanguageAdapter {
@@ -65,10 +79,15 @@ export interface LanguageAdapter {
    */
   unbox?(v: DapVariable): ((inner: DapVariable) => string) | undefined;
   /**
+   * Tamanho que o debugger informa num filho, quando entrega só parte da coleção
+   * ("len()" no debugpy, que para em 100 filhos).
+   */
+  reportedSize?(children: DapVariable[]): number | undefined;
+  /**
    * Coleção que o debugger não abre sozinho, lida por expressões: o tamanho e os
    * itens (std::vector num gdb sem os pretty-printers do Python).
    */
-  indirectSequence?(v: DapVariable): { length: string; items: (length: number) => string } | undefined;
+  indirectSequence?(v: DapVariable): IndirectSequence | undefined;
   /** Pilha ou fila, pelo uso no código-fonte. */
   collectionRole?(source: string, name: string): CollectionRole | undefined;
   /**
@@ -153,6 +172,11 @@ export function declaredClasses(source: string): Set<string> {
   // Em Go o nome vem antes: type No struct.
   const go = [...source.matchAll(/\btype\s+([A-Za-z_]\w*)\s+struct\b/g)].map((m) => m[1]);
   return new Set([...declared, ...go]);
+}
+
+/** Enums declarados no arquivo (Java: enum Cor): o valor é a constante, não um objeto. */
+export function declaredEnums(source: string): Set<string> {
+  return new Set([...source.matchAll(/\benum\s+([A-Za-z_$][\w$]*)/g)].map((m) => m[1]));
 }
 
 export interface ReturnedValue {

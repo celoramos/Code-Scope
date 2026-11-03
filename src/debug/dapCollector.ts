@@ -1,7 +1,7 @@
 import type { DapScope, DapStackFrame, DapVariable } from './dap';
 import type { ArrayVar, CallFrame, HeapObject, MapVar, Pointer, Scalar, Snapshot } from '../model/snapshot';
 import { alignHeap } from '../model/heapIdentity';
-import { isRangeGroup, type LanguageAdapter, type VariableShape } from './adapters/adapter';
+import { isRangeGroup, type IndirectSequence, type LanguageAdapter, type VariableShape } from './adapters/adapter';
 import { HeapCollector, linkSameArrays } from './heapCollector';
 import { nodeValue } from '../model/heap';
 
@@ -39,6 +39,8 @@ export interface Session {
 export interface CollectOptions {
   /** Classes declaradas no arquivo parado: só objetos delas são desenhados. */
   userTypes?: (file: string) => Promise<ReadonlySet<string> | undefined>;
+  /** Enums declarados no arquivo parado: aparecem como a constante (Cor.AZUL). */
+  enumTypes?: (file: string) => Promise<ReadonlySet<string> | undefined>;
   /** Passo anterior: objetos sem identidade no debugger herdam o id pelos caminhos. */
   previous?: Snapshot;
 }
@@ -72,8 +74,11 @@ export async function collectSnapshot(
   }
 
   // Objetos dos arrays e das variáveis passam pelo mesmo leitor: o mesmo objeto tem o mesmo id nos dois.
-  const heapReader = new HeapCollector(session, adapter, { frameId: frame.id, userTypes: await opts.userTypes?.(file) });
-  const objectsOf = (c: DapVariable) => heapReader.objectId(c);
+  const heapReader = new HeapCollector(session, adapter, {
+    frameId: frame.id,
+    userTypes: await opts.userTypes?.(file),
+    enums: await opts.enumTypes?.(file),
+  });
   const arrays: ArrayVar[] = [];
   const arrayVars: { array: ArrayVar; v: DapVariable }[] = [];
   const pointers: Pointer[] = [];
@@ -88,6 +93,12 @@ export async function collectSnapshot(
       caught = { name: v.name, type: error.type, ...(await caughtMessage(session, v, error, frame.id)) };
       continue;
     }
+    // Enum do aluno: para ele, Cor.AZUL é um valor, como um número.
+    const constant = await heapReader.enumText(v);
+    if (constant !== undefined) {
+      scalars.push({ name: v.name, value: clip(constant) });
+      continue;
+    }
     const shape = adapter.shape(v);
     switch (shape.kind) {
       case 'empty-list':
@@ -96,7 +107,7 @@ export async function collectSnapshot(
         break;
       case 'sequence': {
         if (arrays.length >= limits.maxArrays) break;
-        const { array, children } = await readSequence(session, adapter, v, v.name, shape, limits.maxElements, 2, objectsOf, frame.id);
+        const { array, children } = await readSequence(session, adapter, v, v.name, shape, limits.maxElements, 2, heapReader, frame.id);
         // Matriz de três dimensões: cada camada é uma matriz, com desenho próprio.
         const layers = array.rows?.filter((r) => r.rows) ?? [];
         if (layers.length > 0) {
@@ -115,15 +126,15 @@ export async function collectSnapshot(
         break;
       }
       case 'map': {
-        const entries = await readMap(session, adapter, v, limits.maxElements);
-        maps.push({ name: v.name, entries, length: Math.max(shape.length ?? 0, entries.length), ...(shape.id ? { id: shape.id } : {}) });
+        const { entries, size } = await readMap(session, adapter, v, limits.maxElements);
+        maps.push({ name: v.name, entries, length: size ?? Math.max(shape.length ?? 0, entries.length), ...(shape.id ? { id: shape.id } : {}) });
         break;
       }
       case 'integer':
         pointers.push({ name: v.name, value: shape.value });
         break;
       case 'scalar':
-        scalars.push({ name: v.name, value: shape.value });
+        scalars.push({ name: v.name, value: clip(shape.value) });
         break;
     }
   }
@@ -220,7 +231,8 @@ export function isUserFrame(f: DapStackFrame): boolean {
  */
 export function functionName(raw: string): { name: string; program: boolean; owner?: string } {
   if (raw === '<module>' || raw === '<anonymous>' || raw === '') return { name: raw, program: true };
-  const noArgs = raw.replace(/\(.*\)$/, '');
+  // O vsdbg escreve "Exemplo.dll!Programa.Main() Line 29", com a palavra "Line" traduzida.
+  const noArgs = raw.replace(/^[\w.-]+\.(?:dll|exe)!/, '').replace(/\(.*\)(?:\s+\S+\s+\d+)?$/, '');
   const parts = noArgs.split('.');
   const last = parts.pop() ?? noArgs;
   if (last === '<init>') return { name: `new ${(parts.pop() ?? '').split('$').pop()}`, program: false };
@@ -317,6 +329,12 @@ function summarize(adapter: LanguageAdapter, v: DapVariable): Scalar[] {
  * são coleções vira matriz: cada linha é lida uma vez, até depth níveis abaixo.
  * Depois disso, os níveis ficam só como texto.
  */
+/** Posições que guardam objetos: a referência, se é classe do aluno, ou a constante, se é enum. */
+interface ElementReader {
+  objectId(c: DapVariable): Promise<string | undefined>;
+  enumText(c: DapVariable): Promise<string | undefined>;
+}
+
 async function readSequence(
   session: Session,
   adapter: LanguageAdapter,
@@ -325,9 +343,10 @@ async function readSequence(
   shape: Sequence,
   max: number,
   depth: number,
-  objects?: (c: DapVariable) => Promise<string | undefined>,
+  objects?: ElementReader,
   frameId?: number,
 ): Promise<{ array: ArrayVar; children: DapVariable[] }> {
+  if (shape.grid) return { array: await readGrid(session, adapter, v, name, shape.grid, max), children: [] };
   let children: DapVariable[];
   const indirect = frameId !== undefined ? adapter.indirectSequence?.(v) : undefined;
   if (indirect) {
@@ -335,13 +354,13 @@ async function readSequence(
     children = read.children;
     shape = { ...shape, length: read.length };
   } else if (shape.collection === 'set' && adapter.setItem) {
-    children = (await variables(session, v.variablesReference)).filter((c) => adapter.setItem?.(c)).map((c, i) => ({ ...c, name: String(i) }));
+    children = (await firstChildren(session, v, max)).filter((c) => adapter.setItem?.(c)).map((c, i) => ({ ...c, name: String(i) }));
   } else if (shape.length === undefined) {
     children = await variables(session, v.variablesReference);
   } else {
     try {
       const count = Math.min(shape.length, max);
-      children = await variables(session, v.variablesReference, { filter: 'indexed', start: 0, count });
+      children = await readPages(session, adapter, v.variablesReference, count);
     } catch {
       // Debugger sem suporte a paginação: pede tudo e corta aqui.
       children = await variables(session, v.variablesReference);
@@ -359,7 +378,7 @@ async function readSequence(
   if (group) children = await variables(session, group.variablesReference);
 
   const indices = children.map((c) => adapter.elementIndex(c.name)).filter((i) => i !== undefined);
-  const length = shape.length ?? (indices.length > 0 ? Math.max(...indices) + 1 : 0);
+  const length = adapter.reportedSize?.(children) ?? shape.length ?? (indices.length > 0 ? Math.max(...indices) + 1 : 0);
   const count = Math.min(length, max);
   const byIndex: DapVariable[] = [];
   for (const c of children) {
@@ -376,10 +395,15 @@ async function readSequence(
       continue;
     }
     // Objeto de uma classe do aluno: a posição guarda a referência, e o rótulo vem depois.
-    const ref = objects ? await objects(c) : undefined;
+    const ref = objects ? await objects.objectId(c) : undefined;
     if (ref) {
       refs[i] = ref;
-      values.push(adapter.formatElement(c));
+      values.push(clip(adapter.formatElement(c)));
+      continue;
+    }
+    const constant = objects ? await objects.enumText(c) : undefined;
+    if (constant !== undefined) {
+      values.push(clip(constant));
       continue;
     }
     const unbox = adapter.unbox?.(c);
@@ -387,9 +411,11 @@ async function readSequence(
       // Variável "lazy" devolve o próprio valor como único filho; objeto comum devolve os campos.
       const fields = await variables(session, c.variablesReference);
       const inner = fields.find((f) => f.name === 'value') ?? (fields.length === 1 ? fields[0] : undefined);
-      values.push(inner ? unbox(inner) : adapter.formatElement(c));
+      values.push(clip(inner ? unbox(inner) : adapter.formatElement(c)));
     } else {
-      values.push(adapter.formatElement(c));
+      const text = adapter.formatElement(c);
+      const blank = (text === '' || text === '{...}') && c.variablesReference > 0 && adapter.shape(c).kind !== 'sequence';
+      values.push(clip(blank ? await fieldsText(session, c) : text));
     }
   }
   const array: ArrayVar = { name, values, length };
@@ -398,11 +424,16 @@ async function readSequence(
   else if (shape.collection === 'set') array.kind = 'set';
 
   const rowShapes = byIndex.slice(0, count).map((c) => (c ? adapter.shape(c) : undefined));
-  const isMatrix = count > 0 && rowShapes.every((s) => s?.kind === 'sequence');
+  const isMatrix = rowShapes.some((s) => s?.kind === 'sequence') && rowShapes.every((s) => s?.kind === 'sequence' || s?.kind === 'empty-list' || s?.kind === 'null');
   if (depth > 0 && isMatrix) {
     array.rows = [];
     for (let i = 0; i < count; i++) {
-      const rowShape = rowShapes[i] as Sequence;
+      const rowShape = rowShapes[i];
+      // Linha vazia ou nula: comum numa lista de adjacência, e não muda que o resto é matriz.
+      if (rowShape?.kind !== 'sequence') {
+        array.rows.push({ name: `${name}[${i}]`, values: [], length: 0 });
+        continue;
+      }
       // Só as primeiras camadas de um cubo abrem: 50 x 50 x 50 posições travariam o F10.
       const below = i < MAX_LAYERS ? depth - 1 : 0;
       array.rows.push((await readSequence(session, adapter, byIndex[i], `${name}[${i}]`, rowShape, max, below, objects)).array);
@@ -411,41 +442,103 @@ async function readSequence(
   return { array, children };
 }
 
+/** Maior texto guardado por valor: o histórico guarda todos os passos, e um texto de 5 MB vai junto em cada um. */
+const MAX_TEXT = 500;
+
+const clip = (text: string) => (text.length > MAX_TEXT ? `${text.slice(0, MAX_TEXT)}…` : text);
+
+/** Struct sem texto no debugger (C e C++): os primeiros campos, para a célula não ficar em branco. */
+async function fieldsText(session: Session, v: DapVariable): Promise<string> {
+  const fields = await variables(session, v.variablesReference);
+  const shown = fields.slice(0, MAX_CELL_FIELDS).map((f) => `${f.name}: ${f.value}`);
+  return `{${shown.join(', ')}${fields.length > MAX_CELL_FIELDS ? ', …' : ''}}`;
+}
+
+const MAX_CELL_FIELDS = 3;
+
+/** Matriz numa fileira só ("[0, 0]", "[0, 1]"...): cada linha é um trecho dela. */
+async function readGrid(session: Session, adapter: LanguageAdapter, v: DapVariable, name: string, grid: { rows: number; cols: number }, max: number): Promise<ArrayVar> {
+  const rows: ArrayVar[] = [];
+  for (let i = 0; i < Math.min(grid.rows, max); i++) {
+    const cells = await variables(session, v.variablesReference, { filter: 'indexed', start: i * grid.cols, count: Math.min(grid.cols, max) });
+    rows.push({ name: `${name}[${i}]`, values: cells.map((c) => adapter.formatElement(c)), length: grid.cols });
+  }
+  return { name, values: rows.map(() => ''), length: grid.rows, rows };
+}
+
+/** Primeiras posições de uma coleção. O vsdbg responde menos do que foi pedido: continua de onde parou. */
+async function readPages(session: Session, adapter: LanguageAdapter, reference: number, count: number): Promise<DapVariable[]> {
+  const children = await variables(session, reference, { filter: 'indexed', start: 0, count });
+  const seen = new Set(children.map((c) => adapter.elementIndex(c.name)).filter((i) => i !== undefined));
+  while (seen.size > 0 && seen.size < count) {
+    const page = await variables(session, reference, { filter: 'indexed', start: seen.size, count: count - seen.size });
+    const fresh = page.filter((c) => {
+      const i = adapter.elementIndex(c.name);
+      return i !== undefined && !seen.has(i);
+    });
+    if (fresh.length === 0) break;
+    for (const c of fresh) seen.add(adapter.elementIndex(c.name) as number);
+    children.push(...fresh);
+  }
+  return children;
+}
+
 /** Camadas abertas de uma matriz de três dimensões. */
 export const MAX_LAYERS = 8;
 
 /** Coleção lida por expressões: pede o tamanho e depois os itens. */
 async function readIndirect(
   session: Session,
-  indirect: NonNullable<ReturnType<NonNullable<LanguageAdapter['indirectSequence']>>>,
+  indirect: IndirectSequence,
   max: number,
   frameId: number,
 ): Promise<{ children: DapVariable[]; length: number }> {
   const size = (await session.customRequest('evaluate', { expression: indirect.length, frameId, context: 'watch' })) as { result?: string };
   const length = Number(size.result);
   if (!Number.isInteger(length) || length <= 0) return { children: [], length: 0 };
-  const items = (await session.customRequest('evaluate', { expression: indirect.items(Math.min(length, max)), frameId, context: 'watch' })) as { variablesReference?: number };
+  const count = Math.min(length, max);
+  if (indirect.bits) return { children: await readBits(session, indirect, count, frameId), length };
+  const items = (await session.customRequest('evaluate', { expression: indirect.items(count), frameId, context: 'watch' })) as { variablesReference?: number };
   return { children: items.variablesReference ? await variables(session, items.variablesReference) : [], length };
+}
+
+/** Itens de um std::vector<bool>: as palavras de máquina, e o bit i de cada uma, do menos significativo. */
+async function readBits(session: Session, indirect: IndirectSequence, count: number, frameId: number): Promise<DapVariable[]> {
+  const size = (await session.customRequest('evaluate', { expression: indirect.bits?.width, frameId, context: 'watch' })) as { result?: string };
+  const width = Number(size.result) * 8;
+  if (!Number.isInteger(width) || width <= 0) return [];
+  const res = (await session.customRequest('evaluate', { expression: indirect.items(Math.ceil(count / width)), frameId, context: 'watch' })) as { variablesReference?: number };
+  const words = res.variablesReference ? await variables(session, res.variablesReference) : [];
+  const out: DapVariable[] = [];
+  for (let i = 0; i < count; i++) {
+    const word = words[Math.floor(i / width)];
+    if (!word || !/^(?:0x[0-9a-f]+|\d+)$/i.test(word.value)) break;
+    const bit = (BigInt(word.value) >> BigInt(i % width)) & 1n;
+    out.push({ name: `[${i}]`, value: bit === 1n ? 'true' : 'false', type: 'bool', variablesReference: 0 });
+  }
+  return out;
 }
 
 /**
  * Entradas de um dicionário. O Map do JavaScript guarda as entradas num
  * filho "[[Entries]]"; coleções grandes podem vir em grupos "[0..99]".
  */
-async function readMap(session: Session, adapter: LanguageAdapter, v: DapVariable, max: number): Promise<MapVar['entries']> {
-  if (v.variablesReference <= 0 || !adapter.mapEntry) return [];
-  let children = await variables(session, v.variablesReference);
+async function readMap(session: Session, adapter: LanguageAdapter, v: DapVariable, max: number): Promise<{ entries: MapVar['entries']; size?: number }> {
+  if (v.variablesReference <= 0 || !adapter.mapEntry) return { entries: [] };
+  let children = await firstChildren(session, v, max);
+  const size = adapter.reportedSize?.(children);
   const inner = children.find((c) => c.name === '[[Entries]]') ?? children.find((c) => isRangeGroup(c.name));
   if (inner) children = await variables(session, inner.variablesReference);
   const entries: MapVar['entries'] = [];
   for (const c of children) {
-    const e = adapter.mapEntry(c);
-    if (!e) continue;
+    const raw = adapter.mapEntry(c);
+    if (!raw) continue;
+    const e = { key: clip(raw.key), value: clip(raw.value) };
     const items = entries.length < MAX_LIST_ENTRIES ? await entryList(session, adapter, c, e.value, max) : undefined;
     entries.push(items ? { ...e, value: `[${items.join(', ')}]`, items } : e);
     if (entries.length >= max) break;
   }
-  return entries;
+  return { entries, size };
 }
 
 /** Mensagem do erro capturado: no valor (Python, JavaScript) ou num campo do objeto (Java). */
@@ -480,17 +573,38 @@ const MAX_LIST_ENTRIES = 20;
  * Itens da lista guardada numa entrada. No JavaScript e no Python a própria
  * entrada é a lista; no Java a entrada é um nó com "key" e "value", e a lista
  * está em "value" ('"A":ImmutableCollections$List12@38' não mostra os itens).
+ * No C# a entrada é um KeyValuePair, e a lista está em "Value"
+ * ('{[k, System.Collections.Generic.List`1[System.Int32]]}').
  */
 async function entryList(session: Session, adapter: LanguageAdapter, c: DapVariable, value: string, max: number): Promise<string[] | undefined> {
   let list: DapVariable | undefined;
   if (adapter.shape(c).kind === 'sequence') list = c;
-  else if (c.variablesReference > 0 && /@\d+$/.test(value)) {
-    const inner = (await variables(session, c.variablesReference)).find((k) => k.name === 'value');
-    if (inner && adapter.shape(inner).kind === 'sequence') list = inner;
+  else if (c.variablesReference > 0 && (/@\d+$/.test(value) || /`\d+\[/.test(c.value))) {
+    const inner = (await variables(session, c.variablesReference)).find((k) => k.name === 'value' || k.name === 'Value');
+    const kind = inner ? adapter.shape(inner).kind : undefined;
+    if (kind === 'empty-list') return [];
+    if (inner && kind === 'sequence') list = inner;
   }
   const shape = list ? adapter.shape(list) : undefined;
   if (!list || shape?.kind !== 'sequence') return undefined;
   return (await readSequence(session, adapter, list, '', shape, max, 0)).array.values;
+}
+
+/**
+ * Filhos de um Map ou Set que o debugger pagina (indexedVariables): só as
+ * primeiras posições. Sem filtro, o js-debug devolve todos os itens, e um Map
+ * de 50 mil levava de 3 a 4 s por passo. Coleção pequena segue como antes.
+ */
+async function firstChildren(session: Session, v: DapVariable, max: number): Promise<DapVariable[]> {
+  if ((v.indexedVariables ?? 0) > max) {
+    try {
+      const page = await variables(session, v.variablesReference, { filter: 'indexed', start: 0, count: max });
+      if (page.length > 0) return page;
+    } catch {
+      // Debugger sem paginação: pede tudo, logo abaixo.
+    }
+  }
+  return variables(session, v.variablesReference);
 }
 
 async function variables(session: Session, variablesReference: number, extra: object = {}): Promise<DapVariable[]> {

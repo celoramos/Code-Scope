@@ -25,6 +25,7 @@ const INTEGER = /^(?:const )?(?:unsigned |signed )?(?:int|short|long|long long|l
 const SCALAR = /^(?:const )?(?:float|double|long double|bool|_Bool|char|unsigned char|signed char)$/;
 const ARRAY = /\[(\d+)\]$/;
 const VECTOR = /^(?:const )?std::(?:__\w+::)?vector</;
+const VECTOR_BOOL = /^(?:const )?std::(?:__\w+::)?vector<bool\b/;
 const MAP = /^(?:const )?std::(?:__\w+::)?(?:unordered_)?map</;
 /** Quantos itens o valor diz ter: "of length 3", "with 2 elements", "{ size=3 }". */
 const COUNT = /(?:of length |with |size=)(\d+)/;
@@ -98,6 +99,15 @@ export const cAdapter: LanguageAdapter = {
   indirectSequence(v) {
     if (!isOpaqueVector(v)) return undefined;
     const e = v.evaluateName ?? v.name;
+    // vector<bool> (_Bvector_base): um bit por item; início e fim são iteradores de bit (_M_p, _M_offset).
+    if (VECTOR_BOOL.test((v.type ?? '').trim())) {
+      const word = `sizeof(*${e}._M_impl._M_start._M_p)`;
+      return {
+        length: `(${e}._M_impl._M_finish._M_p - ${e}._M_impl._M_start._M_p) * 8 * ${word} + ${e}._M_impl._M_finish._M_offset`,
+        items: (n) => `*${e}._M_impl._M_start._M_p@${n}`,
+        bits: { width: word },
+      };
+    }
     return { length: `${e}._M_impl._M_finish - ${e}._M_impl._M_start`, items: (n) => `*${e}._M_impl._M_start@${n}` };
   },
   // Entrada de std::map: o nome é a chave, entre colchetes.

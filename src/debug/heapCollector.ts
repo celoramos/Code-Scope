@@ -30,6 +30,8 @@ export interface HeapOptions {
   frameId: number;
   /** Classes declaradas no arquivo; sem esta lista, todo objeto é desenhado. */
   userTypes?: ReadonlySet<string>;
+  /** Enums declarados no arquivo: viram a constante, não um objeto. */
+  enums?: ReadonlySet<string>;
 }
 
 /**
@@ -48,6 +50,11 @@ export class HeapCollector {
   async objectId(v: DapVariable): Promise<string | undefined> {
     const shape = this.ctx.adapter.shape(v);
     return shape.kind === 'object' ? this.ctx.visit(v, shape) : undefined;
+  }
+
+  /** "Cor.AZUL" se a variável guarda uma constante de um enum do arquivo. */
+  enumText(v: DapVariable): Promise<string | undefined> {
+    return this.ctx.constant(v);
   }
 
   /** Variáveis locais que apontam para objetos (ou para null). */
@@ -109,6 +116,20 @@ class HeapContext {
     private readonly opts: HeapOptions,
   ) {}
 
+  /**
+   * Constante de um enum do arquivo, como o aluno escreve: "Cor.AZUL". O
+   * java-debug mostra só "Estresse$Cor@40"; aberto, a variável "lazy" tem um
+   * único filho 'Estresse$Cor@40 "AZUL"', e o objeto em si tem o campo name.
+   */
+  async constant(v: DapVariable): Promise<string | undefined> {
+    const shape = this.adapter.shape(v);
+    if (shape.kind !== 'object' || !this.opts.enums?.has(shape.type)) return undefined;
+    const fields = await variables(this.session, v.variablesReference);
+    const lazy = fields.length === 1 ? /^\S+@\d+\s+"(.*)"$/.exec(fields[0].value)?.[1] : undefined;
+    const name = lazy ?? fields.find((f) => f.name === 'name')?.value.replace(/^"(.*)"$/, '$1');
+    return name ? `${shape.type}.${name}` : undefined;
+  }
+
   /** Lê o objeto (uma vez por id) e devolve o id, ou undefined se não é de uma classe do aluno. */
   async visit(v: DapVariable, shape: ObjectShape): Promise<string | undefined> {
     if (this.opts.userTypes && !this.opts.userTypes.has(shape.type)) return undefined;
@@ -136,6 +157,8 @@ class HeapContext {
     const s = this.adapter.shape(c);
     switch (s.kind) {
       case 'object': {
+        const constant = await this.constant(c);
+        if (constant !== undefined) return { name: c.name, value: constant };
         const ref = await this.visit(c, s);
         return ref !== undefined ? { name: c.name, value: c.value, ref } : { name: c.name, value: c.value };
       }
