@@ -74,9 +74,10 @@ export async function collectSnapshot(
   }
 
   // Objetos dos arrays e das variáveis passam pelo mesmo leitor: o mesmo objeto tem o mesmo id nos dois.
+  const userTypes = await opts.userTypes?.(file);
   const heapReader = new HeapCollector(session, adapter, {
     frameId: frame.id,
-    userTypes: await opts.userTypes?.(file),
+    userTypes,
     enums: await opts.enumTypes?.(file),
   });
   const arrays: ArrayVar[] = [];
@@ -160,7 +161,7 @@ export async function collectSnapshot(
   if (refs.length > 0) snapshot.refs = refs;
   alignHeap(opts.previous, snapshot);
 
-  const calls = await readCalls(session, adapter, stackFrames, snapshot);
+  const calls = await readCalls(session, adapter, stackFrames, snapshot, userTypes);
   if (calls.length > 0) snapshot.calls = calls;
 
   return {
@@ -250,6 +251,7 @@ async function readCalls(
   adapter: LanguageAdapter,
   stackFrames: DapStackFrame[],
   top: Snapshot,
+  userTypes?: ReadonlySet<string>,
 ): Promise<CallFrame[]> {
   const user: DapStackFrame[] = [];
   for (const f of stackFrames.slice(0, MAX_CALLS)) {
@@ -276,7 +278,7 @@ async function readCalls(
       vars = [];
       for (const v of locals.filter((x) => !adapter.returnValue?.(x))) {
         if (vars.length >= MAX_CALL_VARS) break;
-        vars.push(...(await summarizeCall(session, adapter, v, f.id)));
+        vars.push(...(await summarizeCall(session, adapter, v, f.id, userTypes)));
       }
       const self = locals.find((v) => v.name === 'self' || v.name === 'this');
       const shape = self ? adapter.shape(self) : undefined;
@@ -296,13 +298,42 @@ export const MAX_CALL_ITEMS = 8;
  * recursiva), cada chamada guarda um pedaço diferente, e é isso que o aluno
  * precisa ver na pilha. O resto fica como em summarize.
  */
-async function summarizeCall(session: Session, adapter: LanguageAdapter, v: DapVariable, frameId: number): Promise<Scalar[]> {
+async function summarizeCall(session: Session, adapter: LanguageAdapter, v: DapVariable, frameId: number, userTypes?: ReadonlySet<string>): Promise<Scalar[]> {
   const shape = adapter.shape(v);
+  // Objeto de uma classe do aluno: o tipo e os primeiros campos. Na recursão sobre uma árvore,
+  // cada chamada guarda um nó diferente. O this e o self já aparecem como dono da chamada.
+  if (shape.kind === 'object' && v.name !== 'this' && v.name !== 'self' && (!userTypes || userTypes.has(shape.type))) {
+    const text = await objectText(session, adapter, v, shape.type).catch(() => undefined);
+    return text ? [{ name: v.name, value: clip(text) }] : [];
+  }
   if (shape.kind !== 'sequence') return summarize(adapter, v);
   const read = await readSequence(session, adapter, v, v.name, shape, MAX_CALL_ITEMS, 0, undefined, frameId).catch(() => undefined);
   if (!read) return summarize(adapter, v);
   const { values, length } = read.array;
   return [{ name: v.name, value: `[${values.join(', ')}${length > values.length ? ', …' : ''}]` }];
+}
+
+/** "No {valor: 5, esq: No, dir: null}": o tipo e os primeiros campos, cada um em texto curto. */
+async function objectText(session: Session, adapter: LanguageAdapter, v: DapVariable, type: string): Promise<string> {
+  let fields = await variables(session, v.variablesReference);
+  const inner = adapter.pointee?.(fields);
+  if (inner) fields = await variables(session, inner.variablesReference);
+  fields = adapter.objectFields?.(fields) ?? fields;
+  const shown = fields.slice(0, MAX_CELL_FIELDS).map((f) => `${f.name}: ${shortValue(adapter, f)}`);
+  return `${type} {${shown.join(', ')}${fields.length > MAX_CELL_FIELDS ? ', …' : ''}}`;
+}
+
+/** Campo de um objeto numa chamada de baixo: outro objeto vira só o tipo, sem abrir. */
+function shortValue(adapter: LanguageAdapter, f: DapVariable): string {
+  const shape = adapter.shape(f);
+  switch (shape.kind) {
+    case 'object':
+      return shape.type;
+    case 'null':
+      return 'null';
+    default:
+      return summarize(adapter, f)[0]?.value ?? adapter.formatElement(f);
+  }
 }
 
 /** Variável como texto curto, sem abrir coleções. */
@@ -319,9 +350,18 @@ function summarize(adapter: LanguageAdapter, v: DapVariable): Scalar[] {
       return [{ name: v.name, value: '[]' }];
     case 'map':
       return [{ name: v.name, value: shape.length === undefined ? '{…}' : `{${shape.length}}` }];
+    case 'null':
+      // No caso base da recursão sobre uma árvore, no = null é o que faz a chamada parar.
+      return [{ name: v.name, value: adapter.formatElement(v) }];
     default:
       return [];
   }
+}
+
+/** Posições que guardam objetos: a referência, se é classe do aluno, ou a constante, se é enum. */
+interface ElementReader {
+  objectId(c: DapVariable): Promise<string | undefined>;
+  enumText(c: DapVariable): Promise<string | undefined>;
 }
 
 /**
@@ -329,11 +369,6 @@ function summarize(adapter: LanguageAdapter, v: DapVariable): Scalar[] {
  * são coleções vira matriz: cada linha é lida uma vez, até depth níveis abaixo.
  * Depois disso, os níveis ficam só como texto.
  */
-/** Posições que guardam objetos: a referência, se é classe do aluno, ou a constante, se é enum. */
-interface ElementReader {
-  objectId(c: DapVariable): Promise<string | undefined>;
-  enumText(c: DapVariable): Promise<string | undefined>;
-}
 
 async function readSequence(
   session: Session,

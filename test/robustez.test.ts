@@ -389,3 +389,44 @@ describe('Java: objeto com toString próprio', () => {
     ]);
   });
 });
+
+describe('Chamadas de baixo com objetos', () => {
+  // insere(no, 7) chamando a si mesma: em cima no = null, embaixo no é a raiz.
+  const vars: Record<number, Var[]> = {
+    1: [{ name: 'no', value: 'null', variablesReference: 0 }, { name: 'valor', value: '7', type: 'int', variablesReference: 0 }],
+    2: [
+      { name: 'no', value: 'Arvore$No@12', type: 'Arvore$No', variablesReference: 3 },
+      { name: 'valor', value: '7', type: 'int', variablesReference: 0 },
+      { name: 'leitor', value: 'Scanner@13', type: 'Scanner', variablesReference: 4 },
+    ],
+    3: [
+      { name: 'valor', value: '5', type: 'int', variablesReference: 0 },
+      { name: 'esq', value: 'Arvore$No@14', type: 'Arvore$No', variablesReference: 5 },
+      { name: 'dir', value: 'null', variablesReference: 0 },
+    ],
+  };
+  const frames: Session = {
+    async customRequest(command: string, args?: any) {
+      if (command === 'stackTrace') {
+        return {
+          stackFrames: [
+            { id: 10, name: 'Arvore.insere(No, int)', line: 9, source: { path: '/x/Arvore.java' } },
+            { id: 11, name: 'Arvore.insere(No, int)', line: 12, source: { path: '/x/Arvore.java' } },
+          ],
+        };
+      }
+      if (command === 'scopes') return { scopes: [{ name: 'Local', variablesReference: args.frameId === 10 ? 1 : 2 }] };
+      if (command === 'evaluate') return { result: 'false' };
+      return { variables: vars[args.variablesReference] ?? [] };
+    },
+  };
+
+  it('o nó de cada chamada aparece com os campos, e o null do caso base também', async () => {
+    const snap = (await collectSnapshot(frames, 1, javaAdapter, undefined, { userTypes: async () => new Set(['No']) }))!.snapshot;
+    const [below, top] = snap.calls ?? [];
+    assert.deepEqual(below.vars.find((v) => v.name === 'no'), { name: 'no', value: 'No {valor: 5, esq: No, dir: null}' });
+    // Objeto de biblioteca fica de fora, como no painel principal.
+    assert.equal(below.vars.find((v) => v.name === 'leitor'), undefined);
+    assert.deepEqual(top.vars.find((v) => v.name === 'valor'), { name: 'valor', value: '7' });
+  });
+});

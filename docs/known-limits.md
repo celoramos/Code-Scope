@@ -2,7 +2,7 @@
 
 What Code Scope does not do yet, or does differently from what you might expect.
 
-- Earlier calls on the call stack show their simple variables and the first 8 items of their arrays and lists, not their objects. At most 12 calls are read.
+- Earlier calls on the call stack show their simple variables, the first 8 items of their arrays and lists, and their objects as text with the first 3 fields (`No {valor: 5, esq: No, dir: null}`), without arrows. At most 12 calls are read.
 - Only objects of classes declared in the file being debugged are drawn, at most 40 per step. Objects inside a matrix show their main value in the cell and their card below. Enums declared in the file show as the constant (`Cor.AZUL`); enums from libraries are left out.
 - JavaScript does not show object identity, so the program itself is asked (`a === b`); across steps, an object keeps its identity by the paths that lead to it. A list rebuilt from scratch in a single step can look like new objects.
 - A condition part that calls a method is only evaluated when the method just reads (`len`, `.length`, `.size()`, `.equals`, `.get`...); otherwise it shows "cannot tell beforehand".

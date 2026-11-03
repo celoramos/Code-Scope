@@ -2,7 +2,7 @@
 
 O que o Code Scope ainda não faz, ou faz diferente do que você poderia esperar.
 
-- As chamadas de baixo na pilha mostram as variáveis simples e os 8 primeiros itens de arrays e listas, mas não os objetos. São lidas no máximo 12 chamadas.
+- As chamadas de baixo na pilha mostram as variáveis simples, os 8 primeiros itens de arrays e listas e os objetos como texto, com os 3 primeiros campos (`No {valor: 5, esq: No, dir: null}`), sem setas. São lidas no máximo 12 chamadas.
 - Só objetos de classes declaradas no arquivo que está sendo debugado são desenhados, no máximo 40 por passo. Objetos dentro de uma matriz mostram o valor principal na célula e o cartão embaixo. Enums declarados no arquivo aparecem como a constante (`Cor.AZUL`); enums de bibliotecas ficam de fora.
 - O JavaScript não mostra a identidade dos objetos, então a pergunta vai para o próprio programa (`a === b`); entre passos, o objeto mantém a identidade pelos caminhos que levam a ele. Uma lista refeita do zero num passo só pode parecer feita de objetos novos.
 - Uma parte de condição que chama um método só é avaliada quando o método apenas lê (`len`, `.length`, `.size()`, `.equals`, `.get`...); senão, aparece "não dá para saber antes".
