@@ -62,23 +62,9 @@ Levels: **no code** (you do not need to program), **beginner** (a few lines, one
 - **Why:** the JavaScript adapter was only tested on Node. The browser debugger (`pwa-chrome`) may format values differently.
 - **How:** debug a page with a script in Chrome or Edge from VS Code, with the Code Scope panel open and the log at *Debug*, and report (or fix) what is different.
 
-### 9. More C#: lists of objects, inheritance and try/catch
-
-- **Issue:** [#11](https://github.com/celoramos/Code-Scope/issues/11)
-- **Why:** the C# adapter (`src/debug/adapters/csharp.ts`) already draws arrays, `List`, `Stack`, `Queue`, `Dictionary` and objects, but the newer concepts (list of objects, polymorphism, handled errors, recursion tree) have no C# sample or test yet.
-- **Where:** `samples/csharp` (one class per sample, registered in `Program.cs` and `launch.json`) and `test/integration/csharp.itest.ts`.
-- **Done when:** each concept has a C# sample and an integration test.
-
-### 10. C++ containers: `std::stack`, `std::map` and an integration test
+### 9. C++ containers: an integration test
 
 - **Issue:** [#12](https://github.com/celoramos/Code-Scope/issues/12)
-- **Why:** the C adapter (`src/debug/adapters/c.ts`) reads `std::vector` with or without pretty-printers and `std::map` with them, but only from unit tests. `std::stack` is not drawn, and `std::map` needs a gdb with Python.
-- **Where:** `src/debug/adapters/c.ts` and `test/integration/c.itest.ts`.
-- **Done when:** the three are drawn in a real C++ session, with an integration test.
-
-### 11. Objects in the variables of earlier calls
-
-- **Issue:** [#13](https://github.com/celoramos/Code-Scope/issues/13)
-- **Why:** in the call stack, calls below the current one already show simple values and the first items of arrays, but not objects.
-- **Where:** `readCalls` in `src/debug/dapCollector.ts` and `renderCalls` in `media/src/calls.js`.
-- **Done when:** a call below the current one shows its objects, with a limit so F10 stays fast.
+- **Why:** the C adapter (`src/debug/adapters/c.ts`) draws `std::stack`, `std::queue`, `std::set` and `std::map` when gdb has the pretty-printers, and `std::vector` and `std::string` with or without them. This was checked in the stress run and in unit tests, but `test/integration/c.itest.ts` has no C++ container sample yet.
+- **Where:** a sample in `samples/c` and `test/integration/c.itest.ts`, with `-enable-pretty-printing` in `setupCommands`.
+- **Done when:** a real C++ session draws a stack, a queue, a set and a map, checked by an integration test.
