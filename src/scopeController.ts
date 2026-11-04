@@ -62,8 +62,8 @@ export class ScopeController implements vscode.Disposable {
 
   private async onSessionStart(session: vscode.DebugSession) {
     this.log.info(`sessão iniciada: ${session.name} (type=${session.type})`);
-    // O histórico da sessão anterior fica disponível até aqui.
-    this.stops.reset();
+    // O histórico da sessão anterior fica disponível até aqui. Aqui não se descarta leitura nenhuma:
+    // o js-debug abre uma sessão filha, e o início dela pode chegar com a primeira parada já sendo lida.
     this.history.clear();
     this.setState('running');
     this.view.post({ type: 'reset' });
