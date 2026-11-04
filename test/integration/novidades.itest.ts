@@ -129,8 +129,44 @@ describe('Novidades C++ real', function () {
   before(function () {
     if (!findTool('gdb') || !findTool('g++') || !vscode.extensions.getExtension('ms-vscode.cpptools')) this.skip();
     fs.mkdirSync(path.join(dir, 'build'), { recursive: true });
-    const r = cp.spawnSync('g++', ['-g', '-O0', 'vetor.cpp', '-o', 'build/vetor.exe'], { cwd: dir, shell: process.platform === 'win32', encoding: 'utf-8' });
-    if (r.status !== 0) throw new Error(`g++ falhou: ${r.stderr}`);
+    for (const name of ['vetor', 'colecoes']) {
+      const r = cp.spawnSync('g++', ['-g', '-O0', `${name}.cpp`, '-o', `build/${name}.exe`], { cwd: dir, shell: process.platform === 'win32', encoding: 'utf-8' });
+      if (r.status !== 0) throw new Error(`g++ falhou em ${name}.cpp: ${r.stderr}`);
+    }
+  });
+
+  it('colecoes.cpp: std::stack, std::queue, std::set, std::map e std::string', async function () {
+    const snaps = await debugFile({
+      file: path.join(dir, 'colecoes.cpp'),
+      breakpointLine: 10,
+      steps: 16,
+      config: {
+        type: 'cppdbg',
+        request: 'launch',
+        name: 'C++ colecoes',
+        program: path.join(dir, 'build', 'colecoes.exe'),
+        cwd: dir,
+        MIMode: 'gdb',
+        miDebuggerPath: findTool('gdb'),
+        externalConsole: false,
+        setupCommands: [{ text: '-enable-pretty-printing', ignoreFailures: true }],
+      },
+      dump: 'cpp-colecoes',
+    });
+    const end = snaps.at(-1);
+    // std::string aparece com ou sem os pretty-printers.
+    assert.ok(snaps.some((s) => s.scalars?.some((v) => v.name === 'nome' && v.value === '"Ana"')), `escalares: ${JSON.stringify(end?.scalars)}`);
+    // Os contêineres só aparecem quando o gdb tem os pretty-printers (o do runner do Linux não carregou no estresse).
+    if (!snaps.some((s) => arrayOf(s, 'vistos'))) {
+      console.warn('C++: gdb sem pretty-printers; std::stack, std::queue, std::set e std::map não foram conferidos.');
+      this.skip();
+    }
+    const full = snaps.find((s) => arrayOf(s, 'pratos')?.length === 2);
+    assert.deepEqual([arrayOf(full, 'pratos')?.kind, arrayOf(full, 'pratos')?.values], ['stack', ['1', '2']], `arrays: ${JSON.stringify(full?.arrays)}`);
+    assert.deepEqual([arrayOf(end, 'pratos')?.kind, arrayOf(end, 'pratos')?.values], ['stack', ['1']]);
+    assert.deepEqual([arrayOf(end, 'fila')?.kind, arrayOf(end, 'fila')?.values], ['queue', ['"Caio"']]);
+    assert.deepEqual([arrayOf(end, 'vistos')?.kind, arrayOf(end, 'vistos')?.values], ['set', ['3']]);
+    assert.deepEqual(end?.maps?.find((m) => m.name === 'idades')?.entries, [{ key: '"Ana"', value: '20' }]);
   });
 
   it('vetor.cpp: std::vector mostra os itens', async () => {
