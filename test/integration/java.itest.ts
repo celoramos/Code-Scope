@@ -207,6 +207,16 @@ describe('Java Debugger real', () => {
     assert.equal(heads.size, 1, `o nó do começo mudou de id: ${[...heads].join(', ')}`);
   });
 
+  it('Java árvore binária: a chamada de baixo mostra o nó que recebeu', async () => {
+    const snaps = await debugSample('ArvoreBinaria', 27, 40, 'stepInto');
+    const below = snaps.flatMap((s) => (s.calls ?? []).filter((c) => c.name === 'inserir').slice(0, -1));
+    const raiz = below.map((c) => c.vars.find((v) => v.name === 'raiz')?.value).filter(Boolean);
+    assert.ok(
+      raiz.some((v) => v?.startsWith('No {valor: 50')),
+      `raiz nas chamadas de baixo: ${raiz.join(' | ')}; pilhas: ${JSON.stringify(snaps.map((s) => s.calls?.map((c) => c.name)))}`,
+    );
+  });
+
   it('Java árvore binária: inserções formam a árvore de busca', async () => {
     const snaps = await debugSample('ArvoreBinaria', 27, 14);
     const best = snaps.reduce((a, s) => ((s.heap?.length ?? 0) > (a.heap?.length ?? 0) ? s : a), snaps[0]);
