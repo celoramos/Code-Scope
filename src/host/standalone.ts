@@ -77,7 +77,6 @@ async function onStopped(threadId: number | undefined, reason: string | undefine
 function receive(event: HostEvent) {
   switch (event.type) {
     case 'session-start':
-      stops.reset();
       history.clear();
       postToPanel({ type: 'reset' });
       setState('running');
