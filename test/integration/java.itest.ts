@@ -212,7 +212,8 @@ describe('Java Debugger real', () => {
     const below = snaps.flatMap((s) => (s.calls ?? []).filter((c) => c.name === 'inserir').slice(0, -1));
     const raiz = below.map((c) => c.vars.find((v) => v.name === 'raiz')?.value).filter(Boolean);
     assert.ok(
-      raiz.some((v) => v?.startsWith('No {valor: 50')),
+      // O java-debug manda os campos em ordem alfabética: No {direita: ..., esquerda: ..., valor: 50}.
+      raiz.some((v) => /^No \{.*\bvalor: 50\b/.test(v ?? '')),
       `raiz nas chamadas de baixo: ${raiz.join(' | ')}; pilhas: ${JSON.stringify(snaps.map((s) => s.calls?.map((c) => c.name)))}`,
     );
   });
