@@ -168,7 +168,9 @@ export function cleanValue(value: string): string {
  */
 export function collectionRole(source: string, name: string): CollectionRole | undefined {
   const n = name.replace(/\$/g, '\\$');
-  const declared = new RegExp(`\\b(\\w+)\\s*(?:<[^;=()]*>)?\\s+${n}\\s*[=;]`).exec(source)?.[1];
+  // Variável ("Stack<Integer> p = ...;") ou parâmetro ("void f(Stack<Integer> p)"): dentro da função
+  // que recebe a pilha, só o parâmetro diz que é um Stack. O tipo começa com maiúscula: "return p;" não declara.
+  const declared = new RegExp(`\\b([A-Z]\\w*)\\s*(?:<[^;=()]*>)?\\s+${n}\\s*[=;),]`).exec(source)?.[1];
   const created = new RegExp(`\\b${n}\\s*=\\s*new\\s+(\\w+)`).exec(source)?.[1];
   const ops = methodsCalledOn(source, name).map((c) => c.method);
 
