@@ -426,7 +426,7 @@ async function readSequence(
     const c = byIndex[i];
     refs.push(null);
     if (!c) {
-      values.push('?');
+      values.push(adapter.hole ?? '?');
       continue;
     }
     // Objeto de uma classe do aluno: a posição guarda a referência, e o rótulo vem depois.

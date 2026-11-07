@@ -84,6 +84,11 @@ export interface LanguageAdapter {
    */
   reportedSize?(children: DapVariable[]): number | undefined;
   /**
+   * Valor de uma posição dentro do tamanho que o debugger não mandou. Sem isto, a posição
+   * vira "?" (não foi lida). No JavaScript, é o buraco de um array esparso: vale undefined.
+   */
+  hole?: string;
+  /**
    * Coleção que o debugger não abre sozinho, lida por expressões: o tamanho e os
    * itens (std::vector num gdb sem os pretty-printers do Python).
    */

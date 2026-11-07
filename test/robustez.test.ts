@@ -467,3 +467,19 @@ describe('C++: contêineres com pretty-printers', () => {
     assert.deepEqual(cAdapter.shape({ name: 'pilha', value: '{...}', type: t('stack'), variablesReference: 2 }), { kind: 'skip' });
   });
 });
+
+describe('JavaScript: array esparso', () => {
+  it('posição que nunca recebeu valor vale undefined, não "?"', async () => {
+    const sieve = { name: 'sieve', value: '(5) [empty × 4, true]', type: 'object', variablesReference: 2, indexedVariables: 5 };
+    const base = session({ 1: [sieve], 2: [{ name: '4', value: 'true', type: 'boolean', variablesReference: 0 }] });
+    // O js-debug chama o escopo de "Local".
+    const js: Session = { customRequest: (c, a) => (c === 'scopes' ? Promise.resolve({ scopes: [{ name: 'Local', variablesReference: 1 }] }) : base.customRequest(c, a)) };
+    const snap = (await collectSnapshot(js, 1, javascriptAdapter))!.snapshot;
+    assert.deepEqual(snap.arrays[0].values, ['undefined', 'undefined', 'undefined', 'undefined', 'true']);
+  });
+  it('nas outras linguagens, posição que não veio continua "?"', async () => {
+    const v = { name: 'v', value: 'int[3]', type: 'int[]', variablesReference: 2, indexedVariables: 3 };
+    const snap = await collect({ 1: [v], 2: [{ name: '[2]', value: '7', type: 'int', variablesReference: 0 }] }, javaAdapter);
+    assert.equal(snap.arrays[0].values[0], '?');
+  });
+});
