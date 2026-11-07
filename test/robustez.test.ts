@@ -483,3 +483,24 @@ describe('JavaScript: array esparso', () => {
     assert.equal(snap.arrays[0].values[0], '?');
   });
 });
+
+describe('Campo que guarda um array', () => {
+  it('mostra os itens, não o tamanho entre colchetes', async () => {
+    const vars = {
+      1: [{ name: 'pilha', value: 'Pilha@12', type: 'Pilha', variablesReference: 2 }],
+      2: [
+        { name: 'itens', value: 'int[2]', type: 'int[]', variablesReference: 3, indexedVariables: 2 },
+        { name: 'vazio', value: 'int[0]', type: 'int[]', variablesReference: 4, indexedVariables: 0 },
+      ],
+      3: [
+        { name: '[0]', value: '1', type: 'int', variablesReference: 0 },
+        { name: '[1]', value: '2', type: 'int', variablesReference: 0 },
+      ],
+    };
+    const snap = (await collectSnapshot(session(vars), 1, javaAdapter, undefined, { userTypes: async () => new Set(['Pilha']) }))!.snapshot;
+    assert.deepEqual(snap.heap?.[0].fields, [
+      { name: 'itens', value: '[1, 2]' },
+      { name: 'vazio', value: '[]' },
+    ]);
+  });
+});

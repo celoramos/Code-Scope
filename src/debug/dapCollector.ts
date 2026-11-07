@@ -79,6 +79,11 @@ export async function collectSnapshot(
     frameId: frame.id,
     userTypes,
     enums: await opts.enumTypes?.(file),
+    // Campo que guarda um array (a pilha dentro de uma classe Stack): os itens, como na chamada de baixo.
+    sequenceText: async (v, shape) => {
+      const { values, length } = (await readSequence(session, adapter, v, v.name, shape, MAX_CALL_ITEMS, 0, undefined, frame.id)).array;
+      return `[${values.join(', ')}${length > values.length ? ', …' : ''}]`;
+    },
   });
   const arrays: ArrayVar[] = [];
   const arrayVars: { array: ArrayVar; v: DapVariable }[] = [];

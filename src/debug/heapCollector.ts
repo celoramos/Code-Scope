@@ -32,6 +32,11 @@ export interface HeapOptions {
   userTypes?: ReadonlySet<string>;
   /** Enums declarados no arquivo: viram a constante, não um objeto. */
   enums?: ReadonlySet<string>;
+  /**
+   * Itens de um array guardado num campo, como texto ("[1, 2]"). Sem isto, o campo mostra
+   * só o tamanho, e "[0]" parece um array com o número zero dentro.
+   */
+  sequenceText?: (v: DapVariable, shape: Extract<VariableShape, { kind: 'sequence' }>) => Promise<string | undefined>;
 }
 
 /**
@@ -169,8 +174,11 @@ class HeapContext {
       case 'scalar':
         // None/null/undefined num campo é uma referência vazia: a lista acaba ali.
         return this.adapter.isNull?.(c) ? { name: c.name, value: c.value, ref: null } : { name: c.name, value: s.value };
-      case 'sequence':
-        return { name: c.name, value: s.length === undefined ? '[…]' : `[${s.length}]` };
+      case 'sequence': {
+        if (s.length === 0) return { name: c.name, value: '[]' };
+        const text = await this.opts.sequenceText?.(c, s).catch(() => undefined);
+        return { name: c.name, value: text ?? (s.length === undefined ? '[…]' : `[${s.length}]`) };
+      }
       case 'empty-list':
         return { name: c.name, value: '[]' };
       case 'map':
