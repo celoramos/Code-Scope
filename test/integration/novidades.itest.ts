@@ -156,7 +156,7 @@ describe('Novidades C++ real', function () {
     const end = snaps.at(-1);
     // std::string aparece com ou sem os pretty-printers.
     assert.ok(snaps.some((s) => s.scalars?.some((v) => v.name === 'nome' && v.value === '"Ana"')), `escalares: ${JSON.stringify(end?.scalars)}`);
-    // Os contêineres só aparecem quando o gdb tem os pretty-printers (o do runner do Linux não carregou no estresse).
+    // Os contêineres só aparecem quando o gdb tem os pretty-printers. No CI do Linux, o gdb só os carrega sem o LD_LIBRARY_PATH do setup-python (ci.yml); o macOS não tem gdb.
     if (!snaps.some((s) => arrayOf(s, 'vistos'))) {
       console.warn('C++: gdb sem pretty-printers; std::stack, std::queue, std::set e std::map não foram conferidos.');
       this.skip();
