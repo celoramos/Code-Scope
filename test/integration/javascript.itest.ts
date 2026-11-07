@@ -28,6 +28,13 @@ function debugScript(name: string, breakpointLine: number, steps: number, step?:
 }
 
 describe('JavaScript (js-debug) real', () => {
+  it('calculadora.js: os números entram na pilha e o + tira os dois de cima', async () => {
+    const snaps = await debugScript('calculadora', 6, 14);
+    const pilhas = snaps.map((s) => s.arrays.find((a) => a.name === 'pilha')).filter((a) => a !== undefined);
+    assert.ok(pilhas.some((a) => a.kind === 'stack' && a.values.length === 2), `pilha: ${JSON.stringify(pilhas)}`);
+    assert.ok(allChanges(snaps).some((c) => c.kind === 'remove' && c.structure === 'stack'), `pop não reconhecido: ${JSON.stringify(allChanges(snaps))}`);
+  });
+
   it('somaMatriz.js: a grade aparece e a soma da primeira linha chega a 6', async () => {
     const snaps = await debugScript('somaMatriz', 8, 10);
     assert.deepEqual(snaps[0].arrays.find((a) => a.name === 'grade')?.rows?.map((r) => r.values), [['1', '2', '3'], ['4', '5', '6']]);

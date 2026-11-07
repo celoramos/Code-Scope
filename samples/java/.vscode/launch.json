@@ -245,6 +245,13 @@
       "request": "launch",
       "mainClass": "SomaMatriz",
       "stopOnEntry": true
+    },
+    {
+      "type": "java",
+      "name": "Calculadora",
+      "request": "launch",
+      "mainClass": "Calculadora",
+      "stopOnEntry": true
     }
   ]
 }
