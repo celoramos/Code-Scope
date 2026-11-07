@@ -22,6 +22,8 @@ type ObjectShape = Extract<VariableShape, { kind: 'object' }>;
 export const MAX_OBJECTS = 40;
 /** Perguntas "a === b" por passo, para debuggers sem identidade no valor. */
 const MAX_EVALS = 80;
+/** Campos com array lidos por passo: um grafo de 40 nós com lista de vizinhos não deve travar o F10. */
+export const MAX_SEQUENCE_FIELDS = 20;
 
 /** Ids inventados quando o debugger não dá um; únicos durante toda a sessão da extensão. */
 let syntheticIds = 0;
@@ -114,6 +116,7 @@ export async function linkSameArrays(
 class HeapContext {
   readonly objects = new Map<string, HeapObject>();
   private evals = 0;
+  private sequenceFields = 0;
 
   constructor(
     private readonly session: Session,
@@ -176,8 +179,9 @@ class HeapContext {
         return this.adapter.isNull?.(c) ? { name: c.name, value: c.value, ref: null } : { name: c.name, value: s.value };
       case 'sequence': {
         if (s.length === 0) return { name: c.name, value: '[]' };
-        const text = await this.opts.sequenceText?.(c, s).catch(() => undefined);
-        return { name: c.name, value: text ?? (s.length === undefined ? '[…]' : `[${s.length}]`) };
+        const text = this.sequenceFields++ < MAX_SEQUENCE_FIELDS ? await this.opts.sequenceText?.(c, s).catch(() => undefined) : undefined;
+        // Sem os itens, "[…]": o tamanho entre colchetes ("[3]") seria lido como um array com o 3 dentro.
+        return { name: c.name, value: text ?? '[…]' };
       }
       case 'empty-list':
         return { name: c.name, value: '[]' };

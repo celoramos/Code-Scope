@@ -81,8 +81,17 @@ export async function collectSnapshot(
     enums: await opts.enumTypes?.(file),
     // Campo que guarda um array (a pilha dentro de uma classe Stack): os itens, como na chamada de baixo.
     sequenceText: async (v, shape) => {
-      const { values, length } = (await readSequence(session, adapter, v, v.name, shape, MAX_CALL_ITEMS, 0, undefined, frame.id)).array;
-      return `[${values.join(', ')}${length > values.length ? ', …' : ''}]`;
+      // Matriz numa fileira só (int[,] do C#): os itens vêm em linhas, e uma linha de texto não dá conta.
+      if (shape.grid) return undefined;
+      const { array, children } = await readSequence(session, adapter, v, v.name, shape, MAX_CALL_ITEMS, 0, undefined, frame.id);
+      // Objeto dentro do array vira o tipo, como nas chamadas de baixo: o texto do debugger
+      // ("<__main__.No object at 0x7f...>" no Python) não diz nada ao aluno.
+      const values = array.values.map((text, i) => {
+        const c = children.find((x) => adapter.elementIndex(x.name) === i);
+        const s = c ? adapter.shape(c) : undefined;
+        return s?.kind === 'object' ? s.type : text;
+      });
+      return `[${values.join(', ')}${array.length > values.length ? ', …' : ''}]`;
     },
   });
   const arrays: ArrayVar[] = [];

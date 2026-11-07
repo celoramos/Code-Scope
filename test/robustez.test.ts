@@ -6,6 +6,7 @@ import { javaAdapter, pythonAdapter } from '../src/debug/adapters';
 import { javascriptAdapter } from '../src/debug/adapters/javascript';
 import { declaredEnums, type LanguageAdapter } from '../src/debug/adapters/adapter';
 import { collectSnapshot, functionName, type Session } from '../src/debug/dapCollector';
+import { MAX_SEQUENCE_FIELDS } from '../src/debug/heapCollector';
 
 type Var = { name: string; value: string; type?: string; variablesReference: number; evaluateName?: string; indexedVariables?: number };
 
@@ -502,5 +503,45 @@ describe('Campo que guarda um array', () => {
       { name: 'itens', value: '[1, 2]' },
       { name: 'vazio', value: '[]' },
     ]);
+  });
+});
+describe('Campo que guarda um array: casos de borda', () => {
+  it('objeto dentro do array do campo vira o tipo, não o texto do debugger', async () => {
+    const vars = {
+      1: [{ name: 'raiz', value: '<__main__.No object at 0x7f0000000001>', type: 'No', variablesReference: 2 }],
+      2: [{ name: 'filhos', value: '[<__main__.No object at 0x7f0000000002>]', type: 'list', variablesReference: 3 }],
+      3: [
+        { name: '0', value: '<__main__.No object at 0x7f0000000002>', type: 'No', variablesReference: 4 },
+        { name: 'len()', value: '1', type: 'int', variablesReference: 0 },
+      ],
+      4: [{ name: 'filhos', value: '[]', type: 'list', variablesReference: 0 }],
+    };
+    const snap = (await collectSnapshot(session(vars), 1, pythonAdapter, undefined, { userTypes: async () => new Set(['No']) }))!.snapshot;
+    const raiz = snap.heap?.find((o) => o.fields.some((f) => f.name === 'filhos' && f.value !== '[]'));
+    assert.deepEqual(raiz?.fields, [{ name: 'filhos', value: '[No]' }]);
+  });
+  it(`só os primeiros ${MAX_SEQUENCE_FIELDS} campos com array são lidos por passo; os outros mostram […]`, async () => {
+    const n = MAX_SEQUENCE_FIELDS + 1;
+    const vars: Record<number, Var[]> = { 1: [] };
+    for (let k = 0; k < n; k++) {
+      vars[1].push({ name: `p${k}`, value: `Pilha@${100 + k}`, type: 'Pilha', variablesReference: 100 + k });
+      vars[100 + k] = [{ name: 'itens', value: 'int[1]', type: 'int[]', variablesReference: 300 + k, indexedVariables: 1 }];
+      vars[300 + k] = [{ name: '[0]', value: String(k), type: 'int', variablesReference: 0 }];
+    }
+    const snap = (await collectSnapshot(session(vars), 1, javaAdapter, undefined, { userTypes: async () => new Set(['Pilha']) }))!.snapshot;
+    const texts = snap.heap?.map((o) => o.fields[0].value);
+    assert.equal(texts?.length, n);
+    assert.equal(texts?.filter((t) => t === '[…]').length, 1);
+    assert.ok(texts?.every((t) => t === '[…]' || /^\[\d+\]$/.test(t)), JSON.stringify(texts));
+  });
+  it('matriz int[,] num campo mostra […], não uma linha de vírgulas', async () => {
+    const cells = Array.from({ length: 4 }, (_, k) => ({ name: `[${Math.floor(k / 2)}, ${k % 2}]`, value: String(k), type: 'int', variablesReference: 0 }));
+    const vars = {
+      1: [{ name: 't', value: '{Tabuleiro}', type: 'Tabuleiro', variablesReference: 2 }],
+      2: [{ name: 'casas', value: '{int[2, 2]}', type: 'int[,]', variablesReference: 3 }],
+      3: cells,
+    };
+    const snap = (await collectSnapshot(session(vars), 1, csharpAdapter, undefined, { userTypes: async () => new Set(['Tabuleiro']) }))!.snapshot;
+    assert.deepEqual(snap.heap?.[0].fields, [{ name: 'casas', value: '[…]' }]);
   });
 });
