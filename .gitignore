@@ -10,5 +10,6 @@ samples/csharp/obj/
 samples/c/build/
 # Gerados por test/reais/preparar.mjs, só no CI.
 test/reais/plano.json
+test/reais/gerados.txt
 samples/python/reais/
 samples/javascript/reais/
