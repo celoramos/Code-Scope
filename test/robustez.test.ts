@@ -606,3 +606,21 @@ describe('Quadro sem arquivo no topo da pilha', () => {
     assert.deepEqual(snap.calls?.map((c) => c.name), ['main']);
   });
 });
+describe('Java: valor devolvido', () => {
+  it('"->binSearchAlgo()" vira o valor devolvido, não uma variável', async () => {
+    const vars = {
+      1: [
+        { name: '->binSearchAlgo()', value: '3', type: 'int', variablesReference: 0 },
+        { name: 'k', value: '1', type: 'int', variablesReference: 0 },
+      ],
+    };
+    const snap = (await collectSnapshot(session(vars), 1, javaAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { function: 'binSearchAlgo', value: '3' });
+    assert.deepEqual(snap.pointers.map((p) => p.name), ['k']);
+  });
+  it('array e objeto devolvidos aparecem como o aluno escreve o tipo', () => {
+    assert.deepEqual(javaAdapter.returnValue?.({ name: '->sort()', value: 'int[7] (id=41)', type: 'int[]', variablesReference: 5 }), { function: 'sort', value: 'int[7]' });
+    assert.deepEqual(javaAdapter.returnValue?.({ name: '->novo()', value: 'No@12', type: 'No', variablesReference: 6 }), { function: 'novo', value: 'No' });
+    assert.equal(javaAdapter.returnValue?.({ name: 'resultado', value: '3', type: 'int', variablesReference: 0 }), undefined);
+  });
+});
