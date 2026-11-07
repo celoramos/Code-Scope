@@ -231,6 +231,13 @@
       "request": "launch",
       "mainClass": "SelectionSort",
       "stopOnEntry": true
+    },
+    {
+      "type": "java",
+      "name": "InsertionSort",
+      "request": "launch",
+      "mainClass": "InsertionSort",
+      "stopOnEntry": true
     }
   ]
 }

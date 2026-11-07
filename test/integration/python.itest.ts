@@ -49,6 +49,13 @@ function debugScript(name: string, breakpointLine: number, steps: number, step?:
 }
 
 describe('Python (debugpy) real', function () {
+  it('insertion_sort.py: o 11 desliza para antes do 12', async () => {
+    const snaps = await debugScript('insertion_sort', 5, 12);
+    const values = snaps.map((s) => s.arrays.find((a) => a.name === 'numeros')?.values.join(','));
+    assert.ok(values.includes('12,12,13,5,6'), `o 12 não andou uma casa: ${values.join(' | ')}`);
+    assert.ok(values.includes('11,12,13,5,6'), `o 11 não entrou na frente: ${values.join(' | ')}`);
+  });
+
   it('selection_sort.py: menor vira seta e a troca acontece num passo só', async () => {
     const snaps = await debugScript('selection_sort', 5, 18);
     assert.ok(snaps.some((s) => s.pointers.some((p) => p.name === 'menor')), `menor nunca apareceu: ${JSON.stringify(snaps.map((s) => s.pointers))}`);

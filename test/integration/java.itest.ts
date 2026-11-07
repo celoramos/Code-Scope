@@ -36,6 +36,13 @@ function debugSample(name: string, breakpointLine: number, steps: number, step?:
 }
 
 describe('Java Debugger real', () => {
+  it('InsertionSort: o 11 desliza para antes do 12', async () => {
+    const snaps = await debugSample('InsertionSort', 6, 12);
+    const values = snaps.map((s) => s.arrays.find((a) => a.name === 'numeros')?.values.join(','));
+    assert.ok(values.includes('12,12,13,5,6'), `o 12 não andou uma casa: ${values.join(' | ')}`);
+    assert.ok(values.includes('11,12,13,5,6'), `o 11 não entrou na frente: ${values.join(' | ')}`);
+  });
+
   it('SelectionSort: menor vira seta e o menor valor vai para a frente', async () => {
     const snaps = await debugSample('SelectionSort', 6, 22);
     assert.ok(snaps.some((s) => s.pointers.some((p) => p.name === 'menor')), `menor nunca apareceu: ${JSON.stringify(snaps.map((s) => s.pointers))}`);

@@ -28,6 +28,13 @@ function debugScript(name: string, breakpointLine: number, steps: number, step?:
 }
 
 describe('JavaScript (js-debug) real', () => {
+  it('insertionSort.js: o 11 desliza para antes do 12', async () => {
+    const snaps = await debugScript('insertionSort', 4, 12);
+    const values = snaps.map((s) => s.arrays.find((a) => a.name === 'numeros')?.values.join(','));
+    assert.ok(values.includes('12,12,13,5,6'), `o 12 não andou uma casa: ${values.join(' | ')}`);
+    assert.ok(values.includes('11,12,13,5,6'), `o 11 não entrou na frente: ${values.join(' | ')}`);
+  });
+
   it('selectionSort.js: menor vira seta e o menor valor vai para a frente', async () => {
     const snaps = await debugScript('selectionSort', 4, 22);
     assert.ok(snaps.some((s) => s.pointers.some((p) => p.name === 'menor')), `menor nunca apareceu: ${JSON.stringify(snaps.map((s) => s.pointers))}`);
