@@ -238,6 +238,13 @@
       "request": "launch",
       "mainClass": "InsertionSort",
       "stopOnEntry": true
+    },
+    {
+      "type": "java",
+      "name": "SomaMatriz",
+      "request": "launch",
+      "mainClass": "SomaMatriz",
+      "stopOnEntry": true
     }
   ]
 }

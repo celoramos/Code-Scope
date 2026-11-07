@@ -28,6 +28,13 @@ function debugScript(name: string, breakpointLine: number, steps: number, step?:
 }
 
 describe('JavaScript (js-debug) real', () => {
+  it('somaMatriz.js: a grade aparece e a soma da primeira linha chega a 6', async () => {
+    const snaps = await debugScript('somaMatriz', 8, 10);
+    assert.deepEqual(snaps[0].arrays.find((a) => a.name === 'grade')?.rows?.map((r) => r.values), [['1', '2', '3'], ['4', '5', '6']]);
+    const somas = snaps.map((s) => s.scalars?.find((v) => v.name === 'soma')?.value);
+    assert.ok(somas.includes('6'), `soma: ${somas.join(' | ')}`);
+  });
+
   it('insertionSort.js: o 11 desliza para antes do 12', async () => {
     const snaps = await debugScript('insertionSort', 4, 12);
     const values = snaps.map((s) => s.arrays.find((a) => a.name === 'numeros')?.values.join(','));
