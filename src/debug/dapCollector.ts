@@ -52,13 +52,19 @@ export async function collectSnapshot(
   limits: Limits = DEFAULT_LIMITS,
   opts: CollectOptions = {},
 ): Promise<Collected | undefined> {
-  const { stackFrames } = (await session.customRequest('stackTrace', {
+  let { stackFrames } = (await session.customRequest('stackTrace', {
     threadId,
     startFrame: 0,
     levels: MAX_CALLS + 1,
   })) as { stackFrames: DapStackFrame[] };
+  // Quadro sem arquivo nenhum é código nativo ou da JVM: o aluno não tem o que ver nele. O passo é o
+  // do primeiro quadro com arquivo (o erro lançado no System.arraycopy aparece na linha do aluno).
+  // Sem nenhum, não há passo: um F11 depois do fim do main cai no encerramento da JVM, e o painel
+  // desenhava Thread, ClassLoader e companhia.
+  const top = stackFrames.findIndex((f) => !!(f.source?.path || f.source?.name));
+  if (top < 0) return undefined;
+  if (top > 0) stackFrames = stackFrames.slice(top);
   const frame = stackFrames[0];
-  if (!frame) return undefined;
   const file = frame.source?.path ?? frame.source?.name ?? '';
   const adapter = typeof pick === 'function' ? pick(file) : pick;
   // Daqui em diante toda resposta de "variables" já vem arrumada pelo adaptador.

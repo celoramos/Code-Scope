@@ -579,3 +579,30 @@ describe('Texto curto de coleção nas chamadas de baixo', () => {
     assert.match(g.value, /vazio: \[\]/);
   });
 });
+describe('Quadro sem arquivo no topo da pilha', () => {
+  const frames = (stackFrames: object[], vars: Record<number, Var[]>): Session => ({
+    async customRequest(command: string, args?: any) {
+      if (command === 'stackTrace') return { stackFrames };
+      if (command === 'scopes') return { scopes: [{ name: 'Locals', variablesReference: args.frameId }] };
+      if (command === 'evaluate') return { result: 'false' };
+      return { variables: vars[args.variablesReference] ?? [] };
+    },
+  });
+  it('F11 depois do fim do main (encerramento da JVM) não vira passo', async () => {
+    const jvm = frames([{ id: 1, name: 'Thread.exit()', line: 0 }], { 1: [{ name: 'this', value: 'Thread@5', type: 'Thread', variablesReference: 7 }] });
+    assert.equal(await collectSnapshot(jvm, 1, javaAdapter), undefined);
+  });
+  it('erro lançado em código nativo aparece na linha do aluno', async () => {
+    const s = frames(
+      [
+        { id: 1, name: 'System.arraycopy(Object, int, Object, int, int)', line: 0 },
+        { id: 2, name: 'Copia.main(String[])', line: 6, source: { path: '/x/Copia.java' } },
+      ],
+      { 1: [], 2: [{ name: 'origem', value: 'int[2]', type: 'int[]', variablesReference: 3, indexedVariables: 2 }], 3: items(2) },
+    );
+    const snap = (await collectSnapshot(s, 1, javaAdapter))!.snapshot;
+    assert.deepEqual([snap.file, snap.line], ['/x/Copia.java', 6]);
+    assert.deepEqual(snap.arrays.map((a) => a.name), ['origem']);
+    assert.deepEqual(snap.calls?.map((c) => c.name), ['main']);
+  });
+});
