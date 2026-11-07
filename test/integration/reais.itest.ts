@@ -80,7 +80,7 @@ async function rodar(caso: Caso): Promise<Snapshot[]> {
       for (const [re, motivo] of LIXO) if (re.test(valor)) achados.push(`passo ${k + 1}, ${onde}: ${motivo}: ${valor.slice(0, 80)}`);
     }
   });
-  const tipos = new Set(snaps.flatMap((s) => s.arrays.map((a) => a.kind)));
+  const tipos = new Set(snaps.flatMap((s) => s.arrays.map((a) => a.kind ?? (a.rows ? 'matriz' : 'array'))));
   console.log(`REAIS ${caso.id}: ${snaps.length} passos, coleções ${[...tipos].join(' ') || 'nenhuma'}, ${achados.length} achados`);
   assert.deepEqual([...new Set(achados)].slice(0, 20), [], `${caso.id}: o painel mostrou texto interno`);
   return snaps;
