@@ -49,6 +49,14 @@ function debugScript(name: string, breakpointLine: number, steps: number, step?:
 }
 
 describe('Python (debugpy) real', function () {
+  it('selection_sort.py: menor vira seta e a troca acontece num passo só', async () => {
+    const snaps = await debugScript('selection_sort', 5, 18);
+    assert.ok(snaps.some((s) => s.pointers.some((p) => p.name === 'menor')), `menor nunca apareceu: ${JSON.stringify(snaps.map((s) => s.pointers))}`);
+    const values = snaps.map((s) => s.arrays.find((a) => a.name === 'numeros')?.values.join(','));
+    assert.ok(values.includes('10,29,14,37,13'), `o 10 não foi para a frente: ${values.join(' | ')}`);
+    assert.ok(allChanges(snaps).some((c) => c.kind === 'swap'), `nenhuma troca: ${JSON.stringify(allChanges(snaps))}`);
+  });
+
   before(function () {
     if (!fs.existsSync(python)) {
       console.warn(`Python não encontrado em ${python}; testes de Python pulados.`);

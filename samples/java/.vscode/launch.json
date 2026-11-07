@@ -224,6 +224,13 @@
       "request": "launch",
       "mainClass": "Cubo",
       "stopOnEntry": true
+    },
+    {
+      "type": "java",
+      "name": "SelectionSort",
+      "request": "launch",
+      "mainClass": "SelectionSort",
+      "stopOnEntry": true
     }
   ]
 }

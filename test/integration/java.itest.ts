@@ -36,6 +36,13 @@ function debugSample(name: string, breakpointLine: number, steps: number, step?:
 }
 
 describe('Java Debugger real', () => {
+  it('SelectionSort: menor vira seta e o menor valor vai para a frente', async () => {
+    const snaps = await debugSample('SelectionSort', 6, 22);
+    assert.ok(snaps.some((s) => s.pointers.some((p) => p.name === 'menor')), `menor nunca apareceu: ${JSON.stringify(snaps.map((s) => s.pointers))}`);
+    const values = snaps.map((s) => s.arrays.find((a) => a.name === 'numeros')?.values.join(','));
+    assert.ok(values.includes('10,29,14,37,13'), `o 10 não foi para a frente: ${values.join(' | ')}`);
+  });
+
   it('BubbleSort: lê o array, os ponteiros e reconhece a troca com temp', async () => {
     const snaps = await debugSample('BubbleSort', 6, 12);
     assert.ok(visibleAtFirstStop, 'o painel não estava visível na primeira parada');
