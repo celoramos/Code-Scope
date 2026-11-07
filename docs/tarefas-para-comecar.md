@@ -35,19 +35,7 @@ Níveis: **sem código** (não precisa programar), **iniciante** (poucas linhas,
 
 ## Iniciante
 
-### 5. Um exemplo novo: ordenação por seleção
-
-- **Issue:** [#6](https://github.com/celoramos/Code-Scope/issues/6)
-- **Por quê:** cada algoritmo clássico é uma aula nova que o painel pode dar.
-- **Onde:** `samples/java`, `samples/javascript`, `samples/python`. Siga o `BubbleSort.java` e o `bubbleSort.js`. No Java, acrescente a configuração em `samples/java/.vscode/launch.json`.
-- **Pronto quando:** o exemplo roda com F5 e o comentário diz onde pôr o breakpoint.
-
-### 6. Mais exemplos: ordenação por inserção, soma de matriz, calculadora com pilha
-
-- **Issue:** [#7](https://github.com/celoramos/Code-Scope/issues/7)
-- Igual ao anterior. Um exemplo por pull request está ótimo.
-
-### 7. Gravar GIFs novos para o README
+### 5. Gravar GIFs novos para o README
 
 - **Issue:** [#8](https://github.com/celoramos/Code-Scope/issues/8)
 - **Por quê:** o README mostra arrays, pilhas, filas, recursão, erros, grafos e objetos. A pilha de chamadas, as listas ligadas, o teste de mesa, os exercícios e as filas de prioridade ainda não têm demonstração.
@@ -56,15 +44,8 @@ Níveis: **sem código** (não precisa programar), **iniciante** (poucas linhas,
 
 ## Intermediário
 
-### 8. JavaScript no navegador
+### 6. JavaScript no navegador
 
 - **Issue:** [#10](https://github.com/celoramos/Code-Scope/issues/10)
 - **Por quê:** o adaptador de JavaScript só foi testado no Node. O debugger do navegador (`pwa-chrome`) pode formatar os valores de outro jeito.
 - **Como:** debugue uma página com script no Chrome ou no Edge pelo VS Code, com o painel aberto e o log em *Debug*, e conte (ou corrija) o que mudar.
-
-### 9. Coleções do C++: um teste de integração
-
-- **Issue:** [#12](https://github.com/celoramos/Code-Scope/issues/12)
-- **Por quê:** o adaptador de C (`src/debug/adapters/c.ts`) desenha `std::stack`, `std::queue`, `std::set` e `std::map` quando o gdb tem os pretty-printers, e `std::vector` e `std::string` com ou sem eles. Isso foi conferido no estresse e em testes unitários, mas `test/integration/c.itest.ts` ainda não tem um exemplo com essas coleções.
-- **Onde:** um exemplo em `samples/c` e `test/integration/c.itest.ts`, com `-enable-pretty-printing` em `setupCommands`.
-- **Pronto quando:** uma sessão real de C++ desenha uma pilha, uma fila, um conjunto e um mapa, conferidos por um teste de integração.

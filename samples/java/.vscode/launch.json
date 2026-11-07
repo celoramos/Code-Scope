@@ -224,6 +224,34 @@
       "request": "launch",
       "mainClass": "Cubo",
       "stopOnEntry": true
+    },
+    {
+      "type": "java",
+      "name": "SelectionSort",
+      "request": "launch",
+      "mainClass": "SelectionSort",
+      "stopOnEntry": true
+    },
+    {
+      "type": "java",
+      "name": "InsertionSort",
+      "request": "launch",
+      "mainClass": "InsertionSort",
+      "stopOnEntry": true
+    },
+    {
+      "type": "java",
+      "name": "SomaMatriz",
+      "request": "launch",
+      "mainClass": "SomaMatriz",
+      "stopOnEntry": true
+    },
+    {
+      "type": "java",
+      "name": "Calculadora",
+      "request": "launch",
+      "mainClass": "Calculadora",
+      "stopOnEntry": true
     }
   ]
 }

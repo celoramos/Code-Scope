@@ -27,9 +27,16 @@ export interface TraceRow {
 
 /** Linhas guardadas na tabela; o painel rola, mas mil linhas pesam no navegador. */
 export const MAX_TRACE_ROWS = 200;
-/** Arrays maiores que isto viram "[...]" na tabela: a célula precisa caber. */
+/**
+ * Arrays maiores que isto mostram só os primeiros itens e "…": a célula precisa caber.
+ * O tamanho entre colchetes ("[9]") seria lido como um array com o 9 dentro.
+ */
 const MAX_INLINE_ARRAY = 8;
 const MAX_INLINE_MAP = 4;
+
+/** "[1, 2, …]": os primeiros itens e reticências quando há mais. */
+const inline = (items: string[], total: number, max: number, open: string, close: string) =>
+  `${open}${items.slice(0, max).join(', ')}${total > Math.min(items.length, max) ? ', …' : ''}${close}`;
 
 /** Variáveis do passo como texto, na ordem em que o painel mostra. */
 export function traceValues(s: Snapshot): Map<string, string> {
@@ -42,10 +49,10 @@ export function traceValues(s: Snapshot): Map<string, string> {
       out.set(a.name, `"${a.values.map((v) => v.slice(1, -1)).join('')}"`);
       continue;
     }
-    out.set(a.name, a.length <= MAX_INLINE_ARRAY ? `[${a.values.join(', ')}]` : `[${a.length}]`);
+    out.set(a.name, inline(a.values, a.length, MAX_INLINE_ARRAY, '[', ']'));
   }
   for (const m of s.maps ?? []) {
-    out.set(m.name, m.length <= MAX_INLINE_MAP ? `{${m.entries.map((e) => `${e.key}: ${e.value}`).join(', ')}}` : `{${m.length}}`);
+    out.set(m.name, inline(m.entries.map((e) => `${e.key}: ${e.value}`), m.length, MAX_INLINE_MAP, '{', '}'));
   }
   return out;
 }

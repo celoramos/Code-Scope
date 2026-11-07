@@ -69,6 +69,15 @@ jobs:
         run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y gdb
+      # O setup-python põe o lib dele no LD_LIBRARY_PATH; com isso, o gdb do apt carrega o libpython
+      # errado ("No module named 'math'") e perde os pretty-printers do libstdc++ (issue #12).
+      # Este gdb vem antes no PATH e roda o do sistema sem a variável; o debugpy continua com ela.
+      - if: runner.os == 'Linux'
+        run: |
+          mkdir -p "$RUNNER_TEMP/gdb-limpo"
+          printf '#!/bin/sh\nexec env -u LD_LIBRARY_PATH /usr/bin/gdb "$@"\n' > "$RUNNER_TEMP/gdb-limpo/gdb"
+          chmod +x "$RUNNER_TEMP/gdb-limpo/gdb"
+          echo "$RUNNER_TEMP/gdb-limpo" >> "$GITHUB_PATH"
       - run: npm ci
       # O VS Code precisa de uma tela; no Linux ela é virtual.
       - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:integration 2>&1 | tee itest.log

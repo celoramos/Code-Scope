@@ -6,6 +6,7 @@ import { javaAdapter, pythonAdapter } from '../src/debug/adapters';
 import { javascriptAdapter } from '../src/debug/adapters/javascript';
 import { declaredEnums, type LanguageAdapter } from '../src/debug/adapters/adapter';
 import { collectSnapshot, functionName, type Session } from '../src/debug/dapCollector';
+import { MAX_SEQUENCE_FIELDS } from '../src/debug/heapCollector';
 
 type Var = { name: string; value: string; type?: string; variablesReference: number; evaluateName?: string; indexedVariables?: number };
 
@@ -465,5 +466,116 @@ describe('C++: contêineres com pretty-printers', () => {
   });
   it('sem os pretty-printers, a pilha fica de fora em vez de mostrar campos internos', () => {
     assert.deepEqual(cAdapter.shape({ name: 'pilha', value: '{...}', type: t('stack'), variablesReference: 2 }), { kind: 'skip' });
+  });
+});
+
+describe('JavaScript: array esparso', () => {
+  it('posição que nunca recebeu valor vale undefined, não "?"', async () => {
+    const sieve = { name: 'sieve', value: '(5) [empty × 4, true]', type: 'object', variablesReference: 2, indexedVariables: 5 };
+    const base = session({ 1: [sieve], 2: [{ name: '4', value: 'true', type: 'boolean', variablesReference: 0 }] });
+    // O js-debug chama o escopo de "Local".
+    const js: Session = { customRequest: (c, a) => (c === 'scopes' ? Promise.resolve({ scopes: [{ name: 'Local', variablesReference: 1 }] }) : base.customRequest(c, a)) };
+    const snap = (await collectSnapshot(js, 1, javascriptAdapter))!.snapshot;
+    assert.deepEqual(snap.arrays[0].values, ['undefined', 'undefined', 'undefined', 'undefined', 'true']);
+  });
+  it('nas outras linguagens, posição que não veio continua "?"', async () => {
+    const v = { name: 'v', value: 'int[3]', type: 'int[]', variablesReference: 2, indexedVariables: 3 };
+    const snap = await collect({ 1: [v], 2: [{ name: '[2]', value: '7', type: 'int', variablesReference: 0 }] }, javaAdapter);
+    assert.equal(snap.arrays[0].values[0], '?');
+  });
+});
+
+describe('Campo que guarda um array', () => {
+  it('mostra os itens, não o tamanho entre colchetes', async () => {
+    const vars = {
+      1: [{ name: 'pilha', value: 'Pilha@12', type: 'Pilha', variablesReference: 2 }],
+      2: [
+        { name: 'itens', value: 'int[2]', type: 'int[]', variablesReference: 3, indexedVariables: 2 },
+        { name: 'vazio', value: 'int[0]', type: 'int[]', variablesReference: 4, indexedVariables: 0 },
+      ],
+      3: [
+        { name: '[0]', value: '1', type: 'int', variablesReference: 0 },
+        { name: '[1]', value: '2', type: 'int', variablesReference: 0 },
+      ],
+    };
+    const snap = (await collectSnapshot(session(vars), 1, javaAdapter, undefined, { userTypes: async () => new Set(['Pilha']) }))!.snapshot;
+    assert.deepEqual(snap.heap?.[0].fields, [
+      { name: 'itens', value: '[1, 2]' },
+      { name: 'vazio', value: '[]' },
+    ]);
+  });
+});
+describe('Campo que guarda um array: casos de borda', () => {
+  it('objeto dentro do array do campo vira o tipo, não o texto do debugger', async () => {
+    const vars = {
+      1: [{ name: 'raiz', value: '<__main__.No object at 0x7f0000000001>', type: 'No', variablesReference: 2 }],
+      2: [{ name: 'filhos', value: '[<__main__.No object at 0x7f0000000002>]', type: 'list', variablesReference: 3 }],
+      3: [
+        { name: '0', value: '<__main__.No object at 0x7f0000000002>', type: 'No', variablesReference: 4 },
+        { name: 'len()', value: '1', type: 'int', variablesReference: 0 },
+      ],
+      4: [{ name: 'filhos', value: '[]', type: 'list', variablesReference: 0 }],
+    };
+    const snap = (await collectSnapshot(session(vars), 1, pythonAdapter, undefined, { userTypes: async () => new Set(['No']) }))!.snapshot;
+    const raiz = snap.heap?.find((o) => o.fields.some((f) => f.name === 'filhos' && f.value !== '[]'));
+    assert.deepEqual(raiz?.fields, [{ name: 'filhos', value: '[No]' }]);
+  });
+  it(`só os primeiros ${MAX_SEQUENCE_FIELDS} campos com array são lidos por passo; os outros mostram […]`, async () => {
+    const n = MAX_SEQUENCE_FIELDS + 1;
+    const vars: Record<number, Var[]> = { 1: [] };
+    for (let k = 0; k < n; k++) {
+      vars[1].push({ name: `p${k}`, value: `Pilha@${100 + k}`, type: 'Pilha', variablesReference: 100 + k });
+      vars[100 + k] = [{ name: 'itens', value: 'int[1]', type: 'int[]', variablesReference: 300 + k, indexedVariables: 1 }];
+      vars[300 + k] = [{ name: '[0]', value: String(k), type: 'int', variablesReference: 0 }];
+    }
+    const snap = (await collectSnapshot(session(vars), 1, javaAdapter, undefined, { userTypes: async () => new Set(['Pilha']) }))!.snapshot;
+    const texts = snap.heap?.map((o) => o.fields[0].value);
+    assert.equal(texts?.length, n);
+    assert.equal(texts?.filter((t) => t === '[…]').length, 1);
+    assert.ok(texts?.every((t) => t === '[…]' || /^\[\d+\]$/.test(t)), JSON.stringify(texts));
+  });
+  it('matriz int[,] num campo mostra […], não uma linha de vírgulas', async () => {
+    const cells = Array.from({ length: 4 }, (_, k) => ({ name: `[${Math.floor(k / 2)}, ${k % 2}]`, value: String(k), type: 'int', variablesReference: 0 }));
+    const vars = {
+      1: [{ name: 't', value: '{Tabuleiro}', type: 'Tabuleiro', variablesReference: 2 }],
+      2: [{ name: 'casas', value: '{int[2, 2]}', type: 'int[,]', variablesReference: 3 }],
+      3: cells,
+    };
+    const snap = (await collectSnapshot(session(vars), 1, csharpAdapter, undefined, { userTypes: async () => new Set(['Tabuleiro']) }))!.snapshot;
+    assert.deepEqual(snap.heap?.[0].fields, [{ name: 'casas', value: '[…]' }]);
+  });
+});
+describe('Texto curto de coleção nas chamadas de baixo', () => {
+  it('campo com array ou mapa mostra […] ou {…}, nunca o tamanho; array vazio mostra []', async () => {
+    const vars: Record<number, Var[]> = {
+      1: [{ name: 'k', value: '1', type: 'int', variablesReference: 0 }],
+      2: [{ name: 'g', value: 'Grafo@12', type: 'Grafo', variablesReference: 3 }],
+      3: [
+        { name: 'nos', value: 'int[3]', type: 'int[]', variablesReference: 4, indexedVariables: 3 },
+        { name: 'vazio', value: 'int[0]', type: 'int[]', variablesReference: 6, indexedVariables: 0 },
+        { name: 'pesos', value: 'HashMap@15 size=2', type: 'HashMap', variablesReference: 5 },
+      ],
+    };
+    const frames: Session = {
+      async customRequest(command: string, args?: any) {
+        if (command === 'stackTrace') {
+          return {
+            stackFrames: [
+              { id: 10, name: 'Grafo.visita(Grafo, int)', line: 9, source: { path: '/x/Grafo.java' } },
+              { id: 11, name: 'Grafo.visita(Grafo, int)', line: 12, source: { path: '/x/Grafo.java' } },
+            ],
+          };
+        }
+        if (command === 'scopes') return { scopes: [{ name: 'Local', variablesReference: args.frameId === 10 ? 1 : 2 }] };
+        if (command === 'evaluate') return { result: 'false' };
+        return { variables: vars[args.variablesReference] ?? [] };
+      },
+    };
+    const snap = (await collectSnapshot(frames, 1, javaAdapter, undefined, { userTypes: async () => new Set(['Grafo']) }))!.snapshot;
+    const g = snap.calls?.[0].vars.find((v) => v.name === 'g');
+    assert.ok(g, JSON.stringify(snap.calls));
+    assert.doesNotMatch(g.value, /\[\d+\]|\{\d+\}/, g.value);
+    assert.match(g.value, /nos: \[…\]/);
+    assert.match(g.value, /vazio: \[\]/);
   });
 });

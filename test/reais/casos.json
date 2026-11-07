@@ -1,0 +1,44 @@
+{
+  "repos": {
+    "python": { "url": "https://raw.githubusercontent.com/TheAlgorithms/Python", "commit": "574d100b7181956e9c8384552fd078165e4cc326" },
+    "java": { "url": "https://raw.githubusercontent.com/TheAlgorithms/Java", "commit": "1e59594d8dee696a85cad5561cc6a533b6824930" },
+    "javascript": { "url": "https://raw.githubusercontent.com/TheAlgorithms/JavaScript", "commit": "5c39e87a9a31f279c60f830ad74a845e4788a517" }
+  },
+  "casos": [
+    { "id": "py-bubble", "lang": "python", "arquivos": ["sorts/bubble_sort.py"], "linhas": ["from bubble_sort import bubble_sort_iterative", "bubble_sort_iterative([5, 1, 4, 2, 8])"], "pare": 2 },
+    { "id": "py-insertion", "lang": "python", "arquivos": ["sorts/insertion_sort.py"], "linhas": ["from insertion_sort import insertion_sort", "insertion_sort([12, 11, 13, 5, 6])"], "pare": 2 },
+    { "id": "py-selection", "lang": "python", "arquivos": ["sorts/selection_sort.py"], "linhas": ["from selection_sort import selection_sort", "selection_sort([29, 10, 14, 37, 13])"], "pare": 2 },
+    { "id": "py-quick", "lang": "python", "arquivos": ["sorts/quick_sort.py"], "linhas": ["from quick_sort import quick_sort", "quick_sort([3, 6, 1, 8, 2, 9])"], "pare": 2 },
+    { "id": "py-merge", "lang": "python", "arquivos": ["sorts/merge_sort.py"], "linhas": ["from merge_sort import merge_sort", "merge_sort([38, 27, 43, 3, 9])"], "pare": 2 },
+    { "id": "py-binary", "lang": "python", "arquivos": ["searches/binary_search.py"], "linhas": ["from binary_search import binary_search", "binary_search([0, 5, 7, 10, 15], 10)"], "pare": 2 },
+    { "id": "py-sieve", "lang": "python", "arquivos": ["maths/sieve_of_eratosthenes.py"], "linhas": ["from sieve_of_eratosthenes import prime_sieve", "prime_sieve(30)"], "pare": 2 },
+    { "id": "py-spiral", "lang": "python", "arquivos": ["matrix/spiral_print.py"], "linhas": ["from spiral_print import spiral_traversal", "spiral_traversal([[1, 2, 3], [4, 5, 6], [7, 8, 9]])"], "pare": 2 },
+    { "id": "py-linked", "lang": "python", "arquivos": ["data_structures/linked_list/singly_linked_list.py"], "linhas": ["from singly_linked_list import LinkedList", "lista = LinkedList()", "lista.insert_tail(1)", "lista.insert_tail(2)", "lista.insert_tail(3)"], "pare": 3 },
+    { "id": "py-bfs", "lang": "python", "arquivos": ["graphs/breadth_first_search_2.py"], "linhas": ["from breadth_first_search_2 import G, breadth_first_search_with_deque", "breadth_first_search_with_deque(G, 'A')"], "pare": 2 },
+    { "id": "py-fib", "lang": "python", "arquivos": ["dynamic_programming/fibonacci.py"], "linhas": ["from fibonacci import Fibonacci", "Fibonacci().get(8)"], "pare": 2 },
+
+    { "id": "java-counting", "lang": "java", "arquivos": ["src/main/java/com/thealgorithms/sorts/CountingSort.java"], "linhas": ["CountingSort.sort(new int[] {4, 2, 2, 8, 3, 3, 1});"], "pare": 1 },
+    { "id": "java-pigeonhole", "lang": "java", "arquivos": ["src/main/java/com/thealgorithms/sorts/PigeonholeSort.java"], "linhas": ["PigeonholeSort.sort(new int[] {8, 3, 2, 7, 4, 6, 8});"], "pare": 1 },
+    { "id": "java-merge", "lang": "java", "arquivos": ["src/main/java/com/thealgorithms/sorts/MergeSortRecursive.java"], "linhas": ["new MergeSortRecursive(java.util.List.of(38, 27, 43, 3, 9)).mergeSort();"], "pare": 1 },
+    { "id": "java-bin2d", "lang": "java", "arquivos": ["src/main/java/com/thealgorithms/searches/BinarySearch2dArray.java"], "linhas": ["BinarySearch2dArray.binarySearch(new int[][] {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}, 6);"], "pare": 1 },
+    { "id": "java-orderagnostic", "lang": "java", "arquivos": ["src/main/java/com/thealgorithms/searches/OrderAgnosticBinarySearch.java"], "linhas": ["OrderAgnosticBinarySearch.binSearchAlgo(new int[] {1, 3, 5, 7, 9}, 0, 4, 7);"], "pare": 1 },
+    { "id": "java-saddleback", "lang": "java", "arquivos": ["src/main/java/com/thealgorithms/searches/SaddlebackSearch.java"], "linhas": ["SaddlebackSearch.find(new int[][] {{-10, -5, -3}, {2, 3, 7}, {5, 9, 15}}, 2, 0, 9);"], "pare": 1 },
+    { "id": "java-brackets", "lang": "java", "arquivos": ["src/main/java/com/thealgorithms/stacks/BalancedBrackets.java"], "linhas": ["BalancedBrackets.isBalanced(\"[()]{}{[()()]()}\");"], "pare": 1 },
+    { "id": "java-decimal", "lang": "java", "arquivos": ["src/main/java/com/thealgorithms/stacks/DecimalToAnyUsingStack.java"], "linhas": ["DecimalToAnyUsingStack.convert(255, 16);"], "pare": 1 },
+    { "id": "java-infix", "lang": "java", "arquivos": ["src/main/java/com/thealgorithms/stacks/InfixToPostfix.java"], "linhas": ["InfixToPostfix.infix2PostFix(\"a+b*(c-d)\");"], "pare": 1 },
+    { "id": "java-rectangle", "lang": "java", "arquivos": ["src/main/java/com/thealgorithms/stacks/LargestRectangle.java"], "linhas": ["LargestRectangle.largestRectangleHistogram(new int[] {2, 1, 5, 6, 2, 3});"], "pare": 1 },
+    { "id": "java-reverse", "lang": "java", "arquivos": ["src/main/java/com/thealgorithms/datastructures/stacks/ReverseStack.java"], "linhas": ["java.util.Stack<Integer> pilha = new java.util.Stack<>();", "pilha.push(1);", "pilha.push(2);", "pilha.push(3);", "ReverseStack.reverseStack(pilha);"], "pare": 5 },
+
+    { "id": "js-bubble", "lang": "javascript", "arquivos": ["Sorts/BubbleSort.js"], "linhas": ["import { bubbleSort } from './BubbleSort.js'", "bubbleSort([5, 1, 4, 2, 8])"], "pare": 2 },
+    { "id": "js-insertion", "lang": "javascript", "arquivos": ["Sorts/InsertionSort.js"], "linhas": ["import { insertionSort } from './InsertionSort.js'", "insertionSort([12, 11, 13, 5, 6])"], "pare": 2 },
+    { "id": "js-selection", "lang": "javascript", "arquivos": ["Sorts/SelectionSort.js"], "linhas": ["import { selectionSort } from './SelectionSort.js'", "selectionSort([29, 10, 14, 37, 13])"], "pare": 2 },
+    { "id": "js-quick", "lang": "javascript", "arquivos": ["Sorts/QuickSort.js"], "linhas": ["import { quickSort } from './QuickSort.js'", "quickSort([3, 6, 1, 8, 2, 9])"], "pare": 2 },
+    { "id": "js-merge", "lang": "javascript", "arquivos": ["Sorts/MergeSort.js"], "linhas": ["import { mergeSort } from './MergeSort.js'", "mergeSort([38, 27, 43, 3, 9])"], "pare": 2 },
+    { "id": "js-binary", "lang": "javascript", "arquivos": ["Search/BinarySearch.js"], "linhas": ["import { binarySearchIterative } from './BinarySearch.js'", "binarySearchIterative([1, 3, 5, 7, 9, 11], 9)"], "pare": 2 },
+    { "id": "js-sieve", "lang": "javascript", "arquivos": ["Maths/SieveOfEratosthenes.js"], "linhas": ["import { sieveOfEratosthenes } from './SieveOfEratosthenes.js'", "sieveOfEratosthenes(30)"], "pare": 2 },
+    { "id": "js-stack", "lang": "javascript", "arquivos": ["Data-Structures/Stack/Stack.js"], "linhas": ["import { Stack } from './Stack.js'", "const pilha = new Stack()", "pilha.push(1)", "pilha.push(2)", "pilha.pop()"], "pare": 2 },
+    { "id": "js-linked", "lang": "javascript", "arquivos": ["Data-Structures/Linked-List/SinglyLinkedList.js"], "linhas": ["import { LinkedList } from './SinglyLinkedList.js'", "const lista = new LinkedList()", "lista.addLast(1)", "lista.addLast(2)", "lista.addLast(3)"], "pare": 3 },
+    { "id": "js-hanoi", "lang": "javascript", "arquivos": ["Recursive/TowerOfHanoi.js"], "linhas": ["import { TowerOfHanoi } from './TowerOfHanoi.js'", "TowerOfHanoi(3, 'A', 'C', 'B')"], "pare": 2 },
+    { "id": "js-matrix", "lang": "javascript", "arquivos": ["Maths/MatrixMultiplication.js"], "linhas": ["import { matrixMult } from './MatrixMultiplication.js'", "matrixMult([[1, 2], [3, 4]], [[5, 6], [7, 8]])"], "pare": 2 }
+  ]
+}

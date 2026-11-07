@@ -36,6 +36,35 @@ function debugSample(name: string, breakpointLine: number, steps: number, step?:
 }
 
 describe('Java Debugger real', () => {
+  it('Calculadora: os números entram na pilha e o + tira os dois de cima', async () => {
+    const snaps = await debugSample('Calculadora', 10, 14);
+    const pilhas = snaps.map((s) => s.arrays.find((a) => a.name === 'pilha')).filter((a) => a !== undefined);
+    assert.ok(pilhas.some((a) => a.kind === 'stack' && a.values.length === 2), `pilha: ${JSON.stringify(pilhas)}`);
+    assert.ok(allChanges(snaps).some((c) => c.kind === 'remove' && c.structure === 'stack'), `pop não reconhecido: ${JSON.stringify(allChanges(snaps))}`);
+  });
+
+  it('SomaMatriz: a grade aparece e a soma da primeira linha chega a 6', async () => {
+    const snaps = await debugSample('SomaMatriz', 10, 10);
+    assert.deepEqual(snaps[0].arrays.find((a) => a.name === 'grade')?.rows?.map((r) => r.values), [['1', '2', '3'], ['4', '5', '6']]);
+    // Inteiro vai para pointers (vira seta só se o código usar como posição).
+    const somas = snaps.map((s) => String(s.pointers.find((p) => p.name === 'soma')?.value ?? s.scalars?.find((v) => v.name === 'soma')?.value));
+    assert.ok(somas.includes('6'), `soma: ${somas.join(' | ')}`);
+  });
+
+  it('InsertionSort: o 11 desliza para antes do 12', async () => {
+    const snaps = await debugSample('InsertionSort', 6, 12);
+    const values = snaps.map((s) => s.arrays.find((a) => a.name === 'numeros')?.values.join(','));
+    assert.ok(values.includes('12,12,13,5,6'), `o 12 não andou uma casa: ${values.join(' | ')}`);
+    assert.ok(values.includes('11,12,13,5,6'), `o 11 não entrou na frente: ${values.join(' | ')}`);
+  });
+
+  it('SelectionSort: menor vira seta e o menor valor vai para a frente', async () => {
+    const snaps = await debugSample('SelectionSort', 6, 22);
+    assert.ok(snaps.some((s) => s.pointers.some((p) => p.name === 'menor')), `menor nunca apareceu: ${JSON.stringify(snaps.map((s) => s.pointers))}`);
+    const values = snaps.map((s) => s.arrays.find((a) => a.name === 'numeros')?.values.join(','));
+    assert.ok(values.includes('10,29,14,37,13'), `o 10 não foi para a frente: ${values.join(' | ')}`);
+  });
+
   it('BubbleSort: lê o array, os ponteiros e reconhece a troca com temp', async () => {
     const snaps = await debugSample('BubbleSort', 6, 12);
     assert.ok(visibleAtFirstStop, 'o painel não estava visível na primeira parada');
@@ -205,6 +234,17 @@ describe('Java Debugger real', () => {
     // O nó do começo é o mesmo objeto em todos os passos em que existe.
     const heads = new Set(snaps.map((s) => s.refs?.find((r) => r.name === 'inicio')?.ref).filter(Boolean));
     assert.equal(heads.size, 1, `o nó do começo mudou de id: ${[...heads].join(', ')}`);
+  });
+
+  it('Java árvore binária: a chamada de baixo mostra o nó que recebeu', async () => {
+    const snaps = await debugSample('ArvoreBinaria', 27, 40, 'stepInto');
+    const below = snaps.flatMap((s) => (s.calls ?? []).filter((c) => c.name === 'inserir').slice(0, -1));
+    const raiz = below.map((c) => c.vars.find((v) => v.name === 'raiz')?.value).filter(Boolean);
+    assert.ok(
+      // O java-debug manda os campos em ordem alfabética: No {direita: ..., esquerda: ..., valor: 50}.
+      raiz.some((v) => /^No \{.*\bvalor: 50\b/.test(v ?? '')),
+      `raiz nas chamadas de baixo: ${raiz.join(' | ')}; pilhas: ${JSON.stringify(snaps.map((s) => s.calls?.map((c) => c.name)))}`,
+    );
   });
 
   it('Java árvore binária: inserções formam a árvore de busca', async () => {

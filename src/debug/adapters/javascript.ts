@@ -64,6 +64,8 @@ export const javascriptAdapter: LanguageAdapter = {
 
   setItem: (c) => numericIndex(c.name) !== undefined,
   elementIndex: numericIndex,
+  // sieve[j] = true num array vazio deixa buracos, que o js-debug não lista: lidos, valem undefined.
+  hole: 'undefined',
   formatElement: (v) => v.value,
   collectionRole: javascriptRole,
   // O js-debug mostra, ainda dentro da função, o valor que ela está para devolver.

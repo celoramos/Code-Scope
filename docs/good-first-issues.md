@@ -35,19 +35,7 @@ Levels: **no code** (you do not need to program), **beginner** (a few lines, one
 
 ## Beginner
 
-### 5. A new sample: selection sort
-
-- **Issue:** [#6](https://github.com/celoramos/Code-Scope/issues/6)
-- **Why:** each classic algorithm is a new lesson the panel can teach.
-- **Where:** `samples/java`, `samples/javascript`, `samples/python`. Follow `BubbleSort.java` and `bubbleSort.js`. In Java, add the configuration to `samples/java/.vscode/launch.json`.
-- **Done when:** the sample runs with F5 and the comment says where to put the breakpoint.
-
-### 6. More samples: insertion sort, matrix sum, stack calculator
-
-- **Issue:** [#7](https://github.com/celoramos/Code-Scope/issues/7)
-- Same as above. One sample per pull request is fine.
-
-### 7. Record new GIFs for the README
+### 5. Record new GIFs for the README
 
 - **Issue:** [#8](https://github.com/celoramos/Code-Scope/issues/8)
 - **Why:** the README shows arrays, stacks, queues, recursion, errors, graphs and objects. The call stack, linked lists, the trace table, exercises and priority queues have no demo yet.
@@ -56,15 +44,8 @@ Levels: **no code** (you do not need to program), **beginner** (a few lines, one
 
 ## Intermediate
 
-### 8. JavaScript in the browser
+### 6. JavaScript in the browser
 
 - **Issue:** [#10](https://github.com/celoramos/Code-Scope/issues/10)
 - **Why:** the JavaScript adapter was only tested on Node. The browser debugger (`pwa-chrome`) may format values differently.
 - **How:** debug a page with a script in Chrome or Edge from VS Code, with the Code Scope panel open and the log at *Debug*, and report (or fix) what is different.
-
-### 9. C++ containers: an integration test
-
-- **Issue:** [#12](https://github.com/celoramos/Code-Scope/issues/12)
-- **Why:** the C adapter (`src/debug/adapters/c.ts`) draws `std::stack`, `std::queue`, `std::set` and `std::map` when gdb has the pretty-printers, and `std::vector` and `std::string` with or without them. This was checked in the stress run and in unit tests, but `test/integration/c.itest.ts` has no C++ container sample yet.
-- **Where:** a sample in `samples/c` and `test/integration/c.itest.ts`, with `-enable-pretty-printing` in `setupCommands`.
-- **Done when:** a real C++ session draws a stack, a queue, a set and a map, checked by an integration test.

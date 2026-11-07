@@ -44,4 +44,8 @@ export default tseslint.config(
     languageOptions: { globals: { require: 'readonly', process: 'readonly', console: 'readonly', __dirname: 'readonly', module: 'writable' } },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
+  {
+    files: ['test/reais/*.mjs'],
+    languageOptions: { globals: { process: 'readonly', console: 'readonly', fetch: 'readonly' } },
+  },
 );

@@ -1,5 +1,19 @@
 # Changelog
 
+## Próxima versão
+
+### Novo
+
+- Exemplos novos em Java, Python e JavaScript: ordenação por seleção, ordenação por inserção, soma de matriz e calculadora com pilha (notação pós-fixa), com teste de integração em cada linguagem.
+- Programas reais: o workflow `reais.yml` roda 33 programas do TheAlgorithms (Python, Java e JavaScript) no debugger real e falha quando o painel mostra texto interno do debugger no lugar de um valor.
+
+### Corrigido
+
+- Coleção nunca aparece como o tamanho entre colchetes: `[2]` era lido como um array com o 2 dentro, e `{3}` como um conjunto. Campo de objeto que guarda um array mostra os itens (`stack: [1, 2]`), com o tipo no lugar de cada objeto (`filhos: [No, No]`); nas chamadas de baixo, coleção não aberta vira `[…]` ou `{…}`; no teste de mesa, array e dicionário grandes mostram os primeiros itens e `…`. Vazios aparecem como `[]` e `{}`.
+- JavaScript: posição de array esparso que nunca recebeu valor (`sieve[j] = true` num array vazio) aparece como `undefined`, não como `?`.
+- C++: o teste de integração de `std::stack`, `std::queue`, `std::set` e `std::map` agora roda também no Linux. O gdb do CI perdia os pretty-printers por causa do `LD_LIBRARY_PATH` do `setup-python`.
+- Limites conhecidos: no Linux, o gdb perde os pretty-printers quando o `LD_LIBRARY_PATH` aponta para outro Python (`No module named 'math'`); o texto diz como contornar.
+
 ## 0.9.1
 
 A 0.9.0 só saiu no Marketplace da JetBrains. No VS Code, a 0.9.1 vem logo depois da 0.8.0 e traz também tudo o que está na 0.9.0.

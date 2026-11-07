@@ -14,6 +14,8 @@ export function run(): Promise<void> {
   mocha.addFile(path.join(__dirname, 'samples.itest.js'));
   mocha.addFile(path.join(__dirname, 'discover.itest.js'));
   mocha.addFile(path.join(__dirname, 'estresse.itest.js'));
+  // Só tem casos depois de test/reais/preparar.mjs (workflow reais.yml); sem eles, é pulado.
+  mocha.addFile(path.join(__dirname, 'reais.itest.js'));
   return new Promise((resolve, reject) => {
     mocha.run((failures) => (failures > 0 ? reject(new Error(`${failures} teste(s) falharam`)) : resolve()));
   });

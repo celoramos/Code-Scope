@@ -79,6 +79,20 @@ export async function collectSnapshot(
     frameId: frame.id,
     userTypes,
     enums: await opts.enumTypes?.(file),
+    // Campo que guarda um array (a pilha dentro de uma classe Stack): os itens, como na chamada de baixo.
+    sequenceText: async (v, shape) => {
+      // Matriz numa fileira só (int[,] do C#): os itens vêm em linhas, e uma linha de texto não dá conta.
+      if (shape.grid) return undefined;
+      const { array, children } = await readSequence(session, adapter, v, v.name, shape, MAX_CALL_ITEMS, 0, undefined, frame.id);
+      // Objeto dentro do array vira o tipo, como nas chamadas de baixo: o texto do debugger
+      // ("<__main__.No object at 0x7f...>" no Python) não diz nada ao aluno.
+      const values = array.values.map((text, i) => {
+        const c = children.find((x) => adapter.elementIndex(x.name) === i);
+        const s = c ? adapter.shape(c) : undefined;
+        return s?.kind === 'object' ? s.type : text;
+      });
+      return `[${values.join(', ')}${array.length > values.length ? ', …' : ''}]`;
+    },
   });
   const arrays: ArrayVar[] = [];
   const arrayVars: { array: ArrayVar; v: DapVariable }[] = [];
@@ -344,12 +358,14 @@ function summarize(adapter: LanguageAdapter, v: DapVariable): Scalar[] {
       return [{ name: v.name, value: String(shape.value) }];
     case 'scalar':
       return [{ name: v.name, value: shape.value }];
+    // Sem abrir, o tamanho não vai entre colchetes: "[3]" seria lido como um array com o 3 dentro,
+    // e "{3}" como um conjunto.
     case 'sequence':
-      return [{ name: v.name, value: shape.length === undefined ? '[…]' : `[${shape.length}]` }];
+      return [{ name: v.name, value: shape.length === 0 ? '[]' : '[…]' }];
     case 'empty-list':
       return [{ name: v.name, value: '[]' }];
     case 'map':
-      return [{ name: v.name, value: shape.length === undefined ? '{…}' : `{${shape.length}}` }];
+      return [{ name: v.name, value: shape.length === 0 ? '{}' : '{…}' }];
     case 'null':
       // No caso base da recursão sobre uma árvore, no = null é o que faz a chamada parar.
       return [{ name: v.name, value: adapter.formatElement(v) }];
@@ -426,7 +442,7 @@ async function readSequence(
     const c = byIndex[i];
     refs.push(null);
     if (!c) {
-      values.push('?');
+      values.push(adapter.hole ?? '?');
       continue;
     }
     // Objeto de uma classe do aluno: a posição guarda a referência, e o rótulo vem depois.

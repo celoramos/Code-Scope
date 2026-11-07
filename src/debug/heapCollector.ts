@@ -22,6 +22,8 @@ type ObjectShape = Extract<VariableShape, { kind: 'object' }>;
 export const MAX_OBJECTS = 40;
 /** Perguntas "a === b" por passo, para debuggers sem identidade no valor. */
 const MAX_EVALS = 80;
+/** Campos com array lidos por passo: um grafo de 40 nós com lista de vizinhos não deve travar o F10. */
+export const MAX_SEQUENCE_FIELDS = 20;
 
 /** Ids inventados quando o debugger não dá um; únicos durante toda a sessão da extensão. */
 let syntheticIds = 0;
@@ -32,6 +34,11 @@ export interface HeapOptions {
   userTypes?: ReadonlySet<string>;
   /** Enums declarados no arquivo: viram a constante, não um objeto. */
   enums?: ReadonlySet<string>;
+  /**
+   * Itens de um array guardado num campo, como texto ("[1, 2]"). Sem isto, o campo mostra
+   * só o tamanho, e "[0]" parece um array com o número zero dentro.
+   */
+  sequenceText?: (v: DapVariable, shape: Extract<VariableShape, { kind: 'sequence' }>) => Promise<string | undefined>;
 }
 
 /**
@@ -109,6 +116,7 @@ export async function linkSameArrays(
 class HeapContext {
   readonly objects = new Map<string, HeapObject>();
   private evals = 0;
+  private sequenceFields = 0;
 
   constructor(
     private readonly session: Session,
@@ -169,12 +177,17 @@ class HeapContext {
       case 'scalar':
         // None/null/undefined num campo é uma referência vazia: a lista acaba ali.
         return this.adapter.isNull?.(c) ? { name: c.name, value: c.value, ref: null } : { name: c.name, value: s.value };
-      case 'sequence':
-        return { name: c.name, value: s.length === undefined ? '[…]' : `[${s.length}]` };
+      case 'sequence': {
+        if (s.length === 0) return { name: c.name, value: '[]' };
+        const text = this.sequenceFields++ < MAX_SEQUENCE_FIELDS ? await this.opts.sequenceText?.(c, s).catch(() => undefined) : undefined;
+        // Sem os itens, "[…]": o tamanho entre colchetes ("[3]") seria lido como um array com o 3 dentro.
+        return { name: c.name, value: text ?? '[…]' };
+      }
       case 'empty-list':
         return { name: c.name, value: '[]' };
       case 'map':
-        return { name: c.name, value: s.length === undefined ? '{…}' : `{${s.length}}` };
+        // "{3}" seria lido como um conjunto com o 3 dentro.
+        return { name: c.name, value: s.length === 0 ? '{}' : '{…}' };
       default:
         return this.adapter.isNull?.(c) ? { name: c.name, value: c.value, ref: null } : undefined;
     }
