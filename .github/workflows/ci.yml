@@ -69,22 +69,15 @@ jobs:
         run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y gdb
-      # Diagnóstico da issue #12: onde estão os pretty-printers do libstdc++ que o gdb deveria carregar.
+      # O setup-python põe o lib dele no LD_LIBRARY_PATH; com isso, o gdb do apt carrega o libpython
+      # errado ("No module named 'math'") e perde os pretty-printers do libstdc++ (issue #12).
+      # Este gdb vem antes no PATH e roda o do sistema sem a variável; o debugpy continua com ela.
       - if: runner.os == 'Linux'
-        continue-on-error: true
         run: |
-          g++ --version | head -1
-          gdb --version | head -1
-          ls -l /usr/lib/x86_64-linux-gnu/libstdc++.so.6*
-          dpkg -S /usr/lib/x86_64-linux-gnu/libstdc++.so.6 || true
-          ls -R /usr/share/gdb/auto-load 2>/dev/null | grep -i stdc || echo "sem script auto-load do libstdc++"
-          ls -d /usr/share/gcc*/python/libstdcxx 2>/dev/null || echo "sem libstdcxx em /usr/share/gcc*/python"
-          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONHOME=$PYTHONHOME"
-          g++ -g -O0 samples/c/colecoes.cpp -o /tmp/colecoes
-          for env in "" "env -u LD_LIBRARY_PATH -u PYTHONHOME -u PYTHONPATH"; do
-            echo "--- gdb com: ${env:-ambiente do job}"
-            $env gdb -batch -ex "python print('python ok')" -ex "break 22" -ex run -ex "info pretty-printer" -ex "print pratos" -ex "print idades" /tmp/colecoes 2>&1 | tail -15
-          done
+          mkdir -p "$RUNNER_TEMP/gdb-limpo"
+          printf '#!/bin/sh\nexec env -u LD_LIBRARY_PATH /usr/bin/gdb "$@"\n' > "$RUNNER_TEMP/gdb-limpo/gdb"
+          chmod +x "$RUNNER_TEMP/gdb-limpo/gdb"
+          echo "$RUNNER_TEMP/gdb-limpo" >> "$GITHUB_PATH"
       - run: npm ci
       # O VS Code precisa de uma tela; no Linux ela é virtual.
       - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:integration 2>&1 | tee itest.log
