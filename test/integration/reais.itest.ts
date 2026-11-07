@@ -3,26 +3,30 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type { Snapshot } from '../../src/model/snapshot';
-import { allChanges, debugFile, samplesRoot } from './helpers';
+import { allChanges, debugFile, lastRunEnded, samplesRoot } from './helpers';
 
 /*
  * Programas de repositórios abertos (TheAlgorithms), baixados por test/reais/preparar.mjs no
- * workflow reais.yml. Cada caso para no driver e entra na função real com F11. O teste falha
- * quando o painel mostra texto interno do debugger no lugar de um valor; o resto se confere
- * lendo os dumps out-test/reais-*.json.
+ * workflow reais.yml. Cada caso para no driver, entra na função real com F11 e vai até o fim do
+ * programa. O teste falha quando o programa não termina, quando um passo sai sem arquivo ou quando
+ * o painel mostra texto interno do debugger no lugar de um valor; o resto se confere lendo os dumps
+ * out-test/reais-*.json.
  */
 interface Caso {
   id: string;
   lang: 'python' | 'java' | 'javascript';
   file: string;
   line: number;
+  /** Java: a linha do "}" que fecha o main do driver; dali o programa segue até o fim. */
+  fim?: number;
   mainClass?: string;
 }
 
 const planoFile = path.resolve(samplesRoot, '..', 'test', 'reais', 'plano.json');
 const plano: Caso[] = fs.existsSync(planoFile) ? JSON.parse(fs.readFileSync(planoFile, 'utf8')) : [];
 const python = process.env.CODE_SCOPE_PYTHON ?? path.resolve(samplesRoot, '..', '.vscode-test', 'python', 'python.exe');
-const PASSOS = 40;
+/** Passos de F11 até desistir; os 33 casos terminam bem antes. */
+const PASSOS = Number(process.env.CODE_SCOPE_REAIS_PASSOS ?? 600);
 
 /** Texto que o debugger usa por dentro e que o aluno nunca escreveu. */
 const LIXO: [RegExp, string][] = [
@@ -64,6 +68,8 @@ async function rodar(caso: Caso): Promise<Snapshot[]> {
     step: 'stepInto',
     config: config(caso),
     dump: `reais-${caso.id}`,
+    // No Java, depois do main vem o encerramento da JVM: dali, segue sem parar. Nos outros, o programa acaba sozinho.
+    until: (s) => caso.fim !== undefined && path.basename(s.file) === path.basename(caso.file) && s.line >= caso.fim,
     async before() {
       if (caso.lang !== 'java') return;
       const java = vscode.extensions.getExtension('redhat.java');
@@ -71,7 +77,9 @@ async function rodar(caso: Caso): Promise<Snapshot[]> {
       await javaApi?.serverReady?.();
     },
   });
+  const fim = lastRunEnded;
   allChanges(snaps);
+  const semArquivo = snaps.findIndex((s) => !s.file || s.line <= 0);
   const achados: string[] = [];
   snaps.forEach((s, k) => {
     const out: { onde: string; valor: string }[] = [];
@@ -81,13 +89,15 @@ async function rodar(caso: Caso): Promise<Snapshot[]> {
     }
   });
   const tipos = new Set(snaps.flatMap((s) => s.arrays.map((a) => a.kind ?? (a.rows ? 'matriz' : 'array'))));
-  console.log(`REAIS ${caso.id}: ${snaps.length} passos, coleções ${[...tipos].join(' ') || 'nenhuma'}, ${achados.length} achados`);
+  console.log(`REAIS ${caso.id}: ${snaps.length} passos, ${fim ? 'até o fim' : 'NÃO TERMINOU'}, coleções ${[...tipos].join(' ') || 'nenhuma'}, ${achados.length} achados`);
+  assert.ok(fim, `${caso.id}: o programa não terminou em ${PASSOS} passos`);
+  assert.equal(semArquivo, -1, `${caso.id}: o passo ${semArquivo + 1} saiu sem arquivo`);
   assert.deepEqual([...new Set(achados)].slice(0, 20), [], `${caso.id}: o painel mostrou texto interno`);
   return snaps;
 }
 
 describe('Reais', function () {
-  this.timeout(600_000);
+  this.timeout(1_200_000);
   before(function () {
     if (plano.length === 0) this.skip();
   });
