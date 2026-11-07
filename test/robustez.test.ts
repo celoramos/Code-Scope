@@ -545,3 +545,37 @@ describe('Campo que guarda um array: casos de borda', () => {
     assert.deepEqual(snap.heap?.[0].fields, [{ name: 'casas', value: '[…]' }]);
   });
 });
+describe('Texto curto de coleção nas chamadas de baixo', () => {
+  it('campo com array ou mapa mostra […] ou {…}, nunca o tamanho; array vazio mostra []', async () => {
+    const vars: Record<number, Var[]> = {
+      1: [{ name: 'k', value: '1', type: 'int', variablesReference: 0 }],
+      2: [{ name: 'g', value: 'Grafo@12', type: 'Grafo', variablesReference: 3 }],
+      3: [
+        { name: 'nos', value: 'int[3]', type: 'int[]', variablesReference: 4, indexedVariables: 3 },
+        { name: 'vazio', value: 'int[0]', type: 'int[]', variablesReference: 6, indexedVariables: 0 },
+        { name: 'pesos', value: 'HashMap@15 size=2', type: 'HashMap', variablesReference: 5 },
+      ],
+    };
+    const frames: Session = {
+      async customRequest(command: string, args?: any) {
+        if (command === 'stackTrace') {
+          return {
+            stackFrames: [
+              { id: 10, name: 'Grafo.visita(Grafo, int)', line: 9, source: { path: '/x/Grafo.java' } },
+              { id: 11, name: 'Grafo.visita(Grafo, int)', line: 12, source: { path: '/x/Grafo.java' } },
+            ],
+          };
+        }
+        if (command === 'scopes') return { scopes: [{ name: 'Local', variablesReference: args.frameId === 10 ? 1 : 2 }] };
+        if (command === 'evaluate') return { result: 'false' };
+        return { variables: vars[args.variablesReference] ?? [] };
+      },
+    };
+    const snap = (await collectSnapshot(frames, 1, javaAdapter, undefined, { userTypes: async () => new Set(['Grafo']) }))!.snapshot;
+    const g = snap.calls?.[0].vars.find((v) => v.name === 'g');
+    assert.ok(g, JSON.stringify(snap.calls));
+    assert.doesNotMatch(g.value, /\[\d+\]|\{\d+\}/, g.value);
+    assert.match(g.value, /nos: \[…\]/);
+    assert.match(g.value, /vazio: \[\]/);
+  });
+});

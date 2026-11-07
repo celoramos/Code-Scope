@@ -47,7 +47,14 @@ describe('teste de mesa', () => {
       ]),
     ]);
     assert.deepEqual(t.columns, ['v', 'grande']);
-    assert.deepEqual(t.rows[0].values, ['[5, 1]', '[9]']);
+    // Array grande: os primeiros itens e "…". O tamanho entre colchetes ("[9]") parecia um array com o 9 dentro.
+    assert.deepEqual(t.rows[0].values, ['[5, 1]', '[0, 0, 0, 0, 0, 0, 0, 0, …]']);
+  });
+
+  it('dicionário grande mostra as primeiras entradas e "…", não o tamanho', () => {
+    const s = snap(3, []);
+    s.maps = [{ name: 'idades', entries: ['a', 'b', 'c', 'd', 'e'].map((k, i) => ({ key: `'${k}'`, value: String(i) })), length: 5 }];
+    assert.deepEqual(traceTable([s]).rows[0].values, ["{'a': 0, 'b': 1, 'c': 2, 'd': 3, …}"]);
   });
 
   it('guarda só as linhas mais recentes e conta as escondidas', () => {

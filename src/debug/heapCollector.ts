@@ -186,7 +186,8 @@ class HeapContext {
       case 'empty-list':
         return { name: c.name, value: '[]' };
       case 'map':
-        return { name: c.name, value: s.length === undefined ? '{…}' : `{${s.length}}` };
+        // "{3}" seria lido como um conjunto com o 3 dentro.
+        return { name: c.name, value: s.length === 0 ? '{}' : '{…}' };
       default:
         return this.adapter.isNull?.(c) ? { name: c.name, value: c.value, ref: null } : undefined;
     }

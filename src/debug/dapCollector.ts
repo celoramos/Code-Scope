@@ -358,12 +358,14 @@ function summarize(adapter: LanguageAdapter, v: DapVariable): Scalar[] {
       return [{ name: v.name, value: String(shape.value) }];
     case 'scalar':
       return [{ name: v.name, value: shape.value }];
+    // Sem abrir, o tamanho não vai entre colchetes: "[3]" seria lido como um array com o 3 dentro,
+    // e "{3}" como um conjunto.
     case 'sequence':
-      return [{ name: v.name, value: shape.length === undefined ? '[…]' : `[${shape.length}]` }];
+      return [{ name: v.name, value: shape.length === 0 ? '[]' : '[…]' }];
     case 'empty-list':
       return [{ name: v.name, value: '[]' }];
     case 'map':
-      return [{ name: v.name, value: shape.length === undefined ? '{…}' : `{${shape.length}}` }];
+      return [{ name: v.name, value: shape.length === 0 ? '{}' : '{…}' }];
     case 'null':
       // No caso base da recursão sobre uma árvore, no = null é o que faz a chamada parar.
       return [{ name: v.name, value: adapter.formatElement(v) }];
