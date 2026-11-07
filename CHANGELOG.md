@@ -10,7 +10,10 @@
 ### Corrigido
 
 - Coleção nunca aparece como o tamanho entre colchetes: `[2]` era lido como um array com o 2 dentro, e `{3}` como um conjunto. Campo de objeto que guarda um array mostra os itens (`stack: [1, 2]`), com o tipo no lugar de cada objeto (`filhos: [No, No]`); nas chamadas de baixo, coleção não aberta vira `[…]` ou `{…}`; no teste de mesa, array e dicionário grandes mostram os primeiros itens e `…`. Vazios aparecem como `[]` e `{}`.
-- Java: um F11 depois do fim do `main` não desenha mais os objetos internos da JVM (`Thread`, `ClassLoader`...); erro lançado em código nativo aparece na linha do aluno. que nunca recebeu valor (`sieve[j] = true` num array vazio) aparece como `undefined`, não como `?`.
+- Java: um F11 depois do fim do `main` não desenha mais os objetos internos da JVM (`Thread`, `ClassLoader`...); erro lançado em código nativo aparece na linha do aluno.
+- Java: `Stack` recebido como parâmetro não aparece mais de cabeça para baixo dentro da função.
+- Java: o valor devolvido (`->fatorial()` no debugger) entra na frase da chamada que terminou, em vez de aparecer como uma variável do aluno.
+- JavaScript: posição de array esparso que nunca recebeu valor (`sieve[j] = true` num array vazio) aparece como `undefined`, não como `?`.
 - C++: o teste de integração de `std::stack`, `std::queue`, `std::set` e `std::map` agora roda também no Linux. O gdb do CI perdia os pretty-printers por causa do `LD_LIBRARY_PATH` do `setup-python`.
 - Limites conhecidos: no Linux, o gdb perde os pretty-printers quando o `LD_LIBRARY_PATH` aponta para outro Python (`No module named 'math'`); o texto diz como contornar.
 
