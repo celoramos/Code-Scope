@@ -79,6 +79,12 @@ jobs:
           dpkg -S /usr/lib/x86_64-linux-gnu/libstdc++.so.6 || true
           ls -R /usr/share/gdb/auto-load 2>/dev/null | grep -i stdc || echo "sem script auto-load do libstdc++"
           ls -d /usr/share/gcc*/python/libstdcxx 2>/dev/null || echo "sem libstdcxx em /usr/share/gcc*/python"
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONHOME=$PYTHONHOME"
+          g++ -g -O0 samples/c/colecoes.cpp -o /tmp/colecoes
+          for env in "" "env -u LD_LIBRARY_PATH -u PYTHONHOME -u PYTHONPATH"; do
+            echo "--- gdb com: ${env:-ambiente do job}"
+            $env gdb -batch -ex "python print('python ok')" -ex "break 22" -ex run -ex "info pretty-printer" -ex "print pratos" -ex "print idades" /tmp/colecoes 2>&1 | tail -15
+          done
       - run: npm ci
       # O VS Code precisa de uma tela; no Linux ela é virtual.
       - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:integration 2>&1 | tee itest.log
