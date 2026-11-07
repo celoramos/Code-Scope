@@ -1,0 +1,51 @@
+name: Programas reais
+
+# Programas de repositórios abertos (TheAlgorithms) rodados no debugger real, um por caso de
+# test/reais/casos.json. Os dumps do que o painel desenhou ficam no artefato, para conferir à mão.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - test/reais/**
+      - test/integration/reais.itest.ts
+      - .github/workflows/reais.yml
+
+jobs:
+  reais:
+    name: Programas reais (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/setup-python@v7
+        id: python
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      # Antes de abrir o VS Code: o language server do Java precisa achar as classes baixadas.
+      - run: node test/reais/preparar.mjs
+      - run: xvfb-run -a npm run test:integration 2>&1 | tee itest.log
+        shell: bash
+        env:
+          CODE_SCOPE_PYTHON: ${{ steps.python.outputs.python-path }}
+          CODE_SCOPE_GREP: Reais
+          CODE_SCOPE_EXTENSIONS: vscjava.vscode-java-pack,ms-python.debugpy
+      - if: always()
+        run: grep -E "^REAIS |passing|failing|pending" itest.log || true
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reais
+          path: |
+            itest.log
+            out-test/reais-*.json
+          if-no-files-found: warn
