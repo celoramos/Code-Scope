@@ -38,7 +38,8 @@ describe('JavaScript (js-debug) real', () => {
   it('somaMatriz.js: a grade aparece e a soma da primeira linha chega a 6', async () => {
     const snaps = await debugScript('somaMatriz', 8, 10);
     assert.deepEqual(snaps[0].arrays.find((a) => a.name === 'grade')?.rows?.map((r) => r.values), [['1', '2', '3'], ['4', '5', '6']]);
-    const somas = snaps.map((s) => s.scalars?.find((v) => v.name === 'soma')?.value);
+    // Inteiro vai para pointers (vira seta só se o código usar como posição).
+    const somas = snaps.map((s) => String(s.pointers.find((p) => p.name === 'soma')?.value ?? s.scalars?.find((v) => v.name === 'soma')?.value));
     assert.ok(somas.includes('6'), `soma: ${somas.join(' | ')}`);
   });
 
