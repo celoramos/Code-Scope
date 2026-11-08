@@ -147,7 +147,7 @@ class CodeScopeService(private val project: Project) : Disposable {
 
     /** Texto do arquivo como está no editor, mesmo antes de salvar. */
     private fun readSource(path: String): String? = ReadAction.computeBlocking<String?, Throwable> {
-        val file = LocalFileSystem.getInstance().findFileByPath(path) ?: return@compute null
+        val file = LocalFileSystem.getInstance().findFileByPath(path) ?: return@computeBlocking null
         FileDocumentManager.getInstance().getDocument(file)?.text
     }
 

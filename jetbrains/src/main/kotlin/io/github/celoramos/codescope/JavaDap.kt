@@ -53,7 +53,7 @@ class JavaDap(
     fun reason(): String = jdi { if (exceptionEvent() != null) "exception" else if (atBreakpoint()) "breakpoint" else "step" }
 
     private fun atBreakpoint(): Boolean = ReadAction.computeBlocking<Boolean, Throwable> {
-        val position = session.currentPosition ?: return@compute false
+        val position = session.currentPosition ?: return@computeBlocking false
         XDebuggerManager.getInstance(project).breakpointManager.allBreakpoints.any {
             val line = it as? XLineBreakpoint<*>
             line != null && line.fileUrl == position.file.url && line.line == position.line
