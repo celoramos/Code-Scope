@@ -671,3 +671,18 @@ describe('Valor devolvido que é coleção ou objeto', () => {
     assert.deepEqual(snap.returned, { function: 'soma', value: '15' });
   });
 });
+describe('JavaScript: array devolvido', () => {
+  it('"Array(5)" do js-debug vira os itens', async () => {
+    const base = session({
+      1: [{ name: 'Return value', value: 'Array(5)', type: 'object', variablesReference: 2, indexedVariables: 5 }],
+      2: ['1', '2', '4', '5', '8'].map((value, i) => ({ name: String(i), value, type: 'number', variablesReference: 0 })),
+    });
+    const js: Session = { customRequest: (c, a) => (c === 'scopes' ? Promise.resolve({ scopes: [{ name: 'Local', variablesReference: 1 }] }) : base.customRequest(c, a)) };
+    const snap = (await collectSnapshot(js, 1, javascriptAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { value: '[1, 2, 4, 5, 8]', pending: true });
+  });
+  it('a forma com os itens continua sendo array', () => {
+    assert.deepEqual(javascriptAdapter.shape({ name: 'v', value: '(3) [1, 2, 3]', type: 'object', variablesReference: 4 }), { kind: 'sequence', length: 3, collection: 'list' });
+    assert.deepEqual(javascriptAdapter.shape({ name: 'v', value: '(0) []', type: 'object', variablesReference: 4 }), { kind: 'sequence', length: 0, collection: 'list' });
+  });
+});

@@ -14,7 +14,8 @@ import { asInteger, methodsCalledOn, numericIndex, splitEntry, type CollectionRo
  * Todo array de JavaScript cresce e encolhe, então é desenhado como lista.
  */
 
-const ARRAY_VALUE = /^(?:Array)?\s*\((\d+)\)\s*\[/;
+// "(5) [1, 2, ...]" nas variáveis; "Array(5)", sem os itens, no valor devolvido.
+const ARRAY_VALUE = /^(?:Array)?\s*\((\d+)\)\s*(?:\[|$)/;
 /** Variáveis que o Node põe em todo módulo e que o aluno não escreveu. */
 const NODE_MODULE_NAMES = new Set(['this', '__dirname', '__filename', 'exports', 'module', 'require']);
 
