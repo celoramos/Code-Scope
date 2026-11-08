@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { readSettings, uiLanguage } from './config';
 import { missingDebugger } from './debuggers';
-import { collectStep, toSource, type Source } from './core/collectStep';
+import { collectStep, toSource, type Source, type Step } from './core/collectStep';
 import { registerPauseOnErrors } from './debug/pauseOnErrors';
 import { registerStopTracker } from './debug/trackerFactory';
 import { makeFrame } from './model/frame';
@@ -19,6 +19,11 @@ export class ScopeController implements vscode.Disposable {
   readonly history = new History();
   /** Resposta crua do adaptador na última parada; os testes de integração leem daqui. */
   lastRaw: unknown;
+  /**
+   * Paradas cuja leitura terminou, com passo publicado ou não (código sem arquivo não vira passo).
+   * Os testes de integração esperam por ele para dar o próximo F10.
+   */
+  stopsRead = 0;
   private state: SessionState = 'idle';
   /** Cada parada ganha um número; uma coleta só publica se ainda for a mais recente. */
   private readonly stops = new StopSequence();
@@ -85,13 +90,19 @@ export class ScopeController implements vscode.Disposable {
     const gen = this.stops.start();
     const started = Date.now();
     try {
-      const step = await collectStep(session, threadId, {
-        debugType: session.type,
-        limits: readSettings().limits,
-        readSource,
-        previous: this.history.last(),
-        reason,
-      });
+      let step: Step | undefined;
+      try {
+        step = await collectStep(session, threadId, {
+          debugType: session.type,
+          limits: readSettings().limits,
+          readSource,
+          previous: this.history.last(),
+          reason,
+        });
+      } finally {
+        // Sem await daqui até o push: quem olha vê o contador e o passo novo juntos, nunca um sem o outro.
+        this.stopsRead++;
+      }
       if (!step) return;
       const collected = step.collected;
       if (!this.stops.isCurrent(gen)) return;

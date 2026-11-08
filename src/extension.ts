@@ -9,6 +9,8 @@ export interface CodeScopeApi {
   snapshots(): Snapshot[];
   lastRaw(): unknown;
   panelVisible(): boolean;
+  /** Paradas lidas até agora, com passo publicado ou não. */
+  stopsRead(): number;
 }
 
 export function activate(context: vscode.ExtensionContext): CodeScopeApi {
@@ -27,6 +29,7 @@ export function activate(context: vscode.ExtensionContext): CodeScopeApi {
     snapshots: () => controller.history.all(),
     lastRaw: () => controller.lastRaw,
     panelVisible: () => provider.visible,
+    stopsRead: () => controller.stopsRead,
   };
 }
 
