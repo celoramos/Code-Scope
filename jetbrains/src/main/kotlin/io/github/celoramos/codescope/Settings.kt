@@ -12,6 +12,7 @@ import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.listCellRenderer.textListCellRenderer
 import java.util.Locale
 import javax.swing.JComponent
 
@@ -59,7 +60,8 @@ class CodeScopeConfigurable : Configurable {
         val v = CodeScopeSettings.current
         val p = panel {
             row(t("Velocidade das animações:", "Animation speed:")) {
-                comboBox(speeds, com.intellij.ui.SimpleListCellRenderer.create("") { speedLabel(it) })
+                // SimpleListCellRenderer.create sai da plataforma (forRemoval); este é o substituto indicado.
+                comboBox(speeds, textListCellRenderer("") { speedLabel(it) })
                     .bindItem({ v.animationSpeed }, { v.animationSpeed = it ?: "normal" })
             }
             row {

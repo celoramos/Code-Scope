@@ -35,7 +35,7 @@ intellijPlatform {
 }
 
 // O painel (HTML com o núcleo TypeScript dentro) sai do repositório principal: npx tsx jetbrains/bundle-panel.ts
-val bundlePanel by tasks.registering(Exec::class) {
+val bundlePanel = tasks.register<Exec>("bundlePanel") {
     workingDir = rootDir.parentFile
     commandLine(if (System.getProperty("os.name").startsWith("Windows")) listOf("cmd", "/c", "npx", "tsx", "jetbrains/bundle-panel.ts") else listOf("npx", "tsx", "jetbrains/bundle-panel.ts"))
     inputs.dir(rootDir.parentFile.resolve("src"))

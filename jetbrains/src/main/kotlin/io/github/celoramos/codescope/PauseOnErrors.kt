@@ -5,7 +5,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.breakpoints.XBreakpointType
-import org.jetbrains.java.debugger.breakpoints.properties.JavaExceptionBreakpointProperties
 
 /*
  * Como a extensão do VS Code (src/debug/pauseOnErrors.ts): o programa para no
@@ -20,7 +19,7 @@ object PauseOnErrors {
         val manager = XDebuggerManager.getInstance(project).breakpointManager
         val breakpoint = manager.getDefaultBreakpoints(type).firstOrNull() ?: return {}
         if (breakpoint.isEnabled) return {}
-        val properties = breakpoint.properties as? JavaExceptionBreakpointProperties ?: return {}
+        val properties = breakpoint.properties ?: return {}
         val caught = properties.NOTIFY_CAUGHT
         val uncaught = properties.NOTIFY_UNCAUGHT
         val app = ApplicationManager.getApplication()

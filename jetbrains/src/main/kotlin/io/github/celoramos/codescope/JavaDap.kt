@@ -52,7 +52,7 @@ class JavaDap(
     /** "step" quando não há breakpoint na linha: o painel avisa quando o F9 pulou várias linhas. */
     fun reason(): String = jdi { if (exceptionEvent() != null) "exception" else if (atBreakpoint()) "breakpoint" else "step" }
 
-    private fun atBreakpoint(): Boolean = ReadAction.compute<Boolean, Throwable> {
+    private fun atBreakpoint(): Boolean = ReadAction.computeBlocking<Boolean, Throwable> {
         val position = session.currentPosition ?: return@compute false
         XDebuggerManager.getInstance(project).breakpointManager.allBreakpoints.any {
             val line = it as? XLineBreakpoint<*>
@@ -86,10 +86,10 @@ class JavaDap(
             val method = location.method()
             val args = method.argumentTypeNames().joinToString(",") { simpleName(it) }
             val name = "${simpleName(location.declaringType().name())}.${method.name()}($args)"
-            val file = ReadAction.compute<com.intellij.openapi.vfs.VirtualFile?, Throwable> {
+            val file = ReadAction.computeBlocking<com.intellij.openapi.vfs.VirtualFile?, Throwable> {
                 process.positionManager.getSourcePosition(location)?.file?.virtualFile
             }
-            val inProject = file != null && ReadAction.compute<Boolean, Throwable> { ProjectFileIndex.getInstance(project).isInContent(file) }
+            val inProject = file != null && ReadAction.computeBlocking<Boolean, Throwable> { ProjectFileIndex.getInstance(project).isInContent(file) }
             val source = JsonObject().apply {
                 file?.let {
                     addProperty("name", it.name)
