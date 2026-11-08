@@ -624,3 +624,50 @@ describe('Java: valor devolvido', () => {
     assert.equal(javaAdapter.returnValue?.({ name: 'resultado', value: '3', type: 'int', variablesReference: 0 }), undefined);
   });
 });
+describe('Valor devolvido que é coleção ou objeto', () => {
+  it('lista devolvida mostra os itens, não o texto do debugger', async () => {
+    const vars = {
+      1: [{ name: '->merge()', value: 'MergeSortRecursive$2@3085 size=5', type: 'MergeSortRecursive$2', variablesReference: 4, indexedVariables: 5 }],
+      4: ['3', '9', '27', '38', '43'].map((value, i) => ({ name: `[${i}]`, value, type: 'int', variablesReference: 0 })),
+    };
+    const snap = (await collectSnapshot(session(vars), 1, javaAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { function: 'merge', value: '[3, 9, 27, 38, 43]' });
+  });
+  it('objeto devolvido mostra o tipo e os campos', async () => {
+    const vars = {
+      1: [{ name: '->novo()', value: 'No@12', type: 'No', variablesReference: 6 }],
+      6: [
+        { name: 'valor', value: '5', type: 'int', variablesReference: 0 },
+        { name: 'prox', value: 'null', variablesReference: 0 },
+      ],
+    };
+    const snap = (await collectSnapshot(session(vars), 1, javaAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { function: 'novo', value: 'No {valor: 5, prox: null}' });
+  });
+  it('Python: o que o debugpy já escreve como o aluno (tupla, lista) fica como veio', async () => {
+    const vars = {
+      1: [
+        { name: '(return) par', value: '(1, 2)', type: 'tuple', variablesReference: 7 },
+        { name: '(return) lista', value: '[1, 2]', type: 'list', variablesReference: 8 },
+      ],
+      7: items(2),
+      8: items(2),
+    };
+    const snap = (await collectSnapshot(session(vars), 1, pythonAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { function: 'lista', value: '[1, 2]' });
+    const tupla = (await collectSnapshot(session({ 1: [vars[1][0]], 7: items(2) }), 1, pythonAdapter))!.snapshot;
+    assert.deepEqual(tupla.returned, { function: 'par', value: '(1, 2)' });
+  });
+  it('Python: objeto sem __repr__ devolvido mostra o tipo e os campos', async () => {
+    const vars = {
+      1: [{ name: '(return) novo', value: '<__main__.No object at 0x7f0000000001>', type: 'No', variablesReference: 9 }],
+      9: [{ name: 'valor', value: '5', type: 'int', variablesReference: 0 }],
+    };
+    const snap = (await collectSnapshot(session(vars), 1, pythonAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { function: 'novo', value: 'No {valor: 5}' });
+  });
+  it('número devolvido continua como veio', async () => {
+    const snap = (await collectSnapshot(session({ 1: [{ name: '->soma()', value: '15', type: 'int', variablesReference: 0 }] }), 1, javaAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { function: 'soma', value: '15' });
+  });
+});
