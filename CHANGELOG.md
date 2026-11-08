@@ -13,6 +13,7 @@
 - Java: um F11 depois do fim do `main` não desenha mais os objetos internos da JVM (`Thread`, `ClassLoader`...); erro lançado em código nativo aparece na linha do aluno.
 - Java: `Stack` recebido como parâmetro não aparece mais de cabeça para baixo dentro da função.
 - Java: o valor devolvido (`->fatorial()` no debugger) entra na frase da chamada que terminou, em vez de aparecer como uma variável do aluno.
+- Valor devolvido que é coleção ou objeto aparece como o aluno lê: os itens (`[3, 9, 27, 38, 43]`), ou o tipo e os campos (`No {valor: 5, prox: null}`), no lugar do texto interno do debugger (`MergeSortRecursive$2@3085 size=5`, `<__main__.No object at 0x...>`).
 - JavaScript: posição de array esparso que nunca recebeu valor (`sieve[j] = true` num array vazio) aparece como `undefined`, não como `?`.
 - C++: o teste de integração de `std::stack`, `std::queue`, `std::set` e `std::map` agora roda também no Linux. O gdb do CI perdia os pretty-printers por causa do `LD_LIBRARY_PATH` do `setup-python`.
 - Limites conhecidos: no Linux, o gdb perde os pretty-printers quando o `LD_LIBRARY_PATH` aponta para outro Python (`No module named 'math'`); o texto diz como contornar.
