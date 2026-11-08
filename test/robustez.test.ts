@@ -686,3 +686,22 @@ describe('JavaScript: array devolvido', () => {
     assert.deepEqual(javascriptAdapter.shape({ name: 'v', value: '(0) []', type: 'object', variablesReference: 4 }), { kind: 'sequence', length: 0, collection: 'list' });
   });
 });
+describe('JavaScript: variáveis do topo de um módulo ES ou de um script do navegador', () => {
+  const names = (scopes: string[]) => javascriptAdapter.localScopes(scopes.map((name, i) => ({ name, variablesReference: i + 1 }))).map((s) => s.name);
+  it('no topo de um módulo, "Module" entra; "Global" não', () => {
+    assert.deepEqual(names(['Module', 'Global']), ['Module']);
+  });
+  it('num laço no topo, o bloco e o módulo entram', () => {
+    assert.deepEqual(names(['Block', 'Module', 'Global']), ['Block', 'Module']);
+  });
+  it('no topo de um script do navegador, "Script" entra', () => {
+    assert.deepEqual(names(['Script', 'Global']), ['Script']);
+  });
+  it('dentro de uma função, o escopo do módulo fica de fora, como um Closure', () => {
+    assert.deepEqual(names(['Local', 'Closure', 'Module', 'Global']), ['Local']);
+    assert.deepEqual(names(['Block', 'Local', 'Script', 'Global']), ['Block', 'Local']);
+  });
+  it('CommonJS no topo continua igual (o módulo é uma função: "Local")', () => {
+    assert.deepEqual(names(['Local', 'Global']), ['Local']);
+  });
+});

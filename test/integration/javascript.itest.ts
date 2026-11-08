@@ -28,6 +28,15 @@ function debugScript(name: string, breakpointLine: number, steps: number, step?:
 }
 
 describe('JavaScript (js-debug) real', () => {
+  it('modulo.mjs: as variáveis do topo de um módulo ES aparecem', async () => {
+    const file = path.join(samplesRoot, 'javascript', 'modulo.mjs');
+    const snaps = await debugFile({ file, breakpointLine: 3, steps: 4, config: { type: 'node', request: 'launch', name: 'JS modulo', program: file, skipFiles: ['<node_internals>/**'] }, dump: 'js-modulo' });
+    const filas = snaps.map((s) => s.arrays.find((a) => a.name === 'fila')).filter((a) => a !== undefined);
+    assert.ok(filas.length > 0, `fila nunca apareceu: ${JSON.stringify(snaps.map((s) => s.arrays))}`);
+    assert.deepEqual(filas.at(-1)?.values, ["'Bia'"], JSON.stringify(filas));
+    assert.equal(filas.at(-1)?.kind, 'queue');
+  });
+
   it('calculadora.js: os números entram na pilha e o + tira os dois de cima', async () => {
     const snaps = await debugScript('calculadora', 6, 14);
     const pilhas = snaps.map((s) => s.arrays.find((a) => a.name === 'pilha')).filter((a) => a !== undefined);

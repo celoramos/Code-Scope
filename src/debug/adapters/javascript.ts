@@ -35,7 +35,12 @@ export const javascriptAdapter: LanguageAdapter = {
 
   localScopes(scopes) {
     // O "e" de um catch fica num escopo próprio ("Catch Block").
-    return scopes.filter((s) => /^(block|local|catch)\b/i.test(s.name));
+    const own = scopes.filter((s) => /^(block|local|catch)\b/i.test(s.name));
+    // Fora das funções, num módulo ES (Node com "type": "module", .mjs) ou num script do navegador, as
+    // variáveis do topo ficam em "Module" ou "Script", não em "Local": sem isto, o painel ficava vazio.
+    // Dentro de uma função esse escopo guarda as globais, como um Closure, e fica de fora.
+    if (!scopes.some((s) => /^local\b/i.test(s.name))) own.push(...scopes.filter((s) => /^(module|script)\b/i.test(s.name)));
+    return own;
   },
 
   shape(v): VariableShape {
