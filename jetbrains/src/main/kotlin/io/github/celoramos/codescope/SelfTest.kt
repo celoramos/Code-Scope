@@ -46,6 +46,15 @@ class SelfTest : ProjectActivity {
             }
             return
         }
+        // -PselfTest=Actions:0:0 confere os comandos de Tools > Code Scope e escreve {"ok":true} (ou ERRO).
+        if (name == "Actions") {
+            Thread {
+                val result = runCatching { checkActions(project) }
+                File(out).writeText(result.fold({ "{\"ok\":true}\n" }, { "ERRO: ${it.stackTraceToString()}" }))
+                ApplicationManager.getApplication().invokeLater { ApplicationManager.getApplication().exit(true, true, false) }
+            }.start()
+            return
+        }
         Thread { run(project, name, line.toInt(), steps.toInt(), File(out)) }.start()
     }
 
@@ -175,6 +184,56 @@ private fun checkSettings() {
     values.revealOnDebug = true
     values.pauseOnErrors = true
     configurable.disposeUIResources()
+}
+
+/**
+ * Tools > Code Scope: os dois comandos estão no menu; o modo apresentação liga e desliga pela própria
+ * ação, executada como um clique no menu; "Open a Sample" copia todos os exemplos e não sobrescreve
+ * o que a pessoa mudou. A janela de escolher pasta fica de fora: ela espera uma pessoa.
+ */
+private fun checkActions(project: Project) {
+    val app = ApplicationManager.getApplication()
+    val manager = com.intellij.openapi.actionSystem.ActionManager.getInstance()
+    lateinit var presentation: com.intellij.openapi.actionSystem.AnAction
+    app.invokeAndWait {
+        presentation = manager.getAction("CodeScope.Presentation") ?: error("CodeScope.Presentation não está registrada")
+        check(presentation is PresentationAction) { "CodeScope.Presentation é ${presentation.javaClass.name}" }
+        check(manager.getAction("CodeScope.OpenSample") is OpenSampleAction) { "CodeScope.OpenSample não está registrada" }
+        val group = manager.getAction("CodeScope.Tools") as? com.intellij.openapi.actionSystem.DefaultActionGroup
+            ?: error("o grupo CodeScope.Tools não está registrado")
+        val ids = group.childActionsOrStubs.map { manager.getId(it) }
+        check(ids == listOf("CodeScope.Presentation", "CodeScope.OpenSample")) { "o grupo Code Scope tem $ids" }
+        val tools = manager.getAction("ToolsMenu") as com.intellij.openapi.actionSystem.DefaultActionGroup
+        check("CodeScope.Tools" in tools.childActionsOrStubs.map { manager.getId(it) }) { "Code Scope não está no menu Tools" }
+    }
+
+    val service = project.service<CodeScopeService>()
+    for (on in listOf(true, false)) {
+        app.invokeAndWait {
+            val frame = WindowManager.getInstance().getFrame(project) ?: error("o projeto não tem janela")
+            manager.tryToExecute(presentation, null, frame.rootPane, com.intellij.openapi.actionSystem.ActionPlaces.UNKNOWN, true)
+        }
+        val until = System.currentTimeMillis() + 10_000
+        while (service.presenting != on && System.currentTimeMillis() < until) Thread.sleep(200)
+        check(service.presenting == on) { "depois da ação, o modo apresentação devia estar ${if (on) "ligado" else "desligado"}" }
+    }
+
+    val names = sampleNames()
+    for (n in listOf("BubbleSort.java", "SelectionSort.java", "InsertionSort.java", "SomaMatriz.java", "Calculadora.java")) {
+        check(n in names) { "$n não está entre os exemplos do plugin" }
+    }
+    val parent = java.nio.file.Files.createTempDirectory("code-scope-samples")
+    try {
+        val target = prepareSamples(parent)
+        val copied = target.toFile().list()!!.toSet()
+        check(copied == names.toSet()) { "copiou ${copied.size} de ${names.size} exemplos; faltam ${names - copied}" }
+        val bubble = target.resolve("BubbleSort.java")
+        java.nio.file.Files.writeString(bubble, "// mudado pela pessoa")
+        check(prepareSamples(parent) == target) { "a segunda cópia foi para outra pasta" }
+        check(java.nio.file.Files.readString(bubble) == "// mudado pela pessoa") { "a segunda cópia sobrescreveu o que a pessoa mudou" }
+    } finally {
+        parent.toFile().deleteRecursively()
+    }
 }
 
 /** Por que um passo não chegou: houve sessão de debug, o painel montou, o JCEF funciona aqui, o painel reclamou de algo. */

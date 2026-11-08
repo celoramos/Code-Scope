@@ -60,8 +60,8 @@ for (const caso of casos) {
     const corpo = caso.linhas.map((l) => `        ${l}`).join('\n');
     const file = path.join(pastas.java, `${classe}.java`);
     escrever(file, `public class ${classe} {\n    public static void main(String[] args) {\n${corpo}\n    }\n}\n`);
-    // O driver tem duas linhas antes do corpo: a da classe e a do main.
-    plano.push({ id: caso.id, lang: caso.lang, file, line: caso.pare + 2, mainClass: classe });
+    // O driver tem duas linhas antes do corpo (a da classe e a do main); fim é o "}" que fecha o main.
+    plano.push({ id: caso.id, lang: caso.lang, file, line: caso.pare + 2, fim: caso.linhas.length + 3, mainClass: classe });
   } else {
     const nome = `rodar_${caso.id.replace(/-/g, '_')}.${caso.lang === 'python' ? 'py' : 'js'}`;
     const file = path.join(pastas[caso.lang], nome);

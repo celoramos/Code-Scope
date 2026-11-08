@@ -29,6 +29,23 @@ describe('collectionRole', () => {
   it('ArrayList comum continua lista', () => {
     assert.equal(collectionRole(sample('ListaDeCompras'), 'lista'), undefined);
   });
+
+  // Achado nos programas reais (ReverseStack do TheAlgorithms): dentro da função, a pilha vinha de
+  // cabeça para baixo, porque o tipo do parâmetro não era lido e push/pop sugeria um ArrayDeque.
+  it('Stack recebido como parâmetro continua com o topo no fim', () => {
+    const fn = 'public static void reverseStack(Stack<Integer> stack) {\n  int element = stack.pop();\n  stack.push(element);\n}';
+    assert.deepEqual(collectionRole(fn, 'stack'), { role: 'stack', topFirst: false });
+    assert.deepEqual(collectionRole('void f(int n, Stack<String> s, int m) {\n  s.push("a");\n}', 's'), { role: 'stack', topFirst: false });
+  });
+
+  it('Deque recebido como parâmetro, com push e pop, tem o topo no começo', () => {
+    assert.deepEqual(collectionRole('void f(Deque<Integer> d) {\n  d.push(1);\n  d.pop();\n}', 'd'), { role: 'stack', topFirst: true });
+  });
+
+  it('"return pilha;" antes da declaração não é lido como tipo', () => {
+    const src = 'Deque<Integer> outra() {\n  return pilha;\n}\nStack<Integer> pilha;\npilha.push(1);';
+    assert.deepEqual(collectionRole(src, 'pilha'), { role: 'stack', topFirst: false });
+  });
 });
 
 describe('applyCollectionRoles', () => {

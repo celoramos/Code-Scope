@@ -52,13 +52,19 @@ export async function collectSnapshot(
   limits: Limits = DEFAULT_LIMITS,
   opts: CollectOptions = {},
 ): Promise<Collected | undefined> {
-  const { stackFrames } = (await session.customRequest('stackTrace', {
+  let { stackFrames } = (await session.customRequest('stackTrace', {
     threadId,
     startFrame: 0,
     levels: MAX_CALLS + 1,
   })) as { stackFrames: DapStackFrame[] };
+  // Quadro sem arquivo nenhum é código nativo ou da JVM: o aluno não tem o que ver nele. O passo é o
+  // do primeiro quadro com arquivo (o erro lançado no System.arraycopy aparece na linha do aluno).
+  // Sem nenhum, não há passo: um F11 depois do fim do main cai no encerramento da JVM, e o painel
+  // desenhava Thread, ClassLoader e companhia.
+  const top = stackFrames.findIndex((f) => !!(f.source?.path || f.source?.name));
+  if (top < 0) return undefined;
+  if (top > 0) stackFrames = stackFrames.slice(top);
   const frame = stackFrames[0];
-  if (!frame) return undefined;
   const file = frame.source?.path ?? frame.source?.name ?? '';
   const adapter = typeof pick === 'function' ? pick(file) : pick;
   // Daqui em diante toda resposta de "variables" já vem arrumada pelo adaptador.
@@ -69,8 +75,15 @@ export async function collectSnapshot(
   let returned: Snapshot['returned'];
   for (const v of frameLocals) {
     const r = adapter.returnValue?.(v);
-    if (r) returned = r;
-    else locals.push(v);
+    if (!r) {
+      locals.push(v);
+      continue;
+    }
+    // Coleção ou objeto devolvido com o texto interno do debugger ("MergeSortRecursive$2@3085 size=5" no
+    // Java, "<__main__.No object at 0x...>" no Python): vale o texto curto das chamadas de baixo. O que já
+    // vem como o aluno escreve ([1, 2], (1, 2), {'a': 1}, 15, "oi") fica como veio.
+    const text = LITERAL.test(r.value) ? undefined : await returnedText(session, adapter, v, frame.id).catch(() => undefined);
+    returned = text === undefined ? r : { ...r, value: clip(text) };
   }
 
   // Objetos dos arrays e das variáveis passam pelo mesmo leitor: o mesmo objeto tem o mesmo id nos dois.
@@ -80,19 +93,7 @@ export async function collectSnapshot(
     userTypes,
     enums: await opts.enumTypes?.(file),
     // Campo que guarda um array (a pilha dentro de uma classe Stack): os itens, como na chamada de baixo.
-    sequenceText: async (v, shape) => {
-      // Matriz numa fileira só (int[,] do C#): os itens vêm em linhas, e uma linha de texto não dá conta.
-      if (shape.grid) return undefined;
-      const { array, children } = await readSequence(session, adapter, v, v.name, shape, MAX_CALL_ITEMS, 0, undefined, frame.id);
-      // Objeto dentro do array vira o tipo, como nas chamadas de baixo: o texto do debugger
-      // ("<__main__.No object at 0x7f...>" no Python) não diz nada ao aluno.
-      const values = array.values.map((text, i) => {
-        const c = children.find((x) => adapter.elementIndex(x.name) === i);
-        const s = c ? adapter.shape(c) : undefined;
-        return s?.kind === 'object' ? s.type : text;
-      });
-      return `[${values.join(', ')}${array.length > values.length ? ', …' : ''}]`;
-    },
+    sequenceText: (v, shape) => itemsText(session, adapter, v, shape, frame.id),
   });
   const arrays: ArrayVar[] = [];
   const arrayVars: { array: ArrayVar; v: DapVariable }[] = [];
@@ -325,6 +326,48 @@ async function summarizeCall(session: Session, adapter: LanguageAdapter, v: DapV
   if (!read) return summarize(adapter, v);
   const { values, length } = read.array;
   return [{ name: v.name, value: `[${values.join(', ')}${length > values.length ? ', …' : ''}]` }];
+}
+
+/**
+ * Primeiros itens de uma coleção como texto ("[1, 2, …]"), com o tipo no lugar de cada objeto: o
+ * texto do debugger ("<__main__.No object at 0x7f...>" no Python) não diz nada ao aluno. Matriz
+ * numa fileira só (int[,] do C#) fica de fora: os itens vêm em linhas, e uma linha de texto não dá conta.
+ */
+async function itemsText(session: Session, adapter: LanguageAdapter, v: DapVariable, shape: Sequence, frameId: number): Promise<string | undefined> {
+  if (shape.grid) return undefined;
+  const { array, children } = await readSequence(session, adapter, v, v.name, shape, MAX_CALL_ITEMS, 0, undefined, frameId);
+  const values = array.values.map((text, i) => {
+    const c = children.find((x) => adapter.elementIndex(x.name) === i);
+    const s = c ? adapter.shape(c) : undefined;
+    return s?.kind === 'object' ? s.type : text;
+  });
+  return `[${values.join(', ')}${array.length > values.length ? ', …' : ''}]`;
+}
+
+/** Itens do dicionário mostrados no valor devolvido; o resto vira "…". */
+const MAX_RETURNED_ENTRIES = 4;
+/** Valor que já vem escrito como no código: coleção literal, texto, número, verdadeiro/falso ou nulo. */
+const LITERAL = /^(?:[[({'"]|-?\d|(?:true|false|True|False|None|null|undefined|nil)$)/;
+
+/** Valor devolvido que é coleção, dicionário ou objeto, como texto curto; undefined para o resto. */
+async function returnedText(session: Session, adapter: LanguageAdapter, v: DapVariable, frameId: number): Promise<string | undefined> {
+  const shape = adapter.shape(v);
+  switch (shape.kind) {
+    case 'sequence':
+      return itemsText(session, adapter, v, shape, frameId);
+    case 'empty-list':
+      return '[]';
+    case 'map': {
+      const { entries, size } = await readMap(session, adapter, v, MAX_RETURNED_ENTRIES);
+      const shown = entries.slice(0, MAX_RETURNED_ENTRIES).map((e) => `${e.key}: ${e.value}`);
+      const total = size ?? shape.length ?? entries.length;
+      return `{${shown.join(', ')}${total > shown.length ? ', …' : ''}}`;
+    }
+    case 'object':
+      return objectText(session, adapter, v, shape.type);
+    default:
+      return undefined;
+  }
 }
 
 /** "No {valor: 5, esq: No, dir: null}": o tipo e os primeiros campos, cada um em texto curto. */

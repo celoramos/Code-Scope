@@ -11,6 +11,8 @@ const dumpDir = path.resolve(__dirname);
 
 /** Se o painel estava visível na primeira parada do último debugFile. */
 export let visibleAtFirstStop = false;
+/** Se o programa do último debugFile terminou sozinho, antes de acabarem os passos. */
+export let lastRunEnded = false;
 
 export async function api(): Promise<CodeScopeApi> {
   const ext = vscode.extensions.getExtension<CodeScopeApi>('code-scope.code-scope');
@@ -41,6 +43,8 @@ export interface DebugRun {
   before?: () => Promise<void>;
   /** F10 (stepOver, o padrão) ou F11 (stepInto, para entrar nas funções). */
   step?: 'stepOver' | 'stepInto';
+  /** Passo depois do qual o programa segue sem parar até o fim (o fim do main, no Java). */
+  until?: (s: Snapshot) => boolean;
 }
 
 /**
@@ -106,9 +110,19 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
   for (let k = 0; k < run.steps && vscode.debug.activeDebugSession; k++) {
     if (delay > 0) await new Promise((r) => setTimeout(r, delay));
     const n = cs.snapshots().length;
+    // Parada em código sem arquivo (o encerramento da JVM depois do fim do main) é lida, mas não vira
+    // passo: o que libera o próximo F10 é a leitura terminar, não o passo aparecer.
+    const read = cs.stopsRead();
     await vscode.commands.executeCommand(`workbench.action.debug.${run.step ?? 'stepOver'}`);
-    await waitFor(`o passo ${k + 1}`, () => cs.snapshots().length > n || !vscode.debug.activeDebugSession || undefined, 30_000);
+    await waitFor(`o passo ${k + 1}`, () => cs.snapshots().length > n || cs.stopsRead() > read || !vscode.debug.activeDebugSession || undefined, 30_000);
+    const last = cs.snapshots().at(-1);
+    if (run.until && cs.snapshots().length > n && last && run.until(last)) {
+      await vscode.commands.executeCommand('workbench.action.debug.continue');
+      await waitFor('o fim do programa', () => !vscode.debug.activeDebugSession || undefined, 60_000).catch(() => undefined);
+      break;
+    }
   }
+  lastRunEnded = !vscode.debug.activeDebugSession;
 
   const snaps = cs.snapshots();
   const probe = await probeLocals();

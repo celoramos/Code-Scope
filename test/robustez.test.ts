@@ -579,3 +579,129 @@ describe('Texto curto de coleção nas chamadas de baixo', () => {
     assert.match(g.value, /vazio: \[\]/);
   });
 });
+describe('Quadro sem arquivo no topo da pilha', () => {
+  const frames = (stackFrames: object[], vars: Record<number, Var[]>): Session => ({
+    async customRequest(command: string, args?: any) {
+      if (command === 'stackTrace') return { stackFrames };
+      if (command === 'scopes') return { scopes: [{ name: 'Locals', variablesReference: args.frameId }] };
+      if (command === 'evaluate') return { result: 'false' };
+      return { variables: vars[args.variablesReference] ?? [] };
+    },
+  });
+  it('F11 depois do fim do main (encerramento da JVM) não vira passo', async () => {
+    const jvm = frames([{ id: 1, name: 'Thread.exit()', line: 0 }], { 1: [{ name: 'this', value: 'Thread@5', type: 'Thread', variablesReference: 7 }] });
+    assert.equal(await collectSnapshot(jvm, 1, javaAdapter), undefined);
+  });
+  it('erro lançado em código nativo aparece na linha do aluno', async () => {
+    const s = frames(
+      [
+        { id: 1, name: 'System.arraycopy(Object, int, Object, int, int)', line: 0 },
+        { id: 2, name: 'Copia.main(String[])', line: 6, source: { path: '/x/Copia.java' } },
+      ],
+      { 1: [], 2: [{ name: 'origem', value: 'int[2]', type: 'int[]', variablesReference: 3, indexedVariables: 2 }], 3: items(2) },
+    );
+    const snap = (await collectSnapshot(s, 1, javaAdapter))!.snapshot;
+    assert.deepEqual([snap.file, snap.line], ['/x/Copia.java', 6]);
+    assert.deepEqual(snap.arrays.map((a) => a.name), ['origem']);
+    assert.deepEqual(snap.calls?.map((c) => c.name), ['main']);
+  });
+});
+describe('Java: valor devolvido', () => {
+  it('"->binSearchAlgo()" vira o valor devolvido, não uma variável', async () => {
+    const vars = {
+      1: [
+        { name: '->binSearchAlgo()', value: '3', type: 'int', variablesReference: 0 },
+        { name: 'k', value: '1', type: 'int', variablesReference: 0 },
+      ],
+    };
+    const snap = (await collectSnapshot(session(vars), 1, javaAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { function: 'binSearchAlgo', value: '3' });
+    assert.deepEqual(snap.pointers.map((p) => p.name), ['k']);
+  });
+  it('array e objeto devolvidos aparecem como o aluno escreve o tipo', () => {
+    assert.deepEqual(javaAdapter.returnValue?.({ name: '->sort()', value: 'int[7] (id=41)', type: 'int[]', variablesReference: 5 }), { function: 'sort', value: 'int[7]' });
+    assert.deepEqual(javaAdapter.returnValue?.({ name: '->novo()', value: 'No@12', type: 'No', variablesReference: 6 }), { function: 'novo', value: 'No' });
+    assert.equal(javaAdapter.returnValue?.({ name: 'resultado', value: '3', type: 'int', variablesReference: 0 }), undefined);
+  });
+});
+describe('Valor devolvido que é coleção ou objeto', () => {
+  it('lista devolvida mostra os itens, não o texto do debugger', async () => {
+    const vars = {
+      1: [{ name: '->merge()', value: 'MergeSortRecursive$2@3085 size=5', type: 'MergeSortRecursive$2', variablesReference: 4, indexedVariables: 5 }],
+      4: ['3', '9', '27', '38', '43'].map((value, i) => ({ name: `[${i}]`, value, type: 'int', variablesReference: 0 })),
+    };
+    const snap = (await collectSnapshot(session(vars), 1, javaAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { function: 'merge', value: '[3, 9, 27, 38, 43]' });
+  });
+  it('objeto devolvido mostra o tipo e os campos', async () => {
+    const vars = {
+      1: [{ name: '->novo()', value: 'No@12', type: 'No', variablesReference: 6 }],
+      6: [
+        { name: 'valor', value: '5', type: 'int', variablesReference: 0 },
+        { name: 'prox', value: 'null', variablesReference: 0 },
+      ],
+    };
+    const snap = (await collectSnapshot(session(vars), 1, javaAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { function: 'novo', value: 'No {valor: 5, prox: null}' });
+  });
+  it('Python: o que o debugpy já escreve como o aluno (tupla, lista) fica como veio', async () => {
+    const vars = {
+      1: [
+        { name: '(return) par', value: '(1, 2)', type: 'tuple', variablesReference: 7 },
+        { name: '(return) lista', value: '[1, 2]', type: 'list', variablesReference: 8 },
+      ],
+      7: items(2),
+      8: items(2),
+    };
+    const snap = (await collectSnapshot(session(vars), 1, pythonAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { function: 'lista', value: '[1, 2]' });
+    const tupla = (await collectSnapshot(session({ 1: [vars[1][0]], 7: items(2) }), 1, pythonAdapter))!.snapshot;
+    assert.deepEqual(tupla.returned, { function: 'par', value: '(1, 2)' });
+  });
+  it('Python: objeto sem __repr__ devolvido mostra o tipo e os campos', async () => {
+    const vars = {
+      1: [{ name: '(return) novo', value: '<__main__.No object at 0x7f0000000001>', type: 'No', variablesReference: 9 }],
+      9: [{ name: 'valor', value: '5', type: 'int', variablesReference: 0 }],
+    };
+    const snap = (await collectSnapshot(session(vars), 1, pythonAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { function: 'novo', value: 'No {valor: 5}' });
+  });
+  it('número devolvido continua como veio', async () => {
+    const snap = (await collectSnapshot(session({ 1: [{ name: '->soma()', value: '15', type: 'int', variablesReference: 0 }] }), 1, javaAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { function: 'soma', value: '15' });
+  });
+});
+describe('JavaScript: array devolvido', () => {
+  it('"Array(5)" do js-debug vira os itens', async () => {
+    const base = session({
+      1: [{ name: 'Return value', value: 'Array(5)', type: 'object', variablesReference: 2, indexedVariables: 5 }],
+      2: ['1', '2', '4', '5', '8'].map((value, i) => ({ name: String(i), value, type: 'number', variablesReference: 0 })),
+    });
+    const js: Session = { customRequest: (c, a) => (c === 'scopes' ? Promise.resolve({ scopes: [{ name: 'Local', variablesReference: 1 }] }) : base.customRequest(c, a)) };
+    const snap = (await collectSnapshot(js, 1, javascriptAdapter))!.snapshot;
+    assert.deepEqual(snap.returned, { value: '[1, 2, 4, 5, 8]', pending: true });
+  });
+  it('a forma com os itens continua sendo array', () => {
+    assert.deepEqual(javascriptAdapter.shape({ name: 'v', value: '(3) [1, 2, 3]', type: 'object', variablesReference: 4 }), { kind: 'sequence', length: 3, collection: 'list' });
+    assert.deepEqual(javascriptAdapter.shape({ name: 'v', value: '(0) []', type: 'object', variablesReference: 4 }), { kind: 'sequence', length: 0, collection: 'list' });
+  });
+});
+describe('JavaScript: variáveis do topo de um módulo ES ou de um script do navegador', () => {
+  const names = (scopes: string[]) => javascriptAdapter.localScopes(scopes.map((name, i) => ({ name, variablesReference: i + 1 }))).map((s) => s.name);
+  it('no topo de um módulo, "Module" entra; "Global" não', () => {
+    assert.deepEqual(names(['Module', 'Global']), ['Module']);
+  });
+  it('num laço no topo, o bloco e o módulo entram', () => {
+    assert.deepEqual(names(['Block', 'Module', 'Global']), ['Block', 'Module']);
+  });
+  it('no topo de um script do navegador, "Script" entra', () => {
+    assert.deepEqual(names(['Script', 'Global']), ['Script']);
+  });
+  it('dentro de uma função, o escopo do módulo fica de fora, como um Closure', () => {
+    assert.deepEqual(names(['Local', 'Closure', 'Module', 'Global']), ['Local']);
+    assert.deepEqual(names(['Block', 'Local', 'Script', 'Global']), ['Block', 'Local']);
+  });
+  it('CommonJS no topo continua igual (o módulo é uma função: "Local")', () => {
+    assert.deepEqual(names(['Local', 'Global']), ['Local']);
+  });
+});

@@ -8,7 +8,9 @@ import { polymorphismNote } from '../../src/model/calls';
 import { graphViews } from '../../src/model/graph';
 import { heapView } from '../../src/model/heap';
 import * as assert from 'node:assert/strict';
+import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as vscode from 'vscode';
 import { callChanges } from '../../src/model/calls';
 import { makeFrame } from '../../src/model/frame';
 import type { Snapshot } from '../../src/model/snapshot';
@@ -27,7 +29,58 @@ function debugScript(name: string, breakpointLine: number, steps: number, step?:
   });
 }
 
+/** Chrome instalado nos lugares de sempre; o js-debug acha o mesmo sozinho. */
+function chrome(): string | undefined {
+  const candidates = [
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    path.join(process.env['PROGRAMFILES'] ?? 'C:\\Program Files', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+    path.join(process.env['PROGRAMFILES(X86)'] ?? 'C:\\Program Files (x86)', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+    path.join(process.env['LOCALAPPDATA'] ?? '', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+  ];
+  return candidates.find((p) => fs.existsSync(p));
+}
+
+describe('JavaScript no navegador (Chrome)', () => {
+  it('navegador/ordenar.js: script de página, com as variáveis do topo e a troca', async function () {
+    const exe = chrome();
+    // No VSCodium do CI (Linux), o js-debug que vem com ele não se conecta ao Chrome ("Could not attach to
+    // main target"), no mesmo runner em que o VS Code conecta. Fica nos limites conhecidos.
+    if (!exe || /vscodium/i.test(vscode.env.appName)) this.skip();
+    const dir = path.join(samplesRoot, 'javascript', 'navegador');
+    const snaps = await debugFile({
+      file: path.join(dir, 'ordenar.js'),
+      breakpointLine: 4,
+      steps: 12,
+      config: {
+        type: 'chrome',
+        request: 'launch',
+        name: 'JS navegador',
+        file: path.join(dir, 'index.html'),
+        runtimeExecutable: exe,
+        // Linux do CI: o sandbox do Chrome não sobe no runner.
+        runtimeArgs: process.platform === 'linux' ? ['--no-sandbox'] : [],
+      },
+      dump: 'js-navegador',
+    });
+    // Sem o escopo "Script", o topo de um script de página ficava vazio no painel.
+    assert.deepEqual(snaps[0].arrays.find((a) => a.name === 'numeros')?.values, ['5', '1', '4', '2', '8'], JSON.stringify(snaps[0]));
+    assert.ok(snaps.some((s) => s.pointers.some((p) => p.name === 'j')), `j nunca apareceu: ${JSON.stringify(snaps.map((s) => s.pointers))}`);
+    assert.ok(allChanges(snaps).some((c) => c.kind === 'swap'), `nenhuma troca: ${JSON.stringify(allChanges(snaps))}`);
+  });
+});
+
 describe('JavaScript (js-debug) real', () => {
+  it('modulo.mjs: as variáveis do topo de um módulo ES aparecem', async () => {
+    const file = path.join(samplesRoot, 'javascript', 'modulo.mjs');
+    const snaps = await debugFile({ file, breakpointLine: 3, steps: 4, config: { type: 'node', request: 'launch', name: 'JS modulo', program: file, skipFiles: ['<node_internals>/**'] }, dump: 'js-modulo' });
+    const filas = snaps.map((s) => s.arrays.find((a) => a.name === 'fila')).filter((a) => a !== undefined);
+    assert.ok(filas.length > 0, `fila nunca apareceu: ${JSON.stringify(snaps.map((s) => s.arrays))}`);
+    assert.deepEqual(filas.at(-1)?.values, ["'Bia'"], JSON.stringify(filas));
+    assert.equal(filas.at(-1)?.kind, 'queue');
+  });
+
   it('calculadora.js: os números entram na pilha e o + tira os dois de cima', async () => {
     const snaps = await debugScript('calculadora', 6, 14);
     const pilhas = snaps.map((s) => s.arrays.find((a) => a.name === 'pilha')).filter((a) => a !== undefined);

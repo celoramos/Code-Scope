@@ -168,7 +168,9 @@ export function cleanValue(value: string): string {
  */
 export function collectionRole(source: string, name: string): CollectionRole | undefined {
   const n = name.replace(/\$/g, '\\$');
-  const declared = new RegExp(`\\b(\\w+)\\s*(?:<[^;=()]*>)?\\s+${n}\\s*[=;]`).exec(source)?.[1];
+  // Variável ("Stack<Integer> p = ...;") ou parâmetro ("void f(Stack<Integer> p)"): dentro da função
+  // que recebe a pilha, só o parâmetro diz que é um Stack. O tipo começa com maiúscula: "return p;" não declara.
+  const declared = new RegExp(`\\b([A-Z]\\w*)\\s*(?:<[^;=()]*>)?\\s+${n}\\s*[=;),]`).exec(source)?.[1];
   const created = new RegExp(`\\b${n}\\s*=\\s*new\\s+(\\w+)`).exec(source)?.[1];
   const ops = methodsCalledOn(source, name).map((c) => c.method);
 
@@ -233,6 +235,13 @@ export const javaAdapter: LanguageAdapter = {
 
   unbox(v) {
     return isBoxed(v) ? (inner) => unboxedValue(inner.value, v.type) : undefined;
+  },
+
+  // O java-debug guarda o valor devolvido como "->fatorial()" nas locais de quem chamou, logo depois
+  // do retorno. Sem isto, o painel desenhava "->fatorial()" como uma variável do aluno.
+  returnValue: (v) => {
+    const m = /^->(\w+)\(\)$/.exec(v.name);
+    return m ? { function: m[1], value: formatElement(v) } : undefined;
   },
 
   // Classe com toString próprio (record, por exemplo) vem "lazy": um filho sem nome,

@@ -54,7 +54,9 @@ class CodeScopeService(private val project: Project) : Disposable {
         return obj("type" to "settings", "animationSpeed" to s.animationSpeed, "maxElements" to s.maxElements, "beginnerMode" to s.beginnerMode)
     }
 
-    private var presenting = false
+    /** Modo apresentação ligado; o autoteste "Actions" confere depois de rodar a ação. */
+    var presenting = false
+        private set
 
     /** Modo apresentação: o painel maximizado, com letra maior e animações mais lentas. */
     fun togglePresentation() {

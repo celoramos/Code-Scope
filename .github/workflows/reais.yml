@@ -1,12 +1,17 @@
 name: Programas reais
 
 # Programas de repositórios abertos (TheAlgorithms) rodados no debugger real, um por caso de
-# test/reais/casos.json. Os dumps do que o painel desenhou ficam no artefato, para conferir à mão.
+# test/reais/casos.json, do começo ao fim. Um job por linguagem, em paralelo. Os dumps do que o painel
+# desenhou ficam no artefato, para conferir à mão.
 on:
   workflow_dispatch:
   push:
     branches: [main]
+    # O código da extensão também: foi este workflow que pegou o valor devolvido do Java e a pilha
+    # de cabeça para baixo, que os testes de integração não pegaram.
     paths:
+      - src/**
+      - test/integration/helpers.ts
       - test/reais/**
       - test/integration/reais.itest.ts
       - .github/workflows/reais.yml
@@ -17,7 +22,20 @@ permissions:
 
 jobs:
   reais:
-    name: Programas reais (Linux)
+    name: Programas reais (${{ matrix.lang }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lang: Python
+            grep: 'Reais py-'
+            ext: ms-python.debugpy
+          - lang: Java
+            grep: 'Reais java-'
+            ext: vscjava.vscode-java-pack
+          - lang: JavaScript
+            grep: 'Reais js-'
+            ext: ''
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -43,14 +61,15 @@ jobs:
         shell: bash
         env:
           CODE_SCOPE_PYTHON: ${{ steps.python.outputs.python-path }}
-          CODE_SCOPE_GREP: Reais
-          CODE_SCOPE_EXTENSIONS: vscjava.vscode-java-pack,ms-python.debugpy
+          CODE_SCOPE_GREP: ${{ matrix.grep }}
+          # Vazio instala nada: o debugger de JavaScript vem no VS Code.
+          CODE_SCOPE_EXTENSIONS: ${{ matrix.ext }}
       - if: always()
         run: grep -E "^REAIS |passing|failing|pending" itest.log || true
       - if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: reais
+          name: reais-${{ matrix.lang }}
           path: |
             itest.log
             out-test/reais-*.json

@@ -32,21 +32,29 @@ class OpenSampleAction : AnAction() {
         val descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
             .withTitle(if (inPortuguese()) "Onde salvar os exemplos?" else "Where should the samples go?")
         val parent = FileChooser.chooseFile(descriptor, e.project, null) ?: return
-        val target = Path.of(parent.path).resolve("code-scope-java")
-        try {
-            if (!Files.exists(target)) copySamples(target)
+        val target = try {
+            prepareSamples(Path.of(parent.path))
         } catch (error: java.io.IOException) {
             Messages.showErrorDialog(e.project, error.message ?: error.toString(), "Code Scope")
             return
         }
         ProjectUtil.openOrImport(target, null, true)
     }
-
-    private fun copySamples(target: Path) {
-        Files.createDirectories(target)
-        val names = resource("/samples/java/index.txt").reader().readLines().filter { it.isNotBlank() }
-        for (name in names) resource("/samples/java/$name").use { Files.copy(it, target.resolve(name)) }
-    }
-
-    private fun resource(path: String) = javaClass.getResourceAsStream(path) ?: throw java.io.IOException("$path não está no plugin")
 }
+
+/** Nomes dos exemplos de Java que vão dentro do plugin (o build lista samples/java em index.txt). */
+internal fun sampleNames(): List<String> = resource("/samples/java/index.txt").reader().readLines().filter { it.isNotBlank() }
+
+/**
+ * Copia os exemplos para <parent>/code-scope-java e devolve essa pasta. Se ela já existe, fica
+ * como está: a pessoa pode ter mexido nos exemplos. O autoteste "Actions" chama esta função.
+ */
+internal fun prepareSamples(parent: Path): Path {
+    val target = parent.resolve("code-scope-java")
+    if (Files.exists(target)) return target
+    Files.createDirectories(target)
+    for (name in sampleNames()) resource("/samples/java/$name").use { Files.copy(it, target.resolve(name)) }
+    return target
+}
+
+private fun resource(path: String) = OpenSampleAction::class.java.getResourceAsStream(path) ?: throw java.io.IOException("$path não está no plugin")

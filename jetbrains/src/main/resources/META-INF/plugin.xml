@@ -16,6 +16,12 @@
   ]]></description>
 
   <change-notes><![CDATA[
+    <b>0.9.2</b>
+    <ul>
+      <li>New samples in Tools &gt; Code Scope &gt; Open a Sample: selection sort, insertion sort, matrix sum and a stack calculator.</li>
+      <li>Collections never show as their size in brackets: an object field holding an array shows its items (<code>stack: [1, 2]</code>), and a returned list shows its items instead of the debugger's internal text.</li>
+      <li>A <code>Stack</code> received as a parameter is no longer drawn upside down, and the value a method returned is part of the sentence about the call that finished.</li>
+    </ul>
     <b>0.9.1</b>
     <ul>
       <li>Call stack: objects and <code>null</code> show in earlier calls, so a recursion over a tree shows the node of each call.</li>

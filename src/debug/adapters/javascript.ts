@@ -14,7 +14,8 @@ import { asInteger, methodsCalledOn, numericIndex, splitEntry, type CollectionRo
  * Todo array de JavaScript cresce e encolhe, então é desenhado como lista.
  */
 
-const ARRAY_VALUE = /^(?:Array)?\s*\((\d+)\)\s*\[/;
+// "(5) [1, 2, ...]" nas variáveis; "Array(5)", sem os itens, no valor devolvido.
+const ARRAY_VALUE = /^(?:Array)?\s*\((\d+)\)\s*(?:\[|$)/;
 /** Variáveis que o Node põe em todo módulo e que o aluno não escreveu. */
 const NODE_MODULE_NAMES = new Set(['this', '__dirname', '__filename', 'exports', 'module', 'require']);
 
@@ -34,7 +35,12 @@ export const javascriptAdapter: LanguageAdapter = {
 
   localScopes(scopes) {
     // O "e" de um catch fica num escopo próprio ("Catch Block").
-    return scopes.filter((s) => /^(block|local|catch)\b/i.test(s.name));
+    const own = scopes.filter((s) => /^(block|local|catch)\b/i.test(s.name));
+    // Fora das funções, num módulo ES (Node com "type": "module", .mjs) ou num script do navegador, as
+    // variáveis do topo ficam em "Module" ou "Script", não em "Local": sem isto, o painel ficava vazio.
+    // Dentro de uma função esse escopo guarda as globais, como um Closure, e fica de fora.
+    if (!scopes.some((s) => /^local\b/i.test(s.name))) own.push(...scopes.filter((s) => /^(module|script)\b/i.test(s.name)));
+    return own;
   },
 
   shape(v): VariableShape {

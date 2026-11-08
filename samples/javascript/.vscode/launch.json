@@ -10,6 +10,12 @@
         "<node_internals>/**"
       ],
       "stopOnEntry": true
+    },
+    {
+      "type": "chrome",
+      "name": "Navegador (Chrome)",
+      "request": "launch",
+      "file": "${workspaceFolder}/navegador/index.html"
     }
   ]
 }
