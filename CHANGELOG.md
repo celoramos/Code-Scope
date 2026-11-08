@@ -1,5 +1,11 @@
 # Changelog
 
+## Próxima versão
+
+### Corrigido
+
+- IntelliJ: o plugin deixa de usar APIs que a plataforma marcou para remoção (`SimpleListCellRenderer.create`, `ReadAction.compute`), para continuar abrindo nas próximas versões da IDE.
+
 ## 0.9.2
 
 ### Novo
