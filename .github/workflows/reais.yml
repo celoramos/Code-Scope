@@ -7,7 +7,11 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    # O código da extensão também: foi este workflow que pegou o valor devolvido do Java e a pilha
+    # de cabeça para baixo, que os testes de integração não pegaram.
     paths:
+      - src/**
+      - test/integration/helpers.ts
       - test/reais/**
       - test/integration/reais.itest.ts
       - .github/workflows/reais.yml
