@@ -6,7 +6,8 @@
  */
 import { onPanelMessage, postToPanel } from './shim';
 import '../../media/src/main.js';
-import { collectStep, toSource } from '../core/collectStep';
+import { collectStep, toSource, type Declarations } from '../core/collectStep';
+import { declaredClasses, declaredEnums } from '../debug/adapters/adapter';
 import type { Session } from '../debug/dapCollector';
 import { makeFrame, type FrameOptions } from '../model/frame';
 import { History } from '../model/history';
@@ -29,6 +30,19 @@ let state: 'idle' | 'running' | 'ended' = 'idle';
 const stops = new StopSequence();
 /** Sessão salva ao lado da atual, depois de "Comparar". */
 let compared: SessionSummary | undefined;
+/** Classes dos outros arquivos do projeto (No.java ao lado do Main.java), lidas uma vez por sessão. */
+let declarations: Promise<Declarations> | undefined;
+
+async function readDeclarations(extensions: readonly string[]): Promise<Declarations> {
+  const texts = ((await request({ kind: 'project-sources', extensions: [...extensions] })) as string[] | null) ?? [];
+  const classes = new Set<string>();
+  const enums = new Set<string>();
+  for (const text of texts) {
+    declaredClasses(text).forEach((c) => classes.add(c));
+    declaredEnums(text).forEach((e) => enums.add(e));
+  }
+  return { classes, enums };
+}
 
 const session: Session = {
   customRequest: (command: string, args?: unknown) => request({ kind: 'dap', command, args }),
@@ -56,6 +70,7 @@ async function onStopped(threadId: number | undefined, reason: string | undefine
         const text = (await request({ kind: 'source', file })) as string | null;
         return text == null ? undefined : toSource(text);
       },
+      projectDeclarations: (_file, extensions) => (declarations ??= readDeclarations(extensions).catch(() => ({ classes: new Set(), enums: new Set() }))),
       previous: history.last(),
       reason,
     });
@@ -78,6 +93,7 @@ function receive(event: HostEvent) {
   switch (event.type) {
     case 'session-start':
       history.clear();
+      declarations = undefined;
       postToPanel({ type: 'reset' });
       setState('running');
       break;

@@ -12,6 +12,8 @@ export type HostRequest =
   | { kind: 'dap'; command: string; args?: unknown }
   /** Texto do arquivo-fonte. */
   | { kind: 'source'; file: string }
+  /** Texto dos arquivos do projeto com essas extensões (até um limite), para achar classes de outros arquivos. */
+  | { kind: 'project-sources'; extensions: string[] }
   /** Depois do palpite, o foco volta ao editor. */
   | { kind: 'focus-editor' }
   /** Arquivo em base64 para a IDE salvar: imagem, GIF ou sessão. */

@@ -172,18 +172,24 @@ function unquoteSimple(value: string): string {
   return m ? m[1] : value;
 }
 
+/** Nome de classe ou variável, com acento: quem aprende em português escreve class Nó e int número. */
+export const IDENT = '[\\p{L}_$][\\p{L}\\p{N}_$]*';
+
 /** Classes declaradas no arquivo: só objetos delas são desenhados. */
 export function declaredClasses(source: string): Set<string> {
   // class (Java, JavaScript, Python, C#, C++), struct (C, C++, C#) e record (C#, Java).
-  const declared = [...source.matchAll(/\b(?:class|struct|record)\s+([A-Za-z_$][\w$]*)/g)].map((m) => m[1]);
+  const declared = [...source.matchAll(new RegExp(`\\b(?:class|struct|record)\\s+(${IDENT})`, 'gu'))].map((m) => m[1]);
   // Em Go o nome vem antes: type No struct.
-  const go = [...source.matchAll(/\btype\s+([A-Za-z_]\w*)\s+struct\b/g)].map((m) => m[1]);
-  return new Set([...declared, ...go]);
+  const go = [...source.matchAll(new RegExp(`\\btype\\s+(${IDENT})\\s+struct\\b`, 'gu'))].map((m) => m[1]);
+  // C: o nome que o programa usa é o do typedef ("typedef struct no {...} No;" e "typedef struct no No;").
+  const typedefBody = [...source.matchAll(new RegExp(`\\btypedef\\s+(?:struct|union)\\s*(?:${IDENT}\\s*)?\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\}\\s*(${IDENT})\\s*;`, 'gu'))].map((m) => m[1]);
+  const typedefTag = [...source.matchAll(new RegExp(`\\btypedef\\s+(?:struct|union)\\s+${IDENT}\\s+(${IDENT})\\s*;`, 'gu'))].map((m) => m[1]);
+  return new Set([...declared, ...go, ...typedefBody, ...typedefTag]);
 }
 
 /** Enums declarados no arquivo (Java: enum Cor): o valor é a constante, não um objeto. */
 export function declaredEnums(source: string): Set<string> {
-  return new Set([...source.matchAll(/\benum\s+([A-Za-z_$][\w$]*)/g)].map((m) => m[1]));
+  return new Set([...source.matchAll(new RegExp(`\\benum\\s+(?:class\\s+)?(${IDENT})`, 'gu'))].map((m) => m[1]));
 }
 
 export interface ReturnedValue {

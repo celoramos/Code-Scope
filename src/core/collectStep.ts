@@ -22,12 +22,23 @@ export interface Source {
   lines: string[];
 }
 
+/** Classes e enums que o programa declara. */
+export interface Declarations {
+  classes: ReadonlySet<string>;
+  enums: ReadonlySet<string>;
+}
+
 export interface StepOptions {
   /** Tipo da sessão ("java", "python"...), que escolhe o adaptador. */
   debugType: string;
   limits: Limits;
   /** Texto do arquivo; undefined quando não dá para ler. */
   readSource: (file: string) => Promise<Source | undefined>;
+  /**
+   * Declarações dos outros arquivos do programa (No.java ao lado do Main.java), com as extensões
+   * da linguagem do arquivo parado. Sem isto, só valem as classes do próprio arquivo.
+   */
+  projectDeclarations?: (file: string, extensions: readonly string[]) => Promise<Declarations> | undefined;
   previous?: Snapshot;
   reason?: string;
 }
@@ -46,14 +57,20 @@ export async function collectStep(session: Session, threadId: number | undefined
     if (!sources.has(file)) sources.set(file, opts.readSource(file));
     return sources.get(file) as Promise<Source | undefined>;
   };
+  // As classes de um objeto podem morar em outro arquivo do programa: as do projeto entram junto.
+  const project = async (file: string) => (await opts.projectDeclarations?.(file, pickAdapter(opts.debugType, file).extensions)?.catch(() => undefined)) ?? undefined;
   const collected = await collectSnapshot(session, thread, (file) => pickAdapter(opts.debugType, file), opts.limits, {
     userTypes: async (file) => {
       const s = await sourceOf(file);
-      return s ? declaredClasses(s.text) : undefined;
+      if (!s) return undefined;
+      const others = await project(file);
+      return others ? new Set([...declaredClasses(s.text), ...others.classes]) : declaredClasses(s.text);
     },
     enumTypes: async (file) => {
       const s = await sourceOf(file);
-      return s ? declaredEnums(s.text) : undefined;
+      if (!s) return undefined;
+      const others = await project(file);
+      return others ? new Set([...declaredEnums(s.text), ...others.enums]) : declaredEnums(s.text);
     },
     previous: opts.previous,
   });

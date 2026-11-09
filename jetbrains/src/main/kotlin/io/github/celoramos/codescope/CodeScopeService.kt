@@ -16,7 +16,9 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.xdebugger.XDebugSession
 import java.util.Base64
@@ -116,6 +118,7 @@ class CodeScopeService(private val project: Project) : Disposable {
             d.handle(req.get("command").asString, req.get("args")?.takeIf { it.isJsonObject }?.asJsonObject)
         }
         "source" -> readSource(req.get("file").asString)
+        "project-sources" -> projectSources(req.getAsJsonArray("extensions").map { it.asString.removePrefix(".").lowercase() }.toSet())
         "focus-editor" -> {
             ApplicationManager.getApplication().invokeLater {
                 FileEditorManager.getInstance(project).selectedTextEditor?.contentComponent?.requestFocusInWindow()
@@ -149,6 +152,23 @@ class CodeScopeService(private val project: Project) : Disposable {
     private fun readSource(path: String): String? = ReadAction.computeBlocking<String?, Throwable> {
         val file = LocalFileSystem.getInstance().findFileByPath(path) ?: return@computeBlocking null
         FileDocumentManager.getInstance().getDocument(file)?.text
+    }
+
+    /**
+     * Texto dos arquivos do projeto com essas extensões, para o painel achar as classes de outros
+     * arquivos (No.java ao lado do Main.java). Só o conteúdo do projeto, sem bibliotecas nem pastas
+     * excluídas, e com um limite, como a busca do VS Code (src/projectDeclarations.ts).
+     */
+    private fun projectSources(extensions: Set<String>): List<String> = ReadAction.computeBlocking<List<String>, Throwable> {
+        val texts = mutableListOf<String>()
+        ProjectFileIndex.getInstance(project).iterateContent { file ->
+            val ext = file.extension?.lowercase() ?: ""
+            if (!file.isDirectory && ext in extensions && file.length < 300_000) {
+                runCatching { VfsUtilCore.loadText(file) }.getOrNull()?.let { texts.add(it) }
+            }
+            texts.size < 300
+        }
+        texts
     }
 
     private fun saveFile(data: String, name: String, ext: String) {

@@ -9,6 +9,7 @@ import { History } from './model/history';
 import { parseSession, serializeSession, summarizeSession, type SessionSummary } from './model/session';
 import { saveFile, type FromWebview, type ScopeViewProvider } from './webview/scopeViewProvider';
 import { StopSequence } from './core/stopSequence';
+import { ProjectDeclarations } from './projectDeclarations';
 import { FEEDBACK_URL, invalidSession, pickSession, readError } from './webview/strings';
 
 type SessionState = 'idle' | 'running' | 'ended';
@@ -31,6 +32,8 @@ export class ScopeController implements vscode.Disposable {
   private revealPending = false;
   /** Sessão salva ao lado da atual, depois de "Comparar". */
   private compared?: SessionSummary;
+  /** Classes dos outros arquivos do programa, lidas uma vez por sessão de debug. */
+  private readonly declarations = new ProjectDeclarations((file) => vscode.workspace.getWorkspaceFolder(vscode.Uri.file(file))?.uri.fsPath);
 
   constructor(
     private readonly view: ScopeViewProvider,
@@ -70,6 +73,7 @@ export class ScopeController implements vscode.Disposable {
     // O histórico da sessão anterior fica disponível até aqui. Aqui não se descarta leitura nenhuma:
     // o js-debug abre uma sessão filha, e o início dela pode chegar com a primeira parada já sendo lida.
     this.history.clear();
+    this.declarations.clear();
     this.setState('running');
     this.view.post({ type: 'reset' });
     // Abrir aqui não adianta: logo depois o VS Code troca a barra lateral para
@@ -96,6 +100,7 @@ export class ScopeController implements vscode.Disposable {
           debugType: session.type,
           limits: readSettings().limits,
           readSource,
+          projectDeclarations: (file, extensions) => this.declarations.get(file, extensions),
           previous: this.history.last(),
           reason,
         });
