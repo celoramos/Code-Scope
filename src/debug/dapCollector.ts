@@ -49,6 +49,8 @@ export interface CollectOptions {
    * onde as locais já são as globais.
    */
   outer?: (file: string, line: number, adapter: LanguageAdapter) => Promise<Outer | undefined>;
+  /** Tamanho de cada ponteiro que é array, achado no código ("v" => "n"): o int v[] do C. */
+  pointerLengths?: (file: string, line: number) => Promise<ReadonlyMap<string, string> | undefined>;
 }
 
 export interface Outer {
@@ -119,7 +121,20 @@ export async function collectSnapshot(
   const maps: MapVar[] = [];
   const elements: Record<string, DapVariable[]> = {};
   let caught: Snapshot['caught'];
+  const lengths = adapter.pointerSequence ? await opts.pointerLengths?.(file, frame.line).catch(() => undefined) : undefined;
   for (const v of locals) {
+    // Ponteiro que o código diz ser array: lido como array, com o tamanho que o programa tem agora.
+    const length = lengths?.get(v.name);
+    const pointer = length !== undefined ? adapter.pointerSequence?.(v, length) : undefined;
+    if (pointer && arrays.length < limits.maxArrays) {
+      const read = await readSequence(session, adapter, v, v.name, { kind: 'sequence', collection: 'array' }, limits.maxElements, 1, heapReader, frame.id, pointer).catch(() => undefined);
+      if (read && read.array.length > 0) {
+        arrays.push(read.array);
+        arrayVars.push({ array: read.array, v });
+        elements[v.name] = read.children.slice(0, 3);
+        continue;
+      }
+    }
     // O "e" de um catch: o erro que o programa tratou.
     const error = adapter.caughtError?.(v);
     if (error) {
@@ -490,10 +505,12 @@ async function readSequence(
   depth: number,
   objects?: ElementReader,
   frameId?: number,
+  /** Leitura por expressões já decidida por quem chama (o ponteiro que é array). */
+  given?: IndirectSequence,
 ): Promise<{ array: ArrayVar; children: DapVariable[] }> {
   if (shape.grid) return { array: await readGrid(session, adapter, v, name, shape.grid, max), children: [] };
   let children: DapVariable[];
-  const indirect = frameId !== undefined ? adapter.indirectSequence?.(v) : undefined;
+  const indirect = given ?? (frameId !== undefined ? adapter.indirectSequence?.(v) : undefined);
   if (indirect) {
     const read = await readIndirect(session, indirect, Math.max(max, 1), frameId as number);
     children = read.children;

@@ -36,6 +36,8 @@ const CONTAINER = /^(?:const )?std::(?:__\w+::)?(stack|queue|priority_queue|dequ
 /** std::string: "std::string" no topo, "std::__cxx11::basic_string<char, ...>" dentro de um vector. */
 const STRING = /^(?:const )?std::(?:__\w+::)?(?:string|basic_string<char\b)/;
 const MAP = /^(?:const )?std::(?:__\w+::)?(?:unordered_)?map</;
+/** Struct, union ou classe por valor, com ou sem a palavra struct, e com os argumentos de template. */
+const STRUCT_VALUE = /^(?:const\s+|volatile\s+)*(?:struct\s+|class\s+|union\s+)?([A-Za-z_]\w*)(?:\s*<.*>)?\s*&?$/;
 /** Quantos itens o valor diz ter: "of length 3", "with 2 elements", "{ size=3 }". */
 const COUNT = /(?:of length |with |size=)(\d+)/;
 
@@ -126,6 +128,15 @@ export const cAdapter: LanguageAdapter = {
       if (!plausibleAddress(address)) return { kind: 'scalar', value: address };
       if (v.variablesReference > 0) return { kind: 'object', type: ptr[1], id: address };
     }
+    // Struct ou objeto guardado direto na variável ("Aluno a;", "Pilha p;", "Pilha<int> p;"): os campos,
+    // como um objeto. Não tem endereço no valor; o que o distingue é o lugar onde mora, como no Go.
+    const value = STRUCT_VALUE.exec(type);
+    if (value && v.variablesReference > 0 && !type.includes('::')) {
+      const e = v.evaluateName ?? v.name;
+      return { kind: 'object', type: value[1], id: `=${e}`, address: `&${e}`, inline: true };
+    }
+    // Constante de enum: o gdb mostra o nome ("AZUL").
+    if (type && v.variablesReference === 0 && /^[A-Za-z_]\w*$/.test(v.value) && /^(?:enum\s+)?[A-Za-z_]\w*$/.test(type)) return { kind: 'scalar', value: v.value };
     return { kind: 'skip' };
   },
 
@@ -142,6 +153,21 @@ export const cAdapter: LanguageAdapter = {
       };
     }
     return { length: `${e}._M_impl._M_finish - ${e}._M_impl._M_start`, items: (n) => `*${e}._M_impl._M_start@${n}` };
+  },
+  // int v[] recebido pela função (vira int *) ou vetor de malloc: o gdb lê n itens a partir do endereço com *v@n.
+  pointerSequence(v, length) {
+    const type = (v.type ?? '').trim();
+    if (!/\*$/.test(type) || /\bchar\s*\*$/.test(type) || /\*\s*\*$/.test(type)) return undefined;
+    const address = v.value.split(' ')[0].toLowerCase();
+    if (!plausibleAddress(address)) return undefined;
+    const e = v.evaluateName ?? v.name;
+    return { length, items: (n) => `*${e}@${n}` };
+  },
+  // char nome[20] num campo: o gdb manda '"ana", '\000' <repeats 16 times>'; vale o texto até o primeiro \0.
+  fieldText(v) {
+    if (!/^(?:const\s+)?(?:unsigned\s+|signed\s+)?char\s*\[\d+\]$/.test((v.type ?? '').trim())) return undefined;
+    const m = /^"((?:[^"\\]|\\.)*)"/.exec(v.value);
+    return m ? `"${m[1].split('\\000')[0]}"` : undefined;
   },
   // std::string sem pretty-printers: "{...}" no valor, e o texto no ponteiro _M_p ('0x5ffb10 "abc"').
   indirectText(v) {

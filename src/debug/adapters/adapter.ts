@@ -21,8 +21,9 @@ export type VariableShape =
    * mostra uma ("@12" no Java, "0x..." no Python); sem ela, o coletor compara
    * com evaluate. address é a expressão que aponta para ele, quando o objeto é um
    * valor guardado num lugar (struct do Go) e ponteiros podem apontar para esse lugar.
+   * inline: struct do C guardado no lugar; dentro de um array, fica como texto na célula.
    */
-  | { kind: 'object'; type: string; id?: string; address?: string }
+  | { kind: 'object'; type: string; id?: string; address?: string; inline?: boolean }
   /** Referência vazia: null do Java, que não diz o tipo. */
   | { kind: 'null' }
   /** Dicionário: HashMap, dict, objeto literal ou Map do JavaScript. */
@@ -103,6 +104,15 @@ export interface LanguageAdapter {
    * itens (std::vector num gdb sem os pretty-printers do Python).
    */
   indirectSequence?(v: DapVariable): IndirectSequence | undefined;
+  /**
+   * Ponteiro que é array (o int v[] recebido pela função, o vetor de malloc), com a expressão do
+   * tamanho achada no código: como ler os itens. undefined se o ponteiro não pode ser array.
+   */
+  pointerSequence?(v: DapVariable, length: string): IndirectSequence | undefined;
+  /**
+   * Texto de um array de char do C num campo de struct (char nome[20]): "ana", não as vinte posições.
+   */
+  fieldText?(v: DapVariable): string | undefined;
   /** Expressão com o texto de um valor que o debugger não mostra (std::string sem pretty-printers). */
   indirectText?(v: DapVariable): string | undefined;
   /** Pilha ou fila, pelo uso no código-fonte. */

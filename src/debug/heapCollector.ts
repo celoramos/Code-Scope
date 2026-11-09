@@ -56,7 +56,8 @@ export class HeapCollector {
   /** id do objeto guardado na variável, se for objeto de uma classe do aluno. */
   async objectId(v: DapVariable): Promise<string | undefined> {
     const shape = this.ctx.adapter.shape(v);
-    return shape.kind === 'object' ? this.ctx.visit(v, shape) : undefined;
+    // Struct guardado dentro do array (Aluno turma[3]) é o valor da célula, não uma seta para fora.
+    return shape.kind === 'object' && !shape.inline ? this.ctx.visit(v, shape) : undefined;
   }
 
   /** "Cor.AZUL" se a variável guarda uma constante de um enum do arquivo. */
@@ -164,6 +165,8 @@ class HeapContext {
   private async field(c: DapVariable): Promise<ObjectField | undefined> {
     // Campo com um valor embrulhado: o T valor de um No<T> com Integer, o BigInteger, o StringBuilder.
     // O debugger mostra "Integer@41"; o valor de verdade está um nível abaixo.
+    const text = this.adapter.fieldText?.(c);
+    if (text !== undefined) return { name: c.name, value: text };
     const unbox = this.adapter.unbox?.(c);
     if (unbox) {
       const inner = await variables(this.session, c.variablesReference);

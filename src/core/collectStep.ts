@@ -10,6 +10,7 @@ import { parseCondition, type Syntax } from '../model/condition';
 import { dropVariables, notYetDeclared } from '../model/declared';
 import { enclosingFunction } from '../model/enclosing';
 import { usedNames } from '../model/outer';
+import { pointerLengths } from '../model/pointerLengths';
 import type { Snapshot } from '../model/snapshot';
 import { applyTextRoles } from '../model/text';
 
@@ -82,6 +83,10 @@ export async function collectStep(session: Session, threadId: number | undefined
       const python = adapter.id === 'python';
       const fn = enclosingFunction(s.text, line, python);
       return fn ? { used: usedNames(fn, python), declared: adapter.outerNames?.(s.text) ?? [] } : undefined;
+    },
+    pointerLengths: async (file, line) => {
+      const s = await sourceOf(file);
+      return s ? pointerLengths(s.text, line) : undefined;
     },
   });
   if (!collected) return undefined;
