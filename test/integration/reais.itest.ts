@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type { Snapshot } from '../../src/model/snapshot';
-import { allChanges, debugFile, lastRaws, lastRunEnded, samplesRoot } from './helpers';
+import { allChanges, debugFile, invisibleDetails, lastRaws, lastRunEnded, samplesRoot } from './helpers';
 
 /*
  * Programas de repositórios abertos (TheAlgorithms), baixados por test/reais/preparar.mjs no
@@ -56,7 +56,8 @@ type Crua = { name: string; value: string; type?: string };
 /** Variáveis que o debugger mostra e que não são do aluno, ou que o painel não deve desenhar. */
 function naoEDoAluno(lang: Caso['lang'], v: Crua): boolean {
   if (lang === 'python') {
-    return /^(special|function|class) variables$/.test(v.name) || /^__\w+__$/.test(v.name) || ['module', 'function', 'type', 'builtin_function_or_method', 'method'].includes(v.type ?? '');
+    // ".0" é o iterador que o Python cria dentro de uma compreensão; TypeVar é anotação de tipo.
+    return /^(special|function|class) variables$/.test(v.name) || /^__\w+__$/.test(v.name) || v.name.startsWith('.') || ['module', 'function', 'type', 'builtin_function_or_method', 'method', 'TypeVar'].includes(v.type ?? '');
   }
   if (lang === 'javascript') {
     if (['exports', 'require', 'module', '__filename', '__dirname'].includes(v.name)) return true;
@@ -87,7 +88,8 @@ function invisiveis(lang: Caso['lang'], snaps: Snapshot[]): string[] {
     ]);
     for (const v of locais) {
       if (desenhadas.has(v.name) || naoEDoAluno(lang, v) || achadas.has(v.name)) continue;
-      achadas.set(v.name, `${v.name} (${v.type ?? '?'}: ${String(v.value).slice(0, 60)})`);
+      const detalhe = invisibleDetails.get(v.name);
+      achadas.set(v.name, `${v.name} (${v.type ?? '?'}: ${String(v.value).slice(0, 60)}${detalhe ? `; ${detalhe}` : ''})`);
     }
   }
   return [...achadas.values()];

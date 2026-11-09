@@ -15,6 +15,34 @@ export let visibleAtFirstStop = false;
 export let lastRunEnded = false;
 /** O que o debugger mandou em cada passo do último debugFile, com a posição do passo no histórico. */
 export let lastRaws: { index: number; raw: unknown }[] = [];
+/**
+ * Variáveis que o painel não desenhou, abertas na hora em que existiam: o valor, a referência e os
+ * primeiros filhos, para saber por que sumiram sem precisar rodar de novo. Uma vez por nome.
+ */
+export const invisibleDetails = new Map<string, string>();
+
+type RawVar = { name: string; value: string; type?: string; variablesReference: number; indexedVariables?: number };
+
+async function probeInvisible(raw: unknown, snap: Snapshot): Promise<void> {
+  const session = vscode.debug.activeDebugSession;
+  const locals = (raw as { locals?: RawVar[] } | undefined)?.locals;
+  if (!session || !locals || invisibleDetails.size >= 40) return;
+  const drawn = new Set([...snap.arrays.map((a) => a.name.replace(/\[.*$/, '')), ...snap.pointers.map((p) => p.name), ...(snap.scalars ?? []).map((s) => s.name), ...(snap.refs ?? []).map((r) => r.name), ...(snap.maps ?? []).map((m) => m.name)]);
+  for (const v of locals) {
+    if (drawn.has(v.name) || invisibleDetails.has(v.name) || v.variablesReference <= 0) continue;
+    let children = '';
+    try {
+      const res = (await session.customRequest('variables', { variablesReference: v.variablesReference })) as { variables?: RawVar[] };
+      children = (res.variables ?? [])
+        .slice(0, 3)
+        .map((c) => `${c.name}=${c.value.slice(0, 50)}${c.type ? `:${c.type}` : ''}${c.variablesReference > 0 ? `#${c.indexedVariables ?? ''}` : ''}`)
+        .join(' | ');
+    } catch (e) {
+      children = `erro: ${e instanceof Error ? e.message : e}`;
+    }
+    invisibleDetails.set(v.name, `ref=${v.variablesReference} idx=${v.indexedVariables ?? '-'} filhos: ${children}`);
+  }
+}
 
 export async function api(): Promise<CodeScopeApi> {
   const ext = vscode.extensions.getExtension<CodeScopeApi>('code-scope.code-scope');
@@ -110,6 +138,7 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
   // CODE_SCOPE_STEP_DELAY (ms) segura cada passo na tela, para gravar o painel animando.
   const delay = Number(process.env.CODE_SCOPE_STEP_DELAY ?? 0);
   const raws = [{ index: cs.snapshots().length - 1, raw }];
+  invisibleDetails.clear();
   for (let k = 0; k < run.steps && vscode.debug.activeDebugSession; k++) {
     if (delay > 0) await new Promise((r) => setTimeout(r, delay));
     const n = cs.snapshots().length;
@@ -119,7 +148,10 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
     await vscode.commands.executeCommand(`workbench.action.debug.${run.step ?? 'stepOver'}`);
     await waitFor(`o passo ${k + 1}`, () => cs.snapshots().length > n || cs.stopsRead() > read || !vscode.debug.activeDebugSession || undefined, 30_000);
     const last = cs.snapshots().at(-1);
-    if (cs.snapshots().length > n) raws.push({ index: cs.snapshots().length - 1, raw: cs.lastRaw() });
+    if (cs.snapshots().length > n) {
+      raws.push({ index: cs.snapshots().length - 1, raw: cs.lastRaw() });
+      if (last) await probeInvisible(cs.lastRaw(), last);
+    }
     if (run.until && cs.snapshots().length > n && last && run.until(last)) {
       await vscode.commands.executeCommand('workbench.action.debug.continue');
       await waitFor('o fim do programa', () => !vscode.debug.activeDebugSession || undefined, 60_000).catch(() => undefined);
