@@ -165,7 +165,7 @@ describe('collectSnapshot', () => {
     assert.deepEqual(got.arrays, [
       {
         name: 'grade',
-        values: ['int[2]', 'int[2]'],
+        values: ['[1, 2]', '[3, 4]'],
         length: 2,
         rows: [
           { name: 'grade[0]', values: ['1', '2'], length: 2 },

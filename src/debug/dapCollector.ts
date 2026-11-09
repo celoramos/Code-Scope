@@ -388,10 +388,9 @@ async function summarizeCall(session: Session, adapter: LanguageAdapter, v: DapV
     return text ? [{ name: v.name, value: clip(text) }] : [];
   }
   if (shape.kind !== 'sequence') return summarize(adapter, v);
-  const read = await readSequence(session, adapter, v, v.name, shape, MAX_CALL_ITEMS, 0, undefined, frameId).catch(() => undefined);
-  if (!read) return summarize(adapter, v);
-  const { values, length } = read.array;
-  return [{ name: v.name, value: `[${values.join(', ')}${length > values.length ? ', …' : ''}]` }];
+  // O mesmo texto curto do campo com array: objeto vira a classe, lista dentro de lista vira os itens dela.
+  const text = await itemsText(session, adapter, v, shape, frameId).catch(() => undefined);
+  return text === undefined ? summarize(adapter, v) : [{ name: v.name, value: clip(text) }];
 }
 
 /**
@@ -399,16 +398,23 @@ async function summarizeCall(session: Session, adapter: LanguageAdapter, v: DapV
  * texto do debugger ("<__main__.No object at 0x7f...>" no Python) não diz nada ao aluno. Matriz
  * numa fileira só (int[,] do C#) fica de fora: os itens vêm em linhas, e uma linha de texto não dá conta.
  */
-async function itemsText(session: Session, adapter: LanguageAdapter, v: DapVariable, shape: Sequence, frameId: number): Promise<string | undefined> {
+async function itemsText(session: Session, adapter: LanguageAdapter, v: DapVariable, shape: Sequence, frameId: number, depth = 1): Promise<string | undefined> {
   if (shape.grid) return undefined;
-  const { array, children } = await readSequence(session, adapter, v, v.name, shape, MAX_CALL_ITEMS, 0, undefined, frameId);
-  const values = array.values.map((text, i) => {
+  const { array, children } = await readSequence(session, adapter, v, v.name, shape, depth > 0 ? MAX_CALL_ITEMS : MAX_NESTED_ITEMS, 0, undefined, frameId);
+  const values: string[] = [];
+  for (let i = 0; i < array.values.length; i++) {
     const c = children.find((x) => adapter.elementIndex(x.name) === i);
     const s = c ? adapter.shape(c) : undefined;
-    return s?.kind === 'object' ? s.type : text;
-  });
+    // Lista de listas (as permutações, a lista de adjacência): um nível de itens; abaixo disso, "[…]".
+    if (c && s?.kind === 'sequence') values.push(depth > 0 ? ((await itemsText(session, adapter, c, s, frameId, depth - 1).catch(() => undefined)) ?? '[…]') : s.length === 0 ? '[]' : '[…]');
+    else if (s?.kind === 'map') values.push(s.length === 0 ? '{}' : '{…}');
+    else values.push(s?.kind === 'object' ? s.type : array.values[i]);
+  }
   return `[${values.join(', ')}${array.length > values.length ? ', …' : ''}]`;
 }
+
+/** Itens de cada lista de dentro, numa lista de listas mostrada como texto. */
+const MAX_NESTED_ITEMS = 4;
 
 /** Itens do dicionário mostrados no valor devolvido; o resto vira "…". */
 const MAX_RETURNED_ENTRIES = 4;
@@ -601,7 +607,10 @@ async function readSequence(
       // Só as primeiras camadas de um cubo abrem: 50 x 50 x 50 posições travariam o F10.
       const below = i < MAX_LAYERS ? depth - 1 : 0;
       // frameId vai junto: no gdb sem pretty-printers, cada linha de um vector<vector<int>> também é lida por expressões.
-      array.rows.push((await readSequence(session, adapter, byIndex[i], `${name}[${i}]`, rowShape, max, below, objects, frameId)).array);
+      const row = (await readSequence(session, adapter, byIndex[i], `${name}[${i}]`, rowShape, max, below, objects, frameId)).array;
+      array.rows.push(row);
+      // O texto da linha é o dela, não o do debugger ("ArrayList@1452 size=3"): a frase do passo e a tabela usam este.
+      array.values[i] = row.rows ? '[…]' : `[${row.values.join(', ')}${row.length > row.values.length ? ', …' : ''}]`;
     }
   }
   return { array, children };

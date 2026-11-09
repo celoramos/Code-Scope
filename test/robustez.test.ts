@@ -772,3 +772,37 @@ describe('Java: BigInteger, BigDecimal e StringBuilder aparecem como valor', () 
     assert.equal(no?.fields.find((f) => f.name === 'valor')?.value, '5');
   });
 });
+
+describe('Texto interno do debugger não chega ao painel', () => {
+  it('Python: o repr padrão dentro de uma lista ou na chave de um dicionário vira a classe', () => {
+    assert.equal(pythonAdapter.formatElement({ name: '0', value: '[<__main__.Ponto object at 0x000001C2932E9780>, 3]', variablesReference: 0 }), '[Ponto, 3]');
+    assert.deepEqual(pythonAdapter.mapEntry?.({ name: '<no.No object at 0x7f00aa>', value: "'origem'", variablesReference: 0 }), { key: 'No', value: "'origem'" });
+  });
+
+  it('campo que aponta para outro objeto guarda a classe, não "<__main__.No object at 0x...>"', async () => {
+    const no = (ref: number, prox: Var) => [{ name: 'valor', value: String(ref), type: 'int', variablesReference: 0 }, prox];
+    const snap = await collect(
+      {
+        1: [{ name: 'inicio', value: '<__main__.No object at 0x0000021CA41A5A00>', type: 'No', variablesReference: 2 }],
+        2: no(1, { name: 'proximo', value: '<__main__.No object at 0x0000021CA41A5B00>', type: 'No', variablesReference: 3 }),
+        3: no(2, { name: 'proximo', value: 'None', type: 'NoneType', variablesReference: 0 }),
+      },
+      pythonAdapter,
+    );
+    assert.deepEqual(snap.heap?.[0].fields.find((f) => f.name === 'proximo'), { name: 'proximo', value: 'No', ref: '0x0000021ca41a5b00' });
+  });
+
+  it('Java: lista de listas vira matriz, e o texto de cada linha é o dela', async () => {
+    const lista = (n: number, ref: number) => ({ name: String(n), value: `ArrayList@${1450 + n} size=2`, type: 'ArrayList', variablesReference: ref, indexedVariables: 2 });
+    const snap = await collect(
+      {
+        1: [{ name: 'saida', value: 'ArrayList@14 size=2', type: 'ArrayList', variablesReference: 2, indexedVariables: 2 }],
+        2: [lista(0, 3), lista(1, 4)],
+        3: items(2, 'Integer').map((v) => ({ ...v, value: String(Number(v.value) + 1) })),
+        4: items(2, 'Integer').map((v) => ({ ...v, value: String(Number(v.value) + 3) })),
+      },
+      javaAdapter,
+    );
+    assert.deepEqual(snap.arrays[0].values, ['[1, 2]', '[3, 4]']);
+  });
+});

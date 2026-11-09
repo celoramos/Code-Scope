@@ -39,6 +39,14 @@ export function pythonRole(source: string, name: string): CollectionRole | undef
 /** Tipos com filhos que não são objetos de uma classe do aluno. */
 const NOT_OBJECTS = new Set(['function', 'builtin_function_or_method', 'method', 'module', 'type', 'generator', 'coroutine', 'range', 'bytes', 'bytearray']);
 
+/**
+ * Repr padrão de um objeto dentro de outro texto ("[<__main__.Ponto object at 0x7f...>]", a chave de
+ * um dicionário): vira o nome da classe, que é o que o aluno reconhece.
+ */
+export function cleanRepr(text: string): string {
+  return text.replace(/<(?:[\w.]+\.)?([\p{L}_][\p{L}\p{N}_]*) object at 0x[0-9a-fA-F]+>/gu, '$1');
+}
+
 /** Filhos que o debugpy acrescenta a uma coleção e que não são itens dela. */
 function notAnItem(c: DapVariable): boolean {
   return /^(special|function|class) variables$/.test(c.name) || c.name === 'len()' || c.name.startsWith('Too large to show') || c.value.startsWith('<bound method ');
@@ -95,7 +103,7 @@ export const pythonAdapter: LanguageAdapter = {
     if (!m || v.type !== m[1]) return undefined;
     return { type: m[1], message: m[2].replace(/^(["'])(.*)\1$/s, '$2') };
   },
-  mapEntry: (child) => (notAnItem(child) ? undefined : { key: child.name, value: child.value }),
+  mapEntry: (child) => (notAnItem(child) ? undefined : { key: cleanRepr(child.name), value: cleanRepr(child.value) }),
 
   setItem: (c) => !notAnItem(c),
   // A partir de 100 itens o debugpy para de listar, e só o "len()" diz o tamanho.
@@ -104,7 +112,7 @@ export const pythonAdapter: LanguageAdapter = {
     return n === undefined ? undefined : asInteger(n);
   },
   elementIndex: numericIndex,
-  formatElement: (v) => v.value,
+  formatElement: (v) => cleanRepr(v.value),
   collectionRole: pythonRole,
   // O debugpy guarda o valor devolvido como "(return) fatorial" nas locais de quem chamou.
   returnValue: (v) => {

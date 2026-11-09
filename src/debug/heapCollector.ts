@@ -179,7 +179,8 @@ class HeapContext {
         const constant = await this.constant(c);
         if (constant !== undefined) return { name: c.name, value: constant };
         const ref = await this.visit(c, s);
-        return ref !== undefined ? { name: c.name, value: c.value, ref } : { name: c.name, value: c.value };
+        // O texto do debugger ("<__main__.No object at 0x...>", "No@13") não diz nada ao aluno: vale a classe.
+        return ref !== undefined ? { name: c.name, value: s.type, ref } : { name: c.name, value: s.type };
       }
       case 'null':
         return { name: c.name, value: c.value, ref: null };
