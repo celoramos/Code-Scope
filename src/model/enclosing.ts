@@ -24,12 +24,23 @@ function pythonFunction(lines: string[], line: number): string | undefined {
 function braceFunction(lines: string[], line: number): string | undefined {
   /** Blocos abertos: linha onde abriu e se o cabeçalho é de função. */
   const open: { start: number; isFunction: boolean }[] = [];
+  const clean = lines.map((l) => l.replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\/\/.*$/g, ''));
   for (let i = 0; i < lines.length; i++) {
-    const text = lines[i].replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\/\/.*$/g, '');
+    const text = clean[i];
     for (let c = 0; c < text.length; c++) {
       if (text[c] === '{') {
-        const header = text.slice(0, c);
-        open.push({ start: i, isFunction: FUNCTION_HEADER.test(header) && !CONTROL.test(header) });
+        let header = text.slice(0, c);
+        let start = i;
+        // Chave sozinha na linha de baixo ("void ordena(int v[], int n)\n{"), o jeito de muito livro de C.
+        if (!header.trim()) {
+          let prev = i - 1;
+          while (prev >= 0 && !clean[prev].trim()) prev--;
+          if (prev >= 0) {
+            header = clean[prev];
+            start = prev;
+          }
+        }
+        open.push({ start, isFunction: FUNCTION_HEADER.test(header) && !CONTROL.test(header) });
       } else if (text[c] === '}') {
         const block = open.pop();
         if (block?.isFunction && block.start < line && i + 1 >= line && !open.some((b) => b.isFunction)) {
