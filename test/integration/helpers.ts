@@ -13,6 +13,8 @@ const dumpDir = path.resolve(__dirname);
 export let visibleAtFirstStop = false;
 /** Se o programa do último debugFile terminou sozinho, antes de acabarem os passos. */
 export let lastRunEnded = false;
+/** O que o debugger mandou em cada passo do último debugFile, com a posição do passo no histórico. */
+export let lastRaws: { index: number; raw: unknown }[] = [];
 
 export async function api(): Promise<CodeScopeApi> {
   const ext = vscode.extensions.getExtension<CodeScopeApi>('code-scope.code-scope');
@@ -107,6 +109,7 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
 
   // CODE_SCOPE_STEP_DELAY (ms) segura cada passo na tela, para gravar o painel animando.
   const delay = Number(process.env.CODE_SCOPE_STEP_DELAY ?? 0);
+  const raws = [{ index: cs.snapshots().length - 1, raw }];
   for (let k = 0; k < run.steps && vscode.debug.activeDebugSession; k++) {
     if (delay > 0) await new Promise((r) => setTimeout(r, delay));
     const n = cs.snapshots().length;
@@ -116,6 +119,7 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
     await vscode.commands.executeCommand(`workbench.action.debug.${run.step ?? 'stepOver'}`);
     await waitFor(`o passo ${k + 1}`, () => cs.snapshots().length > n || cs.stopsRead() > read || !vscode.debug.activeDebugSession || undefined, 30_000);
     const last = cs.snapshots().at(-1);
+    if (cs.snapshots().length > n) raws.push({ index: cs.snapshots().length - 1, raw: cs.lastRaw() });
     if (run.until && cs.snapshots().length > n && last && run.until(last)) {
       await vscode.commands.executeCommand('workbench.action.debug.continue');
       await waitFor('o fim do programa', () => !vscode.debug.activeDebugSession || undefined, 60_000).catch(() => undefined);
@@ -123,6 +127,7 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
     }
   }
   lastRunEnded = !vscode.debug.activeDebugSession;
+  lastRaws = raws;
 
   const snaps = cs.snapshots();
   const probe = await probeLocals();
