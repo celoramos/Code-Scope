@@ -162,6 +162,14 @@ class HeapContext {
   }
 
   private async field(c: DapVariable): Promise<ObjectField | undefined> {
+    // Campo com um valor embrulhado: o T valor de um No<T> com Integer, o BigInteger, o StringBuilder.
+    // O debugger mostra "Integer@41"; o valor de verdade está um nível abaixo.
+    const unbox = this.adapter.unbox?.(c);
+    if (unbox) {
+      const inner = await variables(this.session, c.variablesReference);
+      const value = inner.find((f) => f.name === 'value') ?? (inner.length === 1 ? inner[0] : undefined);
+      if (value) return { name: c.name, value: unbox(value) };
+    }
     const s = this.adapter.shape(c);
     switch (s.kind) {
       case 'object': {

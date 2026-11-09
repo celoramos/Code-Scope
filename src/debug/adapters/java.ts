@@ -54,9 +54,32 @@ export function isListVariable(v: DapVariable): boolean {
   return isArrayVariable(v) && !(v.type?.endsWith('[]') ?? false) && !ARRAY_VALUE.test(v.value);
 }
 
+/**
+ * Classes do JDK que, para o aluno, são um valor: o BigInteger do fatorial de 30, o StringBuilder
+ * que monta a frase. O debugger mostra "BigInteger@12"; o painel mostra o texto do toString.
+ */
+const VALUE_CLASSES = new Set(['BigInteger', 'BigDecimal', 'StringBuilder', 'StringBuffer', 'AtomicInteger', 'AtomicLong', 'AtomicBoolean', 'LocalDate', 'LocalDateTime', 'LocalTime', 'Duration', 'Instant', 'UUID']);
+/** Dessas, as que são número: sem aspas, como o aluno escreve. */
+const NUMERIC_VALUE_CLASSES = new Set(['BigInteger', 'BigDecimal', 'AtomicInteger', 'AtomicLong']);
+
+/** Nome da classe de valor ("BigInteger"), se a variável guarda uma. */
+export function valueClass(v: DapVariable): string | undefined {
+  if (v.variablesReference <= 0) return undefined;
+  const type = simpleClassName(v.type ?? /^([\w.$]+)@\d+/.exec(v.value)?.[1] ?? '');
+  return VALUE_CLASSES.has(type) ? type : undefined;
+}
+
+/** Texto de uma classe de valor: número sem aspas, texto (StringBuilder) com aspas, como uma String. */
+function valueClassText(text: string, type: string): string {
+  const raw = text.replace(/^"(.*)"$/s, '$1');
+  return NUMERIC_VALUE_CLASSES.has(type) || type === 'AtomicBoolean' ? raw : `"${raw}"`;
+}
+
 /** Valor de um elemento para exibir: char ganha aspas simples, como no código. */
 export function formatElement(v: DapVariable): string {
   const value = cleanValue(v.value);
+  const valueType = v.type && VALUE_CLASSES.has(simpleClassName(v.type)) ? simpleClassName(v.type) : undefined;
+  if (valueType && /^".*"$/s.test(value)) return valueClassText(value, valueType);
   if (v.type === 'char' || v.type === 'Character') return `'${value}'`;
   if (v.type && /^(double|float|Double|Float)$/.test(v.type)) return formatDecimal(value);
   return value;
@@ -238,7 +261,17 @@ export const javaAdapter: LanguageAdapter = {
   formatElement,
 
   unbox(v) {
-    return isBoxed(v) ? (inner) => unboxedValue(inner.value, v.type) : undefined;
+    if (isBoxed(v)) return (inner) => unboxedValue(inner.value, v.type);
+    // Classe de valor com toString: a variável "lazy" tem um filho 'BigInteger@46 "123"'; AtomicInteger tem o campo value.
+    const type = valueClass(v);
+    return type ? (inner) => valueClassText(unboxedValue(inner.value, undefined), type) : undefined;
+  },
+
+  // Variável local com BigInteger, StringBuilder...: o próprio programa diz o texto.
+  indirectText(v) {
+    if (!valueClass(v)) return undefined;
+    const expr = v.evaluateName ?? (/^[\p{L}_$][\p{L}\p{N}_$]*$/u.test(v.name) ? v.name : undefined);
+    return expr ? `${expr}.toString()` : undefined;
   },
 
   // O java-debug guarda o valor devolvido como "->fatorial()" nas locais de quem chamou, logo depois

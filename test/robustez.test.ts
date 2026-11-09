@@ -725,3 +725,50 @@ describe('Inteiro grande demais para o número do JavaScript', () => {
     assert.deepEqual(goAdapter.shape({ name: 'f', value: fib80, type: 'int', variablesReference: 0 }), { kind: 'scalar', value: fib80 });
   });
 });
+
+describe('Java: BigInteger, BigDecimal e StringBuilder aparecem como valor', () => {
+  const vars: Record<number, Var[]> = {
+    1: [
+      { name: 'fatorial', value: 'BigInteger@12', type: 'BigInteger', variablesReference: 2, evaluateName: 'fatorial' },
+      { name: 'sb', value: 'StringBuilder@13', type: 'StringBuilder', variablesReference: 3, evaluateName: 'sb' },
+      { name: 'preco', value: 'BigDecimal@18', type: 'java.math.BigDecimal', variablesReference: 8, evaluateName: 'preco' },
+      { name: 'lista', value: 'ArrayList@14 size=1', type: 'ArrayList', variablesReference: 4, indexedVariables: 1 },
+      { name: 'no', value: 'No@15', type: 'No', variablesReference: 5 },
+    ],
+    4: [{ name: '0', value: 'BigInteger@16', type: 'BigInteger', variablesReference: 6 }],
+    6: [{ name: '', value: 'BigInteger@16 "42"', variablesReference: 0 }],
+    5: [
+      { name: 'proximo', value: 'null', variablesReference: 0 },
+      { name: 'valor', value: 'Integer@17', type: 'Integer', variablesReference: 7 },
+    ],
+    7: [{ name: 'value', value: '5', type: 'int', variablesReference: 0 }],
+  };
+  const results: Record<string, string> = {
+    'fatorial.toString()': '"265252859812191058636308480000000"',
+    'sb.toString()': '"xab"',
+    'preco.toString()': '"59.70"',
+  };
+  const s: Session = {
+    async customRequest(command: string, args?: any) {
+      if (command === 'stackTrace') return { stackFrames: [{ id: 10, name: 'Main.main(String[])', line: 1, source: { path: '/x/Main.java' } }] };
+      if (command === 'scopes') return { scopes: [{ name: 'Local', variablesReference: 1 }] };
+      if (command === 'evaluate') return { result: results[args.expression] ?? 'false' };
+      return { variables: vars[args.variablesReference] ?? [] };
+    },
+  };
+
+  it('o fatorial em BigInteger é o número, o StringBuilder é o texto', async () => {
+    const snap = (await collectSnapshot(s, 1, javaAdapter, undefined, { userTypes: async () => new Set(['No']) }))!.snapshot;
+    const scalars = Object.fromEntries((snap.scalars ?? []).map((x) => [x.name, x.value]));
+    assert.equal(scalars.fatorial, '265252859812191058636308480000000');
+    assert.equal(scalars.sb, '"xab"');
+    assert.equal(scalars.preco, '59.70');
+  });
+
+  it('dentro de uma lista e num campo Integer de um nó, o valor de dentro', async () => {
+    const snap = (await collectSnapshot(s, 1, javaAdapter, undefined, { userTypes: async () => new Set(['No']) }))!.snapshot;
+    assert.deepEqual(snap.arrays.find((a) => a.name === 'lista')?.values, ['42']);
+    const no = snap.heap?.find((o) => o.type === 'No');
+    assert.equal(no?.fields.find((f) => f.name === 'valor')?.value, '5');
+  });
+});

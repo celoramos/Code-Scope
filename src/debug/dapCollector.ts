@@ -505,7 +505,8 @@ async function readSequence(
       // Variável "lazy" devolve o próprio valor como único filho; objeto comum devolve os campos.
       const fields = await variables(session, c.variablesReference);
       const inner = fields.find((f) => f.name === 'value') ?? (fields.length === 1 ? fields[0] : undefined);
-      values.push(clip(inner ? unbox(inner) : adapter.formatElement(c)));
+      const indirect = !inner && frameId !== undefined ? await indirectText(session, adapter, c, frameId) : undefined;
+      values.push(clip(inner ? unbox(inner) : (indirect ?? adapter.formatElement(c))));
     } else {
       const indirect = frameId !== undefined ? await indirectText(session, adapter, c, frameId) : undefined;
       const text = indirect ?? adapter.formatElement(c);
