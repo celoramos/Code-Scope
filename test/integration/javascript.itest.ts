@@ -10,6 +10,7 @@ import { heapView } from '../../src/model/heap';
 import * as assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as vscode from 'vscode';
 import { callChanges } from '../../src/model/calls';
 import { makeFrame } from '../../src/model/frame';
 import type { Snapshot } from '../../src/model/snapshot';
@@ -44,7 +45,9 @@ function chrome(): string | undefined {
 describe('JavaScript no navegador (Chrome)', () => {
   it('navegador/ordenar.js: script de página, com as variáveis do topo e a troca', async function () {
     const exe = chrome();
-    if (!exe) this.skip();
+    // No VSCodium do CI (Linux), o js-debug que vem com ele não se conecta ao Chrome ("Could not attach to
+    // main target"), no mesmo runner em que o VS Code conecta. Fica nos limites conhecidos.
+    if (!exe || /vscodium/i.test(vscode.env.appName)) this.skip();
     const dir = path.join(samplesRoot, 'javascript', 'navegador');
     const snaps = await debugFile({
       file: path.join(dir, 'ordenar.js'),
