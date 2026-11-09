@@ -14,6 +14,7 @@ on:
       - test/integration/helpers.ts
       - test/reais/**
       - test/integration/reais.itest.ts
+      - test/corpus/**
       - .github/workflows/reais.yml
 
 # O job roda código baixado de fora: o token só lê, e o checkout não deixa a credencial no .git.
@@ -22,10 +23,13 @@ permissions:
 
 jobs:
   reais:
-    name: Programas reais (${{ matrix.lang }})
+    name: Programas reais (${{ matrix.lang }}, ${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
+        # A maioria de quem aprende usa Windows: os mesmos programas rodam nos três sistemas.
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        lang: [Python, Java, JavaScript]
         include:
           - lang: Python
             grep: 'Reais py-'
@@ -36,8 +40,8 @@ jobs:
           - lang: JavaScript
             grep: 'Reais js-'
             ext: ''
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v7
         with:
@@ -57,19 +61,22 @@ jobs:
       - run: npm ci
       # Antes de abrir o VS Code: o language server do Java precisa achar as classes baixadas.
       - run: node test/reais/preparar.mjs
-      - run: xvfb-run -a npm run test:integration 2>&1 | tee itest.log
+      - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:integration 2>&1 | tee itest.log
         shell: bash
         env:
           CODE_SCOPE_PYTHON: ${{ steps.python.outputs.python-path }}
           CODE_SCOPE_GREP: ${{ matrix.grep }}
+          # Os programas do corpus vão além dos baixados: até 1500 F11 por programa.
+          CODE_SCOPE_REAIS_PASSOS: 1500
           # Vazio instala nada: o debugger de JavaScript vem no VS Code.
           CODE_SCOPE_EXTENSIONS: ${{ matrix.ext }}
       - if: always()
-        run: grep -E "^REAIS |passing|failing|pending" itest.log || true
+        run: grep -E "^REAIS |^INVISIVEIS |passing|failing|pending" itest.log || true
+        shell: bash
       - if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: reais-${{ matrix.lang }}
+          name: reais-${{ matrix.lang }}-${{ matrix.os }}
           path: |
             itest.log
             out-test/reais-*.json

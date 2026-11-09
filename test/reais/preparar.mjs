@@ -69,5 +69,36 @@ for (const caso of casos) {
     plano.push({ id: caso.id, lang: caso.lang, file, line: caso.pare });
   }
 }
+// Programas do próprio projeto (test/corpus/<linguagem>/<caso>/), do iniciante ao avançado, com
+// vários arquivos quando o caso pede. O arquivo com "@pare" é o programa: o breakpoint vai nessa linha.
+// No Java, cada caso é um pacote (corpus.<caso>) e "@fim" marca o "}" que fecha o main.
+const corpus = path.join(import.meta.dirname, '..', 'corpus');
+const prefixo = { python: 'py', java: 'java', javascript: 'js' };
+for (const lang of Object.keys(prefixo)) {
+  const base = path.join(corpus, lang);
+  if (!fs.existsSync(base)) continue;
+  for (const caso of fs.readdirSync(base).sort()) {
+    const origem = path.join(base, caso);
+    const destino = lang === 'java' ? path.join(pastas.java, 'corpus', caso) : path.join(pastas[lang], caso);
+    fs.mkdirSync(destino, { recursive: true });
+    let entrada;
+    for (const nome of fs.readdirSync(origem).sort()) {
+      const texto = fs.readFileSync(path.join(origem, nome), 'utf8');
+      const file = path.join(destino, nome);
+      escrever(file, texto);
+      const linhas = texto.split(/\r?\n/);
+      const pare = linhas.findIndex((l) => l.includes('@pare'));
+      if (pare < 0) continue;
+      const fim = linhas.findIndex((l) => l.includes('@fim'));
+      entrada = { id: `${prefixo[lang]}-corpus-${caso}`, lang, file, line: pare + 1 };
+      if (lang === 'java') Object.assign(entrada, { fim: fim + 1, mainClass: `corpus.${caso}.${path.basename(nome, '.java')}` });
+    }
+    if (!entrada) throw new Error(`test/corpus/${lang}/${caso}: nenhum arquivo marca a linha com @pare`);
+    // Programa de iniciante usa require: a pasta do caso não herda o "type": "module" dos baixados.
+    if (lang === 'javascript' && !fs.existsSync(path.join(origem, 'package.json'))) escrever(path.join(destino, 'package.json'), '{ "type": "commonjs" }\n');
+    plano.push(entrada);
+  }
+}
+
 fs.writeFileSync(path.join(import.meta.dirname, 'plano.json'), JSON.stringify(plano, null, 2));
 console.log(`${plano.length} casos prontos.`);
