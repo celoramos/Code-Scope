@@ -118,7 +118,7 @@ Each language has an adapter that translates its debugger's values for the panel
 | Language | What you need | Structures | Status |
 |---|---|---|---|
 | Java | [Extension Pack for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack) and a JDK | arrays, matrices, `ArrayList`, `Stack`, `Queue`, `ArrayDeque`, `HashMap`, objects, linked lists, trees | validated with the real debugger |
-| JavaScript and TypeScript | Node.js 22 or newer; the debugger ships with VS Code | arrays, matrices, stack, queue, objects as dictionaries, `Map`, class instances, linked lists, trees | validated on Node; the browser is not tested yet |
+| JavaScript and TypeScript | Node.js 22 or newer; the debugger ships with VS Code | arrays, matrices, stack, queue, objects as dictionaries, `Map`, class instances, linked lists, trees | validated on Node and in Chrome |
 | Python | [Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and Python | `list`, `tuple`, `deque`, `dict`, matrices, stack, queue, objects, linked lists, trees | validated with the real debugger |
 | C# | [C# extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) and the .NET SDK | arrays, `List`, `Stack`, `Queue`, `Dictionary`, objects, linked lists | validated with the real debugger |
 | C and C++ | [C/C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools), a compiler and gdb | arrays, pointers to `struct`, linked lists, `std::vector`, `std::string`, `std::map`, `std::set`, `std::stack`, `std::queue` | C validated with gdb on Windows and Linux; lldb on macOS is not tested yet. `std::vector` and `std::string` work with or without pretty-printers; `std::map`, `std::set`, `std::stack` and `std::queue` need them (`-enable-pretty-printing`) |
@@ -181,11 +181,8 @@ Commands in the palette: **Code Scope: Show panel**, **Code Scope: Clear history
 ## Roadmap
 
 1. PyCharm and WebStorm: Python and JavaScript in the JetBrains plugin
-2. JetBrains Marketplace and Open VSX
-3. `std::stack` in C++
-4. The newer concepts in C#
-5. Objects in the variables of earlier calls
-6. JavaScript in the browser, tested with the real debugger
+2. Open VSX
+3. The newer concepts in C#
 
 ## Contributing
 
