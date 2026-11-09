@@ -1,5 +1,5 @@
 import type { DapScope, DapVariable } from '../dap';
-import { asInteger, numericIndex, type LanguageAdapter, type VariableShape } from './adapter';
+import { asInteger, bigIntegerText, numericIndex, type LanguageAdapter, type VariableShape } from './adapter';
 
 /*
  * C e C++ pela extensão C/C++ (ms-vscode.cpptools): cppdbg com gdb ou lldb,
@@ -109,6 +109,8 @@ export const cAdapter: LanguageAdapter = {
     if (INTEGER.test(type)) {
       const n = asInteger(v.value);
       if (n !== undefined) return { kind: 'integer', value: n };
+      const big = bigIntegerText(v.value);
+      if (big !== undefined) return { kind: 'scalar', value: big };
     }
     if (SCALAR.test(type)) return { kind: 'scalar', value: formatValue(v) };
     if (/char\s*\*$/.test(type)) return { kind: 'scalar', value: formatValue(v) };

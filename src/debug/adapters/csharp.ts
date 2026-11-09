@@ -1,5 +1,5 @@
 import type { DapScope, DapVariable } from '../dap';
-import { asInteger, numericIndex, type LanguageAdapter, type MapEntry, type VariableShape } from './adapter';
+import { asInteger, bigIntegerText, numericIndex, type LanguageAdapter, type MapEntry, type VariableShape } from './adapter';
 
 /*
  * C# pela extensão C# (ms-dotnettools.csharp, debugger vsdbg, tipo "coreclr").
@@ -80,6 +80,8 @@ export const csharpAdapter: LanguageAdapter = {
     if (INTEGERS.has(type)) {
       const n = asInteger(v.value);
       if (n !== undefined) return { kind: 'integer', value: n };
+      const big = bigIntegerText(v.value);
+      if (big !== undefined) return { kind: 'scalar', value: big };
     }
     if (SCALARS.has(type)) return { kind: 'scalar', value: formatValue(v) };
     if (v.value === 'null') return { kind: 'null' };

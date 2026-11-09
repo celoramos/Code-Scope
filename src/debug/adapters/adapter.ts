@@ -208,9 +208,19 @@ export function isRangeGroup(name: string): boolean {
   return /^\[?(\d+)\s*\.\.\s*(\d+)\]?$/.test(name);
 }
 
-/** Texto que é um inteiro, como "-3" ou "42". */
+/**
+ * Texto que é um inteiro, como "-3" ou "42". Acima de 2^53 o número do JavaScript perde dígitos
+ * (fib(80) = 23416728348467685 virava ...684, e 25! virava 1.55e+25): esse fica como texto, igual veio.
+ */
 export function asInteger(text: string): number | undefined {
-  return /^-?\d+$/.test(text) ? Number(text) : undefined;
+  if (!/^-?\d+$/.test(text)) return undefined;
+  const n = Number(text);
+  return Number.isSafeInteger(n) ? n : undefined;
+}
+
+/** Inteiro grande demais para virar número sem perder dígitos: o texto exato. */
+export function bigIntegerText(text: string): string | undefined {
+  return /^-?\d+$/.test(text) && asInteger(text) === undefined ? text : undefined;
 }
 
 export interface MethodCall {

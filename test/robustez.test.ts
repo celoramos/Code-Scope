@@ -705,3 +705,23 @@ describe('JavaScript: variáveis do topo de um módulo ES ou de um script do nav
     assert.deepEqual(names(['Local', 'Global']), ['Local']);
   });
 });
+describe('Inteiro grande demais para o número do JavaScript', () => {
+  // fib(80) é ímpar e passa de 2^53: como número, virava ...684. 25! virava 1.5511210043330986e+25.
+  const fib80 = '23416728348467685';
+  const fat25 = '15511210043330985984000000';
+  it('Python: fica o texto exato, não um número arredondado', () => {
+    assert.deepEqual(pythonAdapter.shape({ name: 'f', value: fib80, type: 'int', variablesReference: 0 }), { kind: 'scalar', value: fib80 });
+    assert.deepEqual(pythonAdapter.shape({ name: 'f', value: fat25, type: 'int', variablesReference: 0 }), { kind: 'scalar', value: fat25 });
+  });
+  it('Java: long acima de 2^53 fica como texto', () => {
+    assert.deepEqual(javaAdapter.shape({ name: 'f', value: '9223372036854775807', type: 'long', variablesReference: 0 }), { kind: 'scalar', value: '9223372036854775807' });
+  });
+  it('C e C#: o mesmo, sem mudar o inteiro pequeno', () => {
+    assert.deepEqual(cAdapter.shape({ name: 'f', value: '18446744073709551615', type: 'unsigned long long', variablesReference: 0 }), { kind: 'scalar', value: '18446744073709551615' });
+    assert.deepEqual(csharpAdapter.shape({ name: 'f', value: fib80, type: 'long', variablesReference: 0 }), { kind: 'scalar', value: fib80 });
+    assert.deepEqual(cAdapter.shape({ name: 'i', value: '42', type: 'int', variablesReference: 0 }), { kind: 'integer', value: 42 });
+  });
+  it('Go: texto exato também', () => {
+    assert.deepEqual(goAdapter.shape({ name: 'f', value: fib80, type: 'int', variablesReference: 0 }), { kind: 'scalar', value: fib80 });
+  });
+});

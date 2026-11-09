@@ -1,6 +1,7 @@
 import type { DapScope, DapVariable } from '../dap';
 import {
   asInteger,
+  bigIntegerText,
   methodsCalledOn,
   numericIndex,
   splitEntry,
@@ -208,6 +209,9 @@ export const javaAdapter: LanguageAdapter = {
     }
     const n = integralValue(v);
     if (n !== undefined) return { kind: 'integer', value: n };
+    // long acima de 2^53 (fatorial de 20 em diante, Fibonacci grande): o texto exato, não um número arredondado.
+    const big = v.variablesReference <= 0 && (v.type === undefined || INTEGRAL_TYPES.has(v.type)) ? bigIntegerText(cleanValue(v.value)) : undefined;
+    if (big !== undefined) return { kind: 'scalar', value: big };
     const s = scalarValue(v);
     if (s !== undefined) return { kind: 'scalar', value: s };
     // Referência vazia: o debugger manda "null" sem tipo.
