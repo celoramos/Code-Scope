@@ -8,6 +8,7 @@ import { polymorphismNote } from '../../src/model/calls';
 import { graphViews } from '../../src/model/graph';
 import { heapView } from '../../src/model/heap';
 import * as assert from 'node:assert/strict';
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { callChanges } from '../../src/model/calls';
 import { makeFrame } from '../../src/model/frame';
@@ -26,6 +27,46 @@ function debugScript(name: string, breakpointLine: number, steps: number, step?:
     dump: `js-${name}`,
   });
 }
+
+/** Chrome instalado nos lugares de sempre; o js-debug acha o mesmo sozinho. */
+function chrome(): string | undefined {
+  const candidates = [
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    path.join(process.env['PROGRAMFILES'] ?? 'C:\\Program Files', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+    path.join(process.env['PROGRAMFILES(X86)'] ?? 'C:\\Program Files (x86)', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+    path.join(process.env['LOCALAPPDATA'] ?? '', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+  ];
+  return candidates.find((p) => fs.existsSync(p));
+}
+
+describe('JavaScript no navegador (Chrome)', () => {
+  it('navegador/ordenar.js: script de página, com as variáveis do topo e a troca', async function () {
+    const exe = chrome();
+    if (!exe) this.skip();
+    const dir = path.join(samplesRoot, 'javascript', 'navegador');
+    const snaps = await debugFile({
+      file: path.join(dir, 'ordenar.js'),
+      breakpointLine: 4,
+      steps: 12,
+      config: {
+        type: 'chrome',
+        request: 'launch',
+        name: 'JS navegador',
+        file: path.join(dir, 'index.html'),
+        runtimeExecutable: exe,
+        // Linux do CI: o sandbox do Chrome não sobe no runner.
+        runtimeArgs: process.platform === 'linux' ? ['--no-sandbox'] : [],
+      },
+      dump: 'js-navegador',
+    });
+    // Sem o escopo "Script", o topo de um script de página ficava vazio no painel.
+    assert.deepEqual(snaps[0].arrays.find((a) => a.name === 'numeros')?.values, ['5', '1', '4', '2', '8'], JSON.stringify(snaps[0]));
+    assert.ok(snaps.some((s) => s.pointers.some((p) => p.name === 'j')), `j nunca apareceu: ${JSON.stringify(snaps.map((s) => s.pointers))}`);
+    assert.ok(allChanges(snaps).some((c) => c.kind === 'swap'), `nenhuma troca: ${JSON.stringify(allChanges(snaps))}`);
+  });
+});
 
 describe('JavaScript (js-debug) real', () => {
   it('modulo.mjs: as variáveis do topo de um módulo ES aparecem', async () => {
