@@ -25,11 +25,12 @@ function gdbPath(): string | undefined {
   return undefined;
 }
 
-function debugC(name: string, breakpointLine: number, steps: number): Promise<Snapshot[]> {
+function debugC(name: string, breakpointLine: number, steps: number, step: 'stepOver' | 'stepInto' = 'stepOver'): Promise<Snapshot[]> {
   return debugFile({
     file: path.join(dir, `${name}.c`),
     breakpointLine,
     steps,
+    step,
     config: {
       type: 'cppdbg',
       request: 'launch',
@@ -55,7 +56,7 @@ describe('C (gdb) real', function () {
       this.skip();
     }
     fs.mkdirSync(path.join(dir, 'build'), { recursive: true });
-    for (const f of ['bubble_sort', 'lista_ligada']) {
+    for (const f of ['bubble_sort', 'lista_ligada', 'ponteiros']) {
       const r = cp.spawnSync('gcc', ['-g', '-O0', `${f}.c`, '-o', `build/${f}.exe`], { cwd: dir, shell: process.platform === 'win32', encoding: 'utf-8' });
       if (r.status !== 0) {
         console.warn(`C: gcc falhou: ${r.stderr}`);
@@ -68,6 +69,26 @@ describe('C (gdb) real', function () {
     const snaps = await debugC('bubble_sort', 7, 14);
     assert.deepEqual(snaps[0].arrays.find((a) => a.name === 'numeros')?.values, ['5', '1', '4', '2', '8']);
     assert.ok(allChanges(snaps).some((c) => c.kind === 'swap'), `trocas: ${JSON.stringify(allChanges(snaps))}`);
+  });
+
+  it('ponteiros.c: array recebido por ponteiro, vetor de malloc, globais na função e struct na variável', async () => {
+    const snaps = await debugC('ponteiros', 30, 120, 'stepInto');
+    const dentro = snaps.filter((s) => s.line >= 14 && s.line <= 23);
+    assert.ok(dentro.length > 0, `não entrou em ordena: ${snaps.map((s) => s.line).join(' ')}`);
+    // O int v[] chega como int *: o tamanho vem do n ao lado, nos parâmetros.
+    assert.deepEqual(dentro[0].arrays.find((a) => a.name === 'v')?.values, ['7', '3', '9', '1']);
+    assert.deepEqual(dentro.at(-1)?.arrays.find((a) => a.name === 'v')?.values, ['1', '3', '7', '9']);
+    // As globais que a função usa aparecem dentro dela.
+    assert.ok(dentro.at(-1)?.arrays.some((a) => a.name === 'historico'), `arrays: ${JSON.stringify(dentro.at(-1)?.arrays.map((a) => a.name))}`);
+    assert.ok(dentro.some((s) => s.pointers.some((p) => p.name === 'trocas' && p.value > 0)), 'trocas');
+    assert.ok(allChanges(dentro).some((c) => c.kind === 'swap'), 'troca no v');
+    // O vetor de malloc, no main: o tamanho vem do malloc(n * sizeof(int)).
+    const depois = snaps.find((s) => s.line === 35);
+    assert.deepEqual(depois?.arrays.find((a) => a.name === 'dados')?.values, ['7', '3', '9', '1']);
+    // Struct guardado na variável vira objeto com os campos; char nome[10] é o texto.
+    const aluno = snaps.find((s) => s.refs?.some((r) => r.name === 'a') && s.line >= 37);
+    const campos = aluno?.heap?.find((o) => o.type === 'Aluno')?.fields.map((f) => `${f.name}=${f.value}`);
+    assert.deepEqual(campos?.[0], 'nome="ana"', `campos: ${JSON.stringify(campos)}`);
   });
 
   it('lista_ligada.c: structs ligados por ponteiro viram lista ligada', async () => {
