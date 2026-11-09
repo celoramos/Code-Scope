@@ -1,5 +1,6 @@
 import type { DapScope, DapVariable } from '../dap';
 import { asInteger, bigIntegerText, numericIndex, type LanguageAdapter, type VariableShape } from './adapter';
+import { cGlobals } from '../../model/outer';
 
 /*
  * C e C++ pela extensão C/C++ (ms-vscode.cpptools): cppdbg com gdb ou lldb,
@@ -72,6 +73,8 @@ export const cAdapter: LanguageAdapter = {
     const locals = scopes.filter((s) => /^locals?$/i.test(s.name));
     return locals.length > 0 ? locals : scopes.filter((s) => !s.expensive && !/register/i.test(s.name));
   },
+  // O gdb não lista as globais: o int v[100] declarado fora das funções vem por evaluate.
+  outerNames: cGlobals,
 
   shape(v): VariableShape {
     const type = (v.type ?? '').trim();

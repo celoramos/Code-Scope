@@ -54,6 +54,8 @@ export const pythonAdapter: LanguageAdapter = {
     const locals = scopes.filter((s) => /^locals?$/i.test(s.name));
     return locals.length > 0 ? locals : scopes.filter((s) => !s.expensive && !/global/i.test(s.name));
   },
+  // Dentro de uma função, a lista do módulo que ela muda está em "Globals".
+  outerScopes: (scopes) => scopes.filter((s) => /^globals?$/i.test(s.name)),
 
   shape(v): VariableShape {
     // dict: value "{'sol': 1}", filhos "'sol'" com o valor, mais "len()" e as "special variables".

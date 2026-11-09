@@ -42,6 +42,8 @@ export const javascriptAdapter: LanguageAdapter = {
     if (!scopes.some((s) => /^local\b/i.test(s.name))) own.push(...scopes.filter((s) => /^(module|script)\b/i.test(s.name)));
     return own;
   },
+  // Dentro de uma função, as variáveis do módulo e do closure que ela usa (a lista do topo, o n do contador).
+  outerScopes: (scopes) => (scopes.some((s) => /^local\b/i.test(s.name)) ? scopes.filter((s) => /^(closure|module|script)\b/i.test(s.name)) : []),
 
   shape(v): VariableShape {
     // Dentro de um método, this é o objeto: esse sim interessa.

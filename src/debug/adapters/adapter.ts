@@ -67,6 +67,16 @@ export interface LanguageAdapter {
 
   /** Escopos com as variáveis locais do método ou função parada. */
   localScopes(scopes: DapScope[]): DapScope[];
+  /**
+   * Escopos com as variáveis de fora da função parada que o debugger já lista: Globals do
+   * debugpy; Closure, Module e Script do js-debug. Delas, só entram as que a função usa.
+   */
+  outerScopes?(scopes: DapScope[]): DapScope[];
+  /**
+   * Variáveis de fora da função que o debugger não lista em escopo nenhum (static do Java e do
+   * C#, global do C, var de pacote do Go): os nomes declarados no código, lidos com evaluate.
+   */
+  outerNames?(source: string): string[];
   shape(v: DapVariable): VariableShape;
   /** Posição de um filho de coleção ("0", "[0]"...), ou undefined se não é posição. */
   elementIndex(name: string): number | undefined;

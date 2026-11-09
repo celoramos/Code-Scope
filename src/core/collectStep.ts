@@ -8,6 +8,8 @@ import { parseClasses } from '../model/classes';
 import { indexNames } from '../model/indexNames';
 import { parseCondition, type Syntax } from '../model/condition';
 import { dropVariables, notYetDeclared } from '../model/declared';
+import { enclosingFunction } from '../model/enclosing';
+import { usedNames } from '../model/outer';
 import type { Snapshot } from '../model/snapshot';
 import { applyTextRoles } from '../model/text';
 
@@ -73,6 +75,14 @@ export async function collectStep(session: Session, threadId: number | undefined
       return others ? new Set([...declaredEnums(s.text), ...others.enums]) : declaredEnums(s.text);
     },
     previous: opts.previous,
+    // Dentro de uma função: os nomes que ela usa, para trazer as globais, os static e o closure.
+    outer: async (file, line, adapter) => {
+      const s = await sourceOf(file);
+      if (!s) return undefined;
+      const python = adapter.id === 'python';
+      const fn = enclosingFunction(s.text, line, python);
+      return fn ? { used: usedNames(fn, python), declared: adapter.outerNames?.(s.text) ?? [] } : undefined;
+    },
   });
   if (!collected) return undefined;
   const snap = collected.snapshot;

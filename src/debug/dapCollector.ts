@@ -43,7 +43,21 @@ export interface CollectOptions {
   enumTypes?: (file: string) => Promise<ReadonlySet<string> | undefined>;
   /** Passo anterior: objetos sem identidade no debugger herdam o id pelos caminhos. */
   previous?: Snapshot;
+  /**
+   * Nomes que a função parada usa e nomes declarados fora das funções, para trazer as variáveis
+   * de fora que ela usa (a lista global, o static int[] memo). undefined no topo do programa,
+   * onde as locais já são as globais.
+   */
+  outer?: (file: string, line: number, adapter: LanguageAdapter) => Promise<Outer | undefined>;
 }
+
+export interface Outer {
+  used: ReadonlySet<string>;
+  declared: readonly string[];
+}
+
+/** Variáveis de fora da função lidas por passo: uma função que usa vinte globais não pode travar o F10. */
+const MAX_OUTER = 12;
 
 export async function collectSnapshot(
   session: Session,
@@ -85,6 +99,9 @@ export async function collectSnapshot(
     const text = LITERAL.test(r.value) ? undefined : await returnedText(session, adapter, v, frame.id).catch(() => undefined);
     returned = text === undefined ? r : { ...r, value: clip(text) };
   }
+  // A lista global que a função muda, o static memo, a variável do closure: entram como as locais.
+  const taken = new Set([...frameLocals, ...hidden].map((v) => v.name));
+  locals.push(...(await readOuter(session, adapter, scopes, frame.id, taken, await opts.outer?.(file, frame.line, adapter).catch(() => undefined))));
 
   // Objetos dos arrays e das variáveis passam pelo mesmo leitor: o mesmo objeto tem o mesmo id nos dois.
   const userTypes = await opts.userTypes?.(file);
@@ -184,6 +201,40 @@ export async function collectSnapshot(
     adapter,
     raw: { frame, scopes, locals, elements },
   };
+}
+
+/** Variáveis de fora da função que ela usa: as dos escopos de fora e as que só o evaluate alcança. */
+async function readOuter(session: Session, adapter: LanguageAdapter, scopes: DapScope[], frameId: number, taken: Set<string>, outer?: Outer): Promise<DapVariable[]> {
+  if (!outer) return [];
+  const found: DapVariable[] = [];
+  for (const scope of adapter.outerScopes?.(scopes) ?? []) {
+    if (scope.expensive) continue;
+    for (const v of await variables(session, scope.variablesReference)) {
+      if (found.length >= MAX_OUTER) return found;
+      if (!outer.used.has(v.name) || taken.has(v.name)) continue;
+      taken.add(v.name);
+      found.push(v);
+    }
+  }
+  for (const name of outer.declared) {
+    if (found.length >= MAX_OUTER) break;
+    if (!outer.used.has(name) || taken.has(name)) continue;
+    try {
+      const res = (await session.customRequest('evaluate', { expression: name, frameId, context: 'watch' })) as {
+        result?: string;
+        type?: string;
+        variablesReference?: number;
+        indexedVariables?: number;
+        namedVariables?: number;
+      };
+      if (res?.result === undefined) continue;
+      taken.add(name);
+      found.push({ name, value: res.result, type: res.type, variablesReference: res.variablesReference ?? 0, indexedVariables: res.indexedVariables, namedVariables: res.namedVariables, evaluateName: name });
+    } catch {
+      // Não existe neste quadro (static de outra classe, nome que só aparece num comentário): fica de fora.
+    }
+  }
+  return found;
 }
 
 /** Sessão que passa cada resposta de "variables" pelo normalize do adaptador. */

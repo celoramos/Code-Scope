@@ -9,6 +9,7 @@ import {
   type LanguageAdapter,
   type VariableShape,
 } from './adapter';
+import { staticFields } from '../../model/outer';
 
 /*
  * Java Debugger (vscjava.vscode-java-debug). Formatos observados no adaptador
@@ -219,6 +220,8 @@ export const javaAdapter: LanguageAdapter = {
     const s = pickLocalScope(scopes);
     return s ? [s] : [];
   },
+  // O java-debug não lista os static: o memo da Fibonacci e a lista de visitados vêm por evaluate.
+  outerNames: staticFields,
 
   shape(v): VariableShape {
     // Mapa antes de coleção: o HashMap também chega com indexedVariables.

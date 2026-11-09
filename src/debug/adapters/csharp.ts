@@ -1,5 +1,6 @@
 import type { DapScope, DapVariable } from '../dap';
 import { asInteger, bigIntegerText, numericIndex, type LanguageAdapter, type MapEntry, type VariableShape } from './adapter';
+import { staticFields } from '../../model/outer';
 
 /*
  * C# pela extensão C# (ms-dotnettools.csharp, debugger vsdbg, tipo "coreclr").
@@ -48,6 +49,8 @@ export const csharpAdapter: LanguageAdapter = {
     const locals = scopes.filter((s) => /^locals?$/i.test(s.name));
     return locals.length > 0 ? locals : scopes.filter((s) => !s.expensive).slice(0, 1);
   },
+  // Campos static que o método usa: o vsdbg não lista, o evaluate lê.
+  outerNames: staticFields,
 
   normalize: (vars) =>
     vars

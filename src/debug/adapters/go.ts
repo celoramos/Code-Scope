@@ -1,4 +1,5 @@
 import { asInteger, numericIndex, type CollectionRole, type LanguageAdapter, type VariableShape } from './adapter';
+import { goGlobals } from '../../model/outer';
 
 /*
  * Go pelo Delve (extensão golang.go, sessão "go"). Formatos observados no dlv dap
@@ -53,6 +54,9 @@ export const goAdapter: LanguageAdapter = {
     const locals = scopes.filter((s) => /^(locals?|arguments)$/i.test(s.name));
     return locals.length > 0 ? locals : scopes.filter((s) => !s.expensive && !/global|register/i.test(s.name));
   },
+  // Variáveis de pacote: o escopo Globals quando o dlv mostra, senão evaluate.
+  outerScopes: (scopes) => scopes.filter((s) => /^globals\b/i.test(s.name)),
+  outerNames: goGlobals,
 
   // "~r0" é o resultado sem nome, que o programa não alcança.
   normalize: (vars) => vars.filter((v) => !v.name.startsWith('~')),
