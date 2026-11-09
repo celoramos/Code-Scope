@@ -113,6 +113,11 @@ export interface LanguageAdapter {
    * Texto de um array de char do C num campo de struct (char nome[20]): "ana", não as vinte posições.
    */
   fieldText?(v: DapVariable): string | undefined;
+  /**
+   * Objeto de uma classe de biblioteca (não do aluno) com texto legível: o Optional do Java pelo
+   * toString, o Decimal do Python pelo repr. Sem isto, a variável ficava de fora.
+   */
+  libraryText?(v: DapVariable, children: () => Promise<DapVariable[]>): Promise<string | undefined>;
   /** Expressão com o texto de um valor que o debugger não mostra (std::string sem pretty-printers). */
   indirectText?(v: DapVariable): string | undefined;
   /** Pilha ou fila, pelo uso no código-fonte. */
@@ -204,7 +209,9 @@ export function declaredClasses(source: string): Set<string> {
   // C: o nome que o programa usa é o do typedef ("typedef struct no {...} No;" e "typedef struct no No;").
   const typedefBody = [...source.matchAll(new RegExp(`\\btypedef\\s+(?:struct|union)\\s*(?:${IDENT}\\s*)?\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\}\\s*(${IDENT})\\s*;`, 'gu'))].map((m) => m[1]);
   const typedefTag = [...source.matchAll(new RegExp(`\\btypedef\\s+(?:struct|union)\\s+${IDENT}\\s+(${IDENT})\\s*;`, 'gu'))].map((m) => m[1]);
-  return new Set([...declared, ...go, ...typedefBody, ...typedefTag]);
+  // Python: Aluno = namedtuple("Aluno", ...) e Aluno = NamedTuple("Aluno", ...) também são classes do aluno.
+  const named = [...source.matchAll(new RegExp(`^[ \\t]*(${IDENT})\\s*=\\s*(?:collections\\.|typing\\.)?(?:namedtuple|NamedTuple)\\s*\\(`, 'gmu'))].map((m) => m[1]);
+  return new Set([...declared, ...go, ...typedefBody, ...typedefTag, ...named]);
 }
 
 /** Enums declarados no arquivo (Java: enum Cor): o valor é a constante, não um objeto. */

@@ -4,7 +4,7 @@ import { csharpAdapter } from '../src/debug/adapters/csharp';
 import { goAdapter } from '../src/debug/adapters/go';
 import { javaAdapter, pythonAdapter } from '../src/debug/adapters';
 import { javascriptAdapter } from '../src/debug/adapters/javascript';
-import { declaredEnums, type LanguageAdapter } from '../src/debug/adapters/adapter';
+import { declaredClasses, declaredEnums, type LanguageAdapter } from '../src/debug/adapters/adapter';
 import { collectSnapshot, functionName, type Session } from '../src/debug/dapCollector';
 import { MAX_SEQUENCE_FIELDS } from '../src/debug/heapCollector';
 
@@ -804,5 +804,68 @@ describe('Texto interno do debugger não chega ao painel', () => {
       javaAdapter,
     );
     assert.deepEqual(snap.arrays[0].values, ['[1, 2]', '[3, 4]']);
+  });
+});
+
+describe('Objeto de biblioteca com texto legível vira valor', () => {
+  const s = (vars: Record<number, Var[]>, file: string): Session => ({
+    async customRequest(command: string, args?: any) {
+      if (command === 'stackTrace') return { stackFrames: [{ id: 10, name: 'main', line: 1, source: { path: file } }] };
+      if (command === 'scopes') return { scopes: [{ name: file.endsWith('.py') ? 'Locals' : 'Local', variablesReference: 1 }] };
+      if (command === 'evaluate') return { result: 'false' };
+      return { variables: vars[args.variablesReference] ?? [] };
+    },
+  });
+  const userTypes = async () => new Set(['Aluno']);
+
+  it('Java: o Optional pelo toString; Scanner sem toString continua de fora', async () => {
+    const snap = (await collectSnapshot(
+      s(
+        {
+          1: [
+            { name: 'melhor', value: 'Optional@283', type: 'Optional', variablesReference: 2 },
+            { name: 'sc', value: 'Scanner@9', type: 'Scanner', variablesReference: 3 },
+          ],
+          2: [{ name: '', value: 'Optional@283 "Optional[Aluno[nome=Ana, nota=9.0]]"', variablesReference: 4 }],
+          3: [{ name: 'buf', value: 'HeapCharBuffer@10', variablesReference: 5 }, { name: 'source', value: 'InputStreamReader@11', variablesReference: 6 }],
+        },
+        '/x/Main.java',
+      ),
+      1,
+      javaAdapter,
+      undefined,
+      { userTypes },
+    ))!.snapshot;
+    assert.deepEqual(snap.scalars, [{ name: 'melhor', value: 'Optional[Aluno[nome=Ana, nota=9.0]]' }]);
+  });
+
+  it('Python: Decimal e date pelo repr; range e bytes como valor; repr padrão de fora', async () => {
+    const snap = (await collectSnapshot(
+      s(
+        {
+          1: [
+            { name: 'preco', value: "Decimal('1.10')", type: 'Decimal', variablesReference: 2 },
+            { name: 'rnd', value: '<random.Random object at 0x000001>', type: 'Random', variablesReference: 3 },
+            { name: 'intervalo', value: 'range(0, 3)', type: 'range', variablesReference: 4 },
+            { name: 'dados', value: "b'abc'", type: 'bytes', variablesReference: 5 },
+          ],
+        },
+        '/x/main.py',
+      ),
+      1,
+      pythonAdapter,
+      undefined,
+      { userTypes },
+    ))!.snapshot;
+    assert.deepEqual(snap.scalars, [
+      { name: 'preco', value: "Decimal('1.10')" },
+      { name: 'intervalo', value: 'range(0, 3)' },
+      { name: 'dados', value: "b'abc'" },
+    ]);
+  });
+
+  it('Python: namedtuple é classe do aluno', () => {
+    assert.ok(declaredClasses('from collections import namedtuple\nAluno = namedtuple("Aluno", ["nome", "nota"])\n').has('Aluno'));
+    assert.ok(declaredClasses('import typing\nPonto = typing.NamedTuple("Ponto", [("x", int)])\n').has('Ponto'));
   });
 });

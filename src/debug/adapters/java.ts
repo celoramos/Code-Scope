@@ -270,6 +270,14 @@ export const javaAdapter: LanguageAdapter = {
     return type ? (inner) => valueClassText(unboxedValue(inner.value, undefined), type) : undefined;
   },
 
+  // Objeto do JDK com toString próprio (Optional, IntSummaryStatistics, LocalDate): a variável "lazy"
+  // tem um único filho 'Optional@283 "Optional[Ana]"'. Sem toString, fica de fora, como antes.
+  async libraryText(_v, children) {
+    const kids = await children();
+    const m = kids.length === 1 && kids[0].name === '' ? /^[\w.$]+@\d+\s+"(.*)"$/s.exec(kids[0].value) : undefined;
+    return m?.[1];
+  },
+
   // Variável local com BigInteger, StringBuilder...: o próprio programa diz o texto.
   indirectText(v) {
     if (!valueClass(v)) return undefined;

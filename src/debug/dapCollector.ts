@@ -148,6 +148,14 @@ export async function collectSnapshot(
       continue;
     }
     const shape = adapter.shape(v);
+    // Objeto de biblioteca com texto legível (Optional[Ana], Decimal('1.10')): vira valor, em vez de sumir.
+    if (shape.kind === 'object' && adapter.libraryText && userTypes && !userTypes.has(shape.type)) {
+      const text = await adapter.libraryText(v, () => variables(session, v.variablesReference)).catch(() => undefined);
+      if (text !== undefined) {
+        scalars.push({ name: v.name, value: clip(text) });
+        continue;
+      }
+    }
     switch (shape.kind) {
       case 'empty-list':
         // Lista recém-criada: aparece vazia, para o aluno ver ela nascer antes do primeiro add.

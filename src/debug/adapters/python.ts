@@ -19,7 +19,7 @@ const LISTS = new Set(['list', 'deque']);
 const MAPS = new Set(['dict', 'defaultdict', 'OrderedDict', 'Counter']);
 const ARRAYS = new Set(['tuple', 'array']);
 const SETS = new Set(['set', 'frozenset']);
-const SCALARS = new Set(['str', 'bool', 'float', 'NoneType', 'complex']);
+const SCALARS = new Set(['str', 'bool', 'float', 'NoneType', 'complex', 'range', 'bytes', 'bytearray']);
 /** Objeto de uma classe: "<__main__.No object at 0x00000146F06538C0>"; o endereço é a identidade. */
 const PY_OBJECT = /^<([\w.]+) object at (0x[0-9a-fA-F]+)>$/;
 
@@ -91,6 +91,10 @@ export const pythonAdapter: LanguageAdapter = {
     if (v.variablesReference > 0 && v.type && !NOT_OBJECTS.has(v.type)) return { kind: 'object', type: v.type };
     return { kind: 'skip' };
   },
+
+  // Objeto de biblioteca com repr legível (Decimal('1.10'), datetime.date(2026, 1, 1), Fraction(1, 3)):
+  // o próprio repr. O repr padrão (<random.Random object at 0x...>) não diz nada e fica de fora.
+  libraryText: async (v) => (v.value.startsWith('<') ? undefined : v.value),
 
   // "special variables", "function variables", "class variables" e "len()" são do debugpy.
   objectFields: (fields) => fields.filter((f) => !/^(special|function|class) variables$/.test(f.name) && f.name !== 'len()'),
