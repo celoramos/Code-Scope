@@ -1,5 +1,6 @@
 import { evalIndex } from './indexExpr';
 import { MESSAGES, type Language } from './messages';
+import { IDENT, NAME_END, NAME_START } from './names';
 import type { Snapshot } from './snapshot';
 
 /*
@@ -116,6 +117,15 @@ export function isSafe(part: string): boolean {
   return true;
 }
 
+// Nomes com acento (números, posição): o \w e o \b só conhecem letras sem acento.
+const INDEXED = new RegExp(`(${IDENT})\\s*\\[([^[\\]]+)\\]`, 'gu');
+const ROW_LENGTH = new RegExp(
+  `${NAME_START}len\\s*\\(\\s*(${IDENT})\\s*\\[([^[\\]]+)\\]\\s*\\)|(${IDENT})\\s*\\[([^[\\]]+)\\]\\s*\\.\\s*(?:length${NAME_END}(?!\\s*\\()|size\\s*\\(\\s*\\))`,
+  'gu',
+);
+const LENGTH = new RegExp(`${NAME_START}len\\s*\\(\\s*(${IDENT})\\s*\\)|(${IDENT})\\s*\\.\\s*(?:length${NAME_END}(?!\\s*\\()|size\\s*\\(\\s*\\))`, 'gu');
+const TEXT_OR_NAME = new RegExp(`(["'\`])(?:\\\\.|(?!\\1).)*\\1|${IDENT}`, 'gu');
+
 /** O texto da parte com os valores conhecidos no lugar dos nomes: "numeros[j] > numeros[j + 1]" vira "5 > 1". */
 export function substitute(part: string, s: Snapshot): string | undefined {
   const values = new Map<string, string>([
@@ -125,20 +135,29 @@ export function substitute(part: string, s: Snapshot): string | undefined {
   const lengths = new Map(s.arrays.map((a) => [a.name, a.length]));
   const arrays = new Map(s.arrays.map((a) => [a.name, a]));
   let changed = false;
-  let out = part.replace(/([A-Za-z_$][\w$]*)\s*\[([^[\]]+)\]/g, (whole, name: string, expr: string) => {
+  // O tamanho de uma linha da matriz vira o número: "j < grade[i].length" é "0 < 3", não "0 < [1, 2, 3].length".
+  let out = part.replace(ROW_LENGTH, (whole, a?: string, ai?: string, b?: string, bi?: string) => {
+    const arr = arrays.get((a ?? b) as string);
+    const i = arr?.rows ? evalIndex((ai ?? bi) as string, s) : undefined;
+    const row = i === undefined ? undefined : arr?.rows?.[i];
+    if (!row) return whole;
+    changed = true;
+    return String(row.length);
+  });
+  out = out.replace(INDEXED, (whole, name: string, expr: string) => {
     const arr = arrays.get(name);
     const i = arr ? evalIndex(expr, s) : undefined;
     if (!arr || i === undefined || i < 0 || i >= arr.values.length) return whole;
     changed = true;
     return arr.values[i];
   });
-  out = out.replace(/\blen\s*\(\s*([A-Za-z_$][\w$]*)\s*\)|([A-Za-z_$][\w$]*)\s*\.\s*(?:length\b(?!\s*\()|size\s*\(\s*\))/g, (whole, a?: string, b?: string) => {
+  out = out.replace(LENGTH, (whole, a?: string, b?: string) => {
     const n = lengths.get((a ?? b) as string);
     if (n === undefined) return whole;
     changed = true;
     return String(n);
   });
-  out = out.replace(/(["'`])(?:\\.|(?!\1).)*\1|[A-Za-z_$][\w$]*/g, (token) => {
+  out = out.replace(TEXT_OR_NAME, (token) => {
     if (/^["'`]/.test(token) || !values.has(token)) return token;
     changed = true;
     return values.get(token) as string;

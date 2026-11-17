@@ -55,6 +55,38 @@ describe('condições', () => {
     assert.equal(substitute('outra > 0', busca), undefined);
   });
 
+  it('tamanho de uma linha da matriz vira o número, não o texto da linha', () => {
+    const grade: Snapshot = {
+      file: 'Matriz.java',
+      line: 10,
+      arrays: [
+        {
+          name: 'grade',
+          values: ['[1, 2, 3]', '[4, 5]'],
+          length: 2,
+          rows: [
+            { name: 'grade[0]', values: ['1', '2', '3'], length: 3 },
+            { name: 'grade[1]', values: ['4', '5'], length: 2 },
+          ],
+        },
+      ],
+      pointers: [
+        { name: 'i', value: 1 },
+        { name: 'j', value: 0 },
+      ],
+    };
+    assert.equal(substitute('j < grade[i].length', grade), '0 < 2');
+    assert.equal(substitute('j < len(grade[i])', grade), '0 < 2');
+    assert.equal(substitute('j < grade[0].size()', grade), '0 < 3');
+  });
+
+  it('nome dentro de texto entre aspas continua como está', () => {
+    const s: Snapshot = { file: 'a.js', line: 1, arrays: [], pointers: [], scalars: [{ name: 'nome', value: '"ana"' }] };
+    assert.equal(substitute('nome == "nome"', s), '"ana" == "nome"');
+    assert.equal(substitute("nome == 'it\\'s nome'", s), "\"ana\" == 'it\\'s nome'");
+    assert.equal(substitute('nome == `nome`', s), '"ana" == `nome`');
+  });
+
   it('junta como a linguagem: && antes de ||', () => {
     assert.equal(combine([true, false], ['&&']), false);
     assert.equal(combine([false, true], ['||']), true);
