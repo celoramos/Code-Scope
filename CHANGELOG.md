@@ -2,8 +2,22 @@
 
 ## Próxima versão
 
+### Novo
+
+- Dentro de uma função, aparecem as variáveis de fora que ela usa: as globais do Python, os escopos de closure e de módulo do JavaScript, os campos `static` do Java e do C#, as globais do C e do C++ e as variáveis de pacote do Go. Uma local com o mesmo nome esconde a de fora, como no código; no máximo 12 por passo.
+- Objetos de classes declaradas em outros arquivos do projeto aparecem (`No.java` ao lado do `Main.java`, `from no import No`). A extensão lê os outros arquivos da mesma linguagem uma vez por sessão, até 300, sem dependências nem ambientes virtuais; no IntelliJ, a IDE manda os arquivos do projeto.
+- C: o array que a função recebe como ponteiro (`int v[], int n`) e o vetor de `malloc`, `calloc`, `realloc` e `new[]` aparecem com os itens. O tamanho vem do código: o inteiro ao lado nos parâmetros, ou a conta do `malloc`.
+- C e C++: struct e objeto guardados direto na variável (`Aluno a;`) aparecem com os campos; um campo `char nome[20]` mostra o texto, e a constante de enum mostra o nome.
+- Java: `BigInteger`, `BigDecimal`, `StringBuilder`, `StringBuffer`, `Optional`, `LocalDate` e outros objetos do JDK com `toString` aparecem com o valor, como variável, item de coleção e campo.
+- Python: `Decimal`, `datetime`, `range`, `bytes` e outros objetos com `repr` legível aparecem com o valor; `namedtuple` e `NamedTuple` contam como classe.
+- Programas reais: um corpus próprio de 39 programas (16 em Python, 12 em Java e 11 em JavaScript), do script sem função até classes em vários arquivos, roda no debugger real no Windows, no Linux e no macOS. O teste lista as variáveis que o debugger mostrou e o painel não desenhou.
+
 ### Corrigido
 
+- Nomes com acento funcionam em todo o painel: `posição` e `início` viram seta embaixo do array, `números[i]` marca as posições comparadas, `class Nó` mantém a identidade no Java, no Python, no C e no Go, e `índices.push()`, `lição.trim()`, `avô == avó`, `soma / número` e `def média` ganham a explicação. Antes, `posição` era lido como `posi`.
+- Inteiro acima de 2^53 aparece com os dígitos certos: `fib(80)` terminava em ...684 em vez de ...685, e `25!` aparecia como `1.55e+25`.
+- O painel não mostra mais texto interno do debugger: campo que aponta para outro nó, o `repr` padrão do Python dentro de listas e chaves de dicionário, e as linhas de uma lista de listas do Java (`ArrayList@1452 size=3`).
+- Função com a chave `{` sozinha na linha de baixo (o jeito de muito livro de C, e o padrão do C#) é reconhecida, para as regras de pilha, fila e variáveis de fora.
 - IntelliJ: o plugin deixa de usar APIs que a plataforma marcou para remoção (`SimpleListCellRenderer.create`, `ReadAction.compute`), para continuar abrindo nas próximas versões da IDE.
 
 ## 0.9.2
