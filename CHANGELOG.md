@@ -14,7 +14,8 @@
 
 ### Corrigido
 
-- Nomes com acento funcionam em todo o painel: `posição` e `início` viram seta embaixo do array, `números[i]` marca as posições comparadas, `class Nó` mantém a identidade no Java, no Python, no C e no Go, e `índices.push()`, `lição.trim()`, `avô == avó`, `soma / número` e `def média` ganham a explicação. Antes, `posição` era lido como `posi`.
+- Nomes com acento funcionam em todo o painel: `posição` e `início` viram seta embaixo do array, `números[i]` marca as posições comparadas, `class Nó` mantém a identidade no Java, no Python, no C e no Go, a condição `números[j] > números[j + 1]` mostra os valores, o modo de adivinhar pergunta por `posição++` e `int média = ...`, e `índices.push()`, `lição.trim()`, `avô == avó`, `soma / número`, `ônibus.peek()`, `cães.add(rex)` e `def média` ganham a explicação. Antes, `posição` era lido como `posi`.
+- Condição com o tamanho de uma linha da matriz (`j < grade[i].length`, `len(grade[i])`) mostra o número: `0 < 3`, e não `0 < [1, 2, 3].length`.
 - Inteiro acima de 2^53 aparece com os dígitos certos: `fib(80)` terminava em ...684 em vez de ...685, e `25!` aparecia como `1.55e+25`.
 - O painel não mostra mais texto interno do debugger: campo que aponta para outro nó, o `repr` padrão do Python dentro de listas e chaves de dicionário, e as linhas de uma lista de listas do Java (`ArrayList@1452 size=3`).
 - Função com a chave `{` sozinha na linha de baixo (o jeito de muito livro de C, e o padrão do C#) é reconhecida, para as regras de pilha, fila e variáveis de fora.
