@@ -1,5 +1,6 @@
 import type { ClassInfo } from './classes';
 import { MESSAGES, type Language } from './messages';
+import { IDENT } from './names';
 import type { Snapshot } from './snapshot';
 
 /*
@@ -40,10 +41,10 @@ function languageOf(file: string): Lang | undefined {
   return undefined;
 }
 
-const NAME = '[A-Za-z_$][\\w$]*';
-const OPERATOR = new RegExp(`^(${NAME})\\s*(===|!==|==|!=)\\s*(${NAME})$`);
-const IS = new RegExp(`^(${NAME})\\s+(is not|is)\\s+(${NAME})$`);
-const EQUALS = new RegExp(`^(!?)\\s*(${NAME})\\.(equals|Equals)\\(\\s*(${NAME})\\s*\\)$`);
+const NAME = IDENT;
+const OPERATOR = new RegExp(`^(${NAME})\\s*(===|!==|==|!=)\\s*(${NAME})$`, 'u');
+const IS = new RegExp(`^(${NAME})\\s+(is not|is)\\s+(${NAME})$`, 'u');
+const EQUALS = new RegExp(`^(!?)\\s*(${NAME})\\.(equals|Equals)\\(\\s*(${NAME})\\s*\\)$`, 'u');
 
 function parseComparison(part: string): Comparison | undefined {
   const text = part.trim();

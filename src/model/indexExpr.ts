@@ -19,7 +19,7 @@ export function indexAccesses(code: string | undefined, snapshot: Snapshot): Ind
   if (!code) return [];
   const names = new Set(snapshot.arrays.map((a) => a.name));
   const out: IndexAccess[] = [];
-  for (const m of stripStrings(code).matchAll(/([A-Za-z_$][\w$]*)\s*\[([^[\]]+)\]/g)) {
+  for (const m of stripStrings(code).matchAll(/([\p{L}_$][\p{L}\p{N}_$]*)\s*\[([^[\]]+)\]/gu)) {
     if (!names.has(m[1])) continue;
     out.push({ array: m[1], expr: m[2].trim(), index: evalIndex(m[2], snapshot) });
   }
@@ -36,9 +36,9 @@ export function evalIndex(expr: string, snapshot: Snapshot): number | undefined 
     .replace(/\/\//g, '/')
     .replace(/\bMath\s*\.\s*floor\b/g, '')
     // Tamanho de coleção nas três linguagens.
-    .replace(/\blen\s*\(\s*([A-Za-z_$][\w$]*)\s*\)/g, (_, n: string) => String(lengths.get(n) ?? 'NaN'))
-    .replace(/([A-Za-z_$][\w$]*)\s*\.\s*(?:length|size\s*\(\s*\))/g, (_, n: string) => String(lengths.get(n) ?? 'NaN'))
-    .replace(/[A-Za-z_$][\w$]*/g, (n) => (values.has(n) ? `(${values.get(n)})` : 'NaN'));
+    .replace(/\blen\s*\(\s*([\p{L}_$][\p{L}\p{N}_$]*)\s*\)/gu, (_, n: string) => String(lengths.get(n) ?? 'NaN'))
+    .replace(/([\p{L}_$][\p{L}\p{N}_$]*)\s*\.\s*(?:length|size\s*\(\s*\))/gu, (_, n: string) => String(lengths.get(n) ?? 'NaN'))
+    .replace(/[\p{L}_$][\p{L}\p{N}_$]*/gu, (n) => (values.has(n) ? `(${values.get(n)})` : 'NaN'));
   if (!/^[\d\s+\-*/()]+$/.test(text)) return undefined;
   try {
     // Só dígitos, espaços, parênteses e + - * /: seguro de calcular.

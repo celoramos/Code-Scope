@@ -1,4 +1,5 @@
 import type { DapScope, DapVariable } from '../dap';
+import { IDENT, NAME_START } from '../../model/names';
 
 /*
  * Todo debugger do VS Code fala o mesmo protocolo (DAP), mas cada um escreve
@@ -197,8 +198,7 @@ function unquoteSimple(value: string): string {
   return m ? m[1] : value;
 }
 
-/** Nome de classe ou variável, com acento: quem aprende em português escreve class Nó e int número. */
-export const IDENT = '[\\p{L}_$][\\p{L}\\p{N}_$]*';
+export { IDENT };
 
 /** Classes declaradas no arquivo: só objetos delas são desenhados. */
 export function declaredClasses(source: string): Set<string> {
@@ -269,7 +269,7 @@ export interface MethodCall {
 export function methodsCalledOn(source: string, name: string): MethodCall[] {
   const n = name.replace(/\$/g, '\\$');
   // Até o primeiro ")": basta para separar pop() de pop(0) e não perde push(s.charAt(i)).
-  return [...source.matchAll(new RegExp(`\\b${n}\\s*\\.\\s*(\\w+)\\s*\\(([^)]*)`, 'g'))].map((m) => ({
+  return [...source.matchAll(new RegExp(`${NAME_START}${n}\\s*\\.\\s*(\\w+)\\s*\\(([^)]*)`, 'gu'))].map((m) => ({
     method: m[1],
     args: m[2].trim(),
   }));

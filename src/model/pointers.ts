@@ -1,3 +1,4 @@
+import { NAME_CHAR, NAME_START } from './names';
 import type { ArrayVar, Pointer } from './snapshot';
 
 /**
@@ -29,8 +30,8 @@ export interface MatrixAxes {
  */
 export function matrixAxesFor(matrix: ArrayVar, pointers: Pointer[], codes: (string | undefined)[]): MatrixAxes {
   const name = matrix.name.replace(/[$]/g, '\\$&');
-  const both = new RegExp(`\\b${name}\\s*\\[\\s*(\\w+)\\s*\\]\\s*\\[\\s*(\\w+)\\s*\\]`);
-  const rowOnly = new RegExp(`\\b${name}\\s*\\[\\s*(\\w+)\\s*\\]`);
+  const both = new RegExp(`${NAME_START}${name}\\s*\\[\\s*(${NAME_CHAR}+)\\s*\\]\\s*\\[\\s*(${NAME_CHAR}+)\\s*\\]`, 'u');
+  const rowOnly = new RegExp(`${NAME_START}${name}\\s*\\[\\s*(${NAME_CHAR}+)\\s*\\]`, 'u');
   const value = new Map(pointers.map((p) => [p.name, p.value]));
   const rows = matrix.rows ?? [];
   const cols = Math.max(0, ...rows.map((r) => r.values.length));

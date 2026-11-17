@@ -37,7 +37,7 @@ const CONTAINER = /^(?:const )?std::(?:__\w+::)?(stack|queue|priority_queue|dequ
 const STRING = /^(?:const )?std::(?:__\w+::)?(?:string|basic_string<char\b)/;
 const MAP = /^(?:const )?std::(?:__\w+::)?(?:unordered_)?map</;
 /** Struct, union ou classe por valor, com ou sem a palavra struct, e com os argumentos de template. */
-const STRUCT_VALUE = /^(?:const\s+|volatile\s+)*(?:struct\s+|class\s+|union\s+)?([A-Za-z_]\w*)(?:\s*<.*>)?\s*&?$/;
+const STRUCT_VALUE = /^(?:const\s+|volatile\s+)*(?:struct\s+|class\s+|union\s+)?([\p{L}_][\p{L}\p{N}_]*)(?:\s*<.*>)?\s*&?$/u;
 /** Quantos itens o valor diz ter: "of length 3", "with 2 elements", "{ size=3 }". */
 const COUNT = /(?:of length |with |size=)(\d+)/;
 
@@ -120,7 +120,7 @@ export const cAdapter: LanguageAdapter = {
     if (SCALAR.test(type)) return { kind: 'scalar', value: formatValue(v) };
     if (/char\s*\*$/.test(type)) return { kind: 'scalar', value: formatValue(v) };
     // Ponteiro para struct: o endereço é a identidade, e 0x0 é NULL.
-    const ptr = /^(?:struct\s+)?([A-Za-z_]\w*)\s*\*$/.exec(type);
+    const ptr = /^(?:struct\s+)?([\p{L}_][\p{L}\p{N}_]*)\s*\*$/u.exec(type);
     if (ptr) {
       if (/^0x0+$/i.test(v.value)) return { kind: 'null' };
       const address = v.value.split(' ')[0].toLowerCase();
@@ -136,7 +136,7 @@ export const cAdapter: LanguageAdapter = {
       return { kind: 'object', type: value[1], id: `=${e}`, address: `&${e}`, inline: true };
     }
     // Constante de enum: o gdb mostra o nome ("AZUL").
-    if (type && v.variablesReference === 0 && /^[A-Za-z_]\w*$/.test(v.value) && /^(?:enum\s+)?[A-Za-z_]\w*$/.test(type)) return { kind: 'scalar', value: v.value };
+    if (type && v.variablesReference === 0 && /^[\p{L}_][\p{L}\p{N}_]*$/u.test(v.value) && /^(?:enum\s+)?[\p{L}_][\p{L}\p{N}_]*$/u.test(type)) return { kind: 'scalar', value: v.value };
     return { kind: 'skip' };
   },
 

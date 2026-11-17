@@ -1,4 +1,5 @@
 import type { DapVariable } from '../dap';
+import { NAME_END } from '../../model/names';
 import { asInteger, methodsCalledOn, numericIndex, type CollectionRole, type LanguageAdapter, type VariableShape } from './adapter';
 
 /*
@@ -21,13 +22,13 @@ const ARRAYS = new Set(['tuple', 'array']);
 const SETS = new Set(['set', 'frozenset']);
 const SCALARS = new Set(['str', 'bool', 'float', 'NoneType', 'complex', 'range', 'bytes', 'bytearray']);
 /** Objeto de uma classe: "<__main__.No object at 0x00000146F06538C0>"; o endereço é a identidade. */
-const PY_OBJECT = /^<([\w.]+) object at (0x[0-9a-fA-F]+)>$/;
+const PY_OBJECT = /^<([\p{L}\p{N}_.]+) object at (0x[0-9a-fA-F]+)>$/u;
 
 export function pythonRole(source: string, name: string): CollectionRole | undefined {
   const calls = methodsCalledOn(source, name);
   const has = (method: string, args?: string) => calls.some((c) => c.method === method && (args === undefined || c.args === args));
   // heapq trabalha numa lista comum: heappush(fila, x), heapq.heappop(fila).
-  if (new RegExp(`\\bheap(?:push|pop|ify|replace|pushpop)\\s*\\(\\s*${name}\\b`).test(source)) return { role: 'heap', topFirst: false };
+  if (new RegExp(`\\bheap(?:push|pop|ify|replace|pushpop)\\s*\\(\\s*${name}${NAME_END}`, 'u').test(source)) return { role: 'heap', topFirst: false };
   if (has('appendleft') && (has('append') || has('pop', ''))) return { role: 'deque', topFirst: false };
   if (has('popleft') && has('pop', '')) return { role: 'deque', topFirst: false };
   // pop(0) e popleft() tiram do começo: fila. pop() tira do fim: pilha.
@@ -85,7 +86,7 @@ export const pythonAdapter: LanguageAdapter = {
     if (v.type && SCALARS.has(v.type)) return { kind: 'scalar', value: v.value };
     const obj = PY_OBJECT.exec(v.value);
     if (obj && v.variablesReference > 0) return { kind: 'object', type: obj[1].split('.').pop() ?? obj[1], id: obj[2].toLowerCase() };
-    const member = /^<(\w+\.\w+): .*>$/.exec(v.value);
+    const member = /^<([\p{L}\p{N}_]+\.[\p{L}\p{N}_]+): .*>$/u.exec(v.value);
     if (member && v.type && member[1].startsWith(`${v.type}.`)) return { kind: 'scalar', value: member[1] };
     // dataclass e __repr__ próprio trocam o texto, então o endereço some do valor; quem compara é "is".
     if (v.variablesReference > 0 && v.type && !NOT_OBJECTS.has(v.type)) return { kind: 'object', type: v.type };

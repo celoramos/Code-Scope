@@ -18,7 +18,7 @@ export function parseClasses(source: string): Record<string, ClassInfo> {
   // Python, "class Animal:" tem o corpo na linha de baixo.
   const decls = [
     ...source.matchAll(
-      /\bclass\s+([A-Za-z_$][\w$]*)\s*(?:\(\s*([A-Za-z_$][\w$.]*)\s*\)|(?:extends\s+([A-Za-z_$][\w$.]*))|:[ \t]*(?:(?:public|protected|private|virtual)[ \t]+)*([A-Za-z_][\w.:]*))?/g,
+      /\bclass\s+([\p{L}_$][\p{L}\p{N}_$]*)\s*(?:\(\s*([\p{L}_$][\p{L}\p{N}_$.]*)\s*\)|(?:extends\s+([\p{L}_$][\p{L}\p{N}_$.]*))|:[ \t]*(?:(?:public|protected|private|virtual)[ \t]+)*([\p{L}_][\p{L}\p{N}_.:]*))?/gu,
     ),
   ];
   const out: Record<string, ClassInfo> = {};
@@ -28,8 +28,8 @@ export function parseClasses(source: string): Record<string, ClassInfo> {
     const base = d[4] === 'pass' ? undefined : d[4];
     const parent = (d[2] ?? d[3] ?? base)?.split(/[.:]/).pop();
     const methods = new Set<string>();
-    for (const m of body.matchAll(/\bdef\s+([A-Za-z_]\w*)\s*\(/g)) methods.add(m[1]);
-    for (const m of body.matchAll(/(?:^|[\s;{}])([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*(?:throws\s+[\w., ]+)?\{/gm)) {
+    for (const m of body.matchAll(/\bdef\s+([\p{L}_][\p{L}\p{N}_]*)\s*\(/gu)) methods.add(m[1]);
+    for (const m of body.matchAll(/(?:^|[\s;{}])([\p{L}_$][\p{L}\p{N}_$]*)\s*\([^)]*\)\s*(?:throws\s+[\w., ]+)?\{/gmu)) {
       if (!NOT_METHODS.has(m[1])) methods.add(m[1]);
     }
     out[d[1]] = { ...(parent && parent !== 'object' ? { parent } : {}), methods: [...methods] };

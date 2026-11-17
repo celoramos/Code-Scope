@@ -1,4 +1,5 @@
 import { asInteger, numericIndex, type CollectionRole, type LanguageAdapter, type VariableShape } from './adapter';
+import { NAME_START } from '../../model/names';
 import { goGlobals } from '../../model/outer';
 
 /*
@@ -22,8 +23,8 @@ const SLICE = /^\[\]/;
 const ARRAY = /^\[(\d+)\]/;
 const MAP = /^map\[/;
 const LENGTH = /\blen: (\d+)/;
-const POINTER = /^\*(?:[\w/.-]+\.)?([A-Za-z_]\w*)$/;
-const STRUCT = /^(?:[\w/.-]+\.)?([A-Za-z_]\w*)$/;
+const POINTER = /^\*(?:[\w/.-]+\.)?([\p{L}_][\p{L}\p{N}_]*)$/u;
+const STRUCT = /^(?:[\w/.-]+\.)?([\p{L}_][\p{L}\p{N}_]*)$/u;
 
 /**
  * Pilha ou fila, pelo código: em Go as duas são um slice, e quem diz é o corte.
@@ -31,8 +32,8 @@ const STRUCT = /^(?:[\w/.-]+\.)?([A-Za-z_]\w*)$/;
  */
 export function goRole(source: string, name: string): CollectionRole | undefined {
   const n = name.replace(/\$/g, '\\$');
-  if (new RegExp(`\\b${n}\\s*=\\s*${n}\\[\\s*1\\s*:\\s*\\]`).test(source)) return { role: 'queue', topFirst: false };
-  if (new RegExp(`\\b${n}\\s*=\\s*${n}\\[\\s*:\\s*len\\(${n}\\)\\s*-\\s*1\\s*\\]`).test(source)) return { role: 'stack', topFirst: false };
+  if (new RegExp(`${NAME_START}${n}\\s*=\\s*${n}\\[\\s*1\\s*:\\s*\\]`, 'u').test(source)) return { role: 'queue', topFirst: false };
+  if (new RegExp(`${NAME_START}${n}\\s*=\\s*${n}\\[\\s*:\\s*len\\(${n}\\)\\s*-\\s*1\\s*\\]`, 'u').test(source)) return { role: 'stack', topFirst: false };
   return undefined;
 }
 

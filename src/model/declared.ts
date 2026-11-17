@@ -1,3 +1,4 @@
+import { IDENT, NAME_START } from './names';
 import type { Snapshot } from './snapshot';
 
 /*
@@ -23,7 +24,8 @@ function functionBounds(lines: string[], index: number): [number, number] {
 /** Linha (base 1) em que o nome é declarado dentro da função, e se é no cabeçalho de um for. */
 function declaration(lines: string[], from: number, to: number, name: string): { line: number; inFor: boolean } | undefined {
   const decl = new RegExp(
-    `(?:^|[;({])\\s*(?:(?:const|static|unsigned|signed|long|short|volatile)\\s+)*(struct\\s+\\w+|[A-Za-z_]\\w*)\\s*\\**\\s*\\b${name}\\s*(?:\\[[^\\]]*\\])?\\s*(?:=|;|,)`,
+    `(?:^|[;({])\\s*(?:(?:const|static|unsigned|signed|long|short|volatile)\\s+)*(struct\\s+${IDENT}|${IDENT})\\s*\\**\\s*${NAME_START}${name}\\s*(?:\\[[^\\]]*\\])?\\s*(?:=|;|,)`,
+    'u',
   );
   for (let i = from; i <= to; i++) {
     const code = lines[i].replace(/\/\/.*$/, '');
@@ -39,7 +41,7 @@ export function notYetDeclared(source: string, line: number, names: string[]): S
   const [start, end] = functionBounds(lines, line - 1);
   const out = new Set<string>();
   for (const name of names) {
-    if (!/^[A-Za-z_]\w*$/.test(name)) continue;
+    if (!/^[\p{L}_][\p{L}\p{N}_]*$/u.test(name)) continue;
     const at = declaration(lines, start, end, name);
     // O for volta para a própria linha a cada volta: ali a variável dele já existe.
     if (at && (at.line > line || (at.line === line && !at.inFor))) out.add(name);

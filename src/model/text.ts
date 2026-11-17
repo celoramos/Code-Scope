@@ -1,3 +1,4 @@
+import { NAME_END, NAME_START } from './names';
 import type { Snapshot } from './snapshot';
 
 /*
@@ -13,7 +14,7 @@ const MAX_LETTERS = 40;
 /** O código lê este texto por posição em algum lugar do arquivo? */
 export function readsLetters(source: string, name: string): boolean {
   const n = name.replace(/\$/g, '\\$');
-  return new RegExp(`\\b${n}\\s*(?:\\.\\s*(?:charAt|substring|substr|slice|codePointAt|charCodeAt)\\s*\\(|\\[)|\\bin\\s+${n}\\b|\\bof\\s+${n}\\b|\\b${n}\\s*\\.\\s*toCharArray\\s*\\(`).test(source);
+  return new RegExp(`${NAME_START}${n}\\s*(?:\\.\\s*(?:charAt|substring|substr|slice|codePointAt|charCodeAt)\\s*\\(|\\[)|\\bin\\s+${n}${NAME_END}|\\bof\\s+${n}${NAME_END}|${NAME_START}${n}\\s*\\.\\s*toCharArray\\s*\\(`, 'u').test(source);
 }
 
 /** Letras de um texto como o debugger mostra ("'radar'", "\"radar\""), já entre aspas simples. */

@@ -23,11 +23,11 @@ export function numberNotes(prev: Snapshot | undefined, next: Snapshot, language
   // Divisão: a linha que acabou de rodar divide duas coisas que o passo anterior sabia calcular.
   // Comentário sai antes: no Python é #, e // é divisão; nas outras, // começa comentário.
   const bare = /\.py$/i.test(next.file) ? code.replace(/#.*$/, '') : code.replace(/\/\/.*$/, '');
-  const div = /([\w.[\]()]+)\s*(\/\/|\/)(?!=)\s*([\w.[\]()]+)/.exec(bare);
+  const div = /([\p{L}\p{N}_.[\]()]+)\s*(\/\/|\/)(?!=)\s*([\p{L}\p{N}_.[\]()]+)/u.exec(bare);
   if (div) {
     const a = evalIndex(div[1], prev);
     const b = evalIndex(div[3], prev);
-    const isInt = (s: string) => /^[A-Za-z_]\w*$/.test(s) ? prev.pointers.some((p) => p.name === s) : /^-?\d+$/.test(s);
+    const isInt = (s: string) => /^[\p{L}_][\p{L}\p{N}_]*$/u.test(s) ? prev.pointers.some((p) => p.name === s) : /^-?\d+$/.test(s);
     if (a !== undefined && b !== undefined && b !== 0 && isInt(div[1]) && isInt(div[3]) && a % b !== 0) {
       const exact = String(Math.round((a / b) * 10000) / 10000);
       if (div[2] === '//') out.push(m.floorDivision(a, b, Math.floor(a / b), exact));

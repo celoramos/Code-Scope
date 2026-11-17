@@ -9,6 +9,7 @@ import {
   type LanguageAdapter,
   type VariableShape,
 } from './adapter';
+import { NAME_START } from '../../model/names';
 import { staticFields } from '../../model/outer';
 
 /*
@@ -26,7 +27,7 @@ import { staticFields } from '../../model/outer';
  * Também aceitamos "[0]" e "(id=10)", formatos de versões antigas.
  */
 
-const ARRAY_VALUE = /^[\w.$]+\[(\d+)\](?:\[\])*/;
+const ARRAY_VALUE = /^[\p{L}\p{N}_.$]+\[(\d+)\](?:\[\])*/u;
 const INTEGRAL_TYPES = new Set(['int', 'short', 'long', 'byte', 'Integer', 'Short', 'Long', 'Byte']);
 const SCALAR_TYPES = new Set(['boolean', 'Boolean', 'char', 'Character', 'double', 'Double', 'float', 'Float', 'String']);
 const BOXED = /^(Character|Integer|Long|Short|Byte|Double|Float|Boolean)@\d+$/;
@@ -66,7 +67,7 @@ const NUMERIC_VALUE_CLASSES = new Set(['BigInteger', 'BigDecimal', 'AtomicIntege
 /** Nome da classe de valor ("BigInteger"), se a variável guarda uma. */
 export function valueClass(v: DapVariable): string | undefined {
   if (v.variablesReference <= 0) return undefined;
-  const type = simpleClassName(v.type ?? /^([\w.$]+)@\d+/.exec(v.value)?.[1] ?? '');
+  const type = simpleClassName(v.type ?? /^([\p{L}\p{N}_.$]+)@\d+/u.exec(v.value)?.[1] ?? '');
   return VALUE_CLASSES.has(type) ? type : undefined;
 }
 
@@ -98,7 +99,7 @@ export function formatDecimal(value: string): string {
 }
 
 /** "HashMap@26 size=1", "TreeMap@3 size=0": qualquer classe terminada em Map. */
-const MAP_VALUE = /^([\w.$]*Map)@(\d+)\s+size=(\d+)/;
+const MAP_VALUE = /^([\p{L}\p{N}_.$]*Map)@(\d+)\s+size=(\d+)/u;
 
 export function mapShape(v: DapVariable): VariableShape | undefined {
   const m = MAP_VALUE.exec(v.value);
@@ -107,7 +108,7 @@ export function mapShape(v: DapVariable): VariableShape | undefined {
 }
 
 /** Objeto comum: "Referencias$Conta@12", sem "size=" (coleções) nem embrulho de primitivo. */
-const OBJECT_VALUE = /^([\w.$]+)@(\d+)$/;
+const OBJECT_VALUE = /^([\p{L}\p{N}_.$]+)@(\d+)$/u;
 
 /** Classe e identidade de um objeto; undefined se não é objeto de classe. */
 export function objectShape(v: DapVariable): { type: string; id: string } | undefined {
@@ -119,7 +120,7 @@ export function objectShape(v: DapVariable): { type: string; id: string } | unde
 
 /** HashSet, LinkedHashSet, TreeSet: "HashSet@13 size=2", com os itens numerados como numa lista. */
 export function isSetType(v: DapVariable): boolean {
-  return /Set$/.test(simpleClassName(v.type ?? /^([\w.$]+)@/.exec(v.value)?.[1] ?? ''));
+  return /Set$/.test(simpleClassName(v.type ?? /^([\p{L}\p{N}_.$]+)@/u.exec(v.value)?.[1] ?? ''));
 }
 
 /** "Referencias$Conta" e "java.util.Random" viram "Conta" e "Random". */
@@ -196,7 +197,7 @@ export function collectionRole(source: string, name: string): CollectionRole | u
   // Variável ("Stack<Integer> p = ...;") ou parâmetro ("void f(Stack<Integer> p)"): dentro da função
   // que recebe a pilha, só o parâmetro diz que é um Stack. O tipo começa com maiúscula: "return p;" não declara.
   const declared = new RegExp(`\\b([A-Z]\\w*)\\s*(?:<[^;=()]*>)?\\s+${n}\\s*[=;),]`).exec(source)?.[1];
-  const created = new RegExp(`\\b${n}\\s*=\\s*new\\s+(\\w+)`).exec(source)?.[1];
+  const created = new RegExp(`${NAME_START}${n}\\s*=\\s*new\\s+(\\w+)`, 'u').exec(source)?.[1];
   const ops = methodsCalledOn(source, name).map((c) => c.method);
 
   if (declared === 'PriorityQueue' || created === 'PriorityQueue') return { role: 'heap', topFirst: false };
@@ -250,13 +251,13 @@ export const javaAdapter: LanguageAdapter = {
 
   // "NumberFormatException@30": a mensagem está no campo detailMessage.
   caughtError(v) {
-    const m = /^([\w.$]*(?:Exception|Error))@\d+$/.exec(v.value);
+    const m = /^([\p{L}\p{N}_.$]*(?:Exception|Error))@\d+$/u.exec(v.value);
     return m && v.variablesReference > 0 ? { type: simpleClassName(m[1]), messageField: 'detailMessage' } : undefined;
   },
 
   mapEntry(child) {
     // Entrada: 'HashMap$Node@44 "sol":"1"'.
-    const m = /^[\w.$]+@\d+\s+(.*)$/.exec(child.value);
+    const m = /^[\p{L}\p{N}_.$]+@\d+\s+(.*)$/u.exec(child.value);
     return m ? splitEntry(m[1]) : undefined;
   },
 
@@ -274,7 +275,7 @@ export const javaAdapter: LanguageAdapter = {
   // tem um único filho 'Optional@283 "Optional[Ana]"'. Sem toString, fica de fora, como antes.
   async libraryText(_v, children) {
     const kids = await children();
-    const m = kids.length === 1 && kids[0].name === '' ? /^[\w.$]+@\d+\s+"(.*)"$/s.exec(kids[0].value) : undefined;
+    const m = kids.length === 1 && kids[0].name === '' ? /^[\p{L}\p{N}_.$]+@\d+\s+"(.*)"$/su.exec(kids[0].value) : undefined;
     return m?.[1];
   },
 

@@ -1,4 +1,5 @@
 import { enclosingFunction } from './enclosing';
+import { IDENT, NAME_START } from './names';
 
 /*
  * Array do C que chega como ponteiro: o int v[] da função de ordenar (que vira int *), o
@@ -10,10 +11,9 @@ import { enclosingFunction } from './enclosing';
  * Leitura de texto, como enclosing.ts: um palpite errado só faz a pergunta falhar.
  */
 
-const IDENT = '[A-Za-z_]\\w*';
-const INTEGER_PARAM = /^(?:const\s+)?(?:unsigned\s+|signed\s+)?(?:int|long|short|long\s+long|size_t|ssize_t|unsigned)\s+([A-Za-z_]\w*)$/;
+const INTEGER_PARAM = /^(?:const\s+)?(?:unsigned\s+|signed\s+)?(?:int|long|short|long\s+long|size_t|ssize_t|unsigned)\s+([\p{L}_][\p{L}\p{N}_]*)$/u;
 /** Ponteiro ou array de número ("int *v", "double notas[]", "float v[10]"); char * é texto, não entra. */
-const ARRAY_PARAM = /^(?:const\s+)?(?:unsigned\s+|signed\s+)?(?:int|long|short|long\s+long|float|double|size_t|bool|_Bool)\s*(?:\*\s*([A-Za-z_]\w*)|([A-Za-z_]\w*)\s*\[\s*(\w*)\s*\])$/;
+const ARRAY_PARAM = /^(?:const\s+)?(?:unsigned\s+|signed\s+)?(?:int|long|short|long\s+long|float|double|size_t|bool|_Bool)\s*(?:\*\s*([\p{L}_][\p{L}\p{N}_]*)|([\p{L}_][\p{L}\p{N}_]*)\s*\[\s*([\p{L}\p{N}_]*)\s*\])$/u;
 
 /** Separa por vírgulas que não estão dentro de parênteses, colchetes ou chaves. */
 function splitTop(text: string): string[] {
@@ -67,7 +67,7 @@ function countOf(bytes: string): string | undefined {
 /** Tamanhos vindos de malloc, calloc, realloc e new[] no arquivo inteiro: "v" => "n". */
 function allocations(source: string): Map<string, string> {
   const out = new Map<string, string>();
-  const re = new RegExp(`\\b(${IDENT})\\s*=\\s*(?:\\([^()]*\\)\\s*)?(malloc|calloc|realloc)\\s*\\(`, 'g');
+  const re = new RegExp(`${NAME_START}(${IDENT})\\s*=\\s*(?:\\([^()]*\\)\\s*)?(malloc|calloc|realloc)\\s*\\(`, 'gu');
   for (const m of source.matchAll(re)) {
     const args = balanced(source, (m.index ?? 0) + m[0].length - 1);
     if (args === undefined) continue;
@@ -76,7 +76,7 @@ function allocations(source: string): Map<string, string> {
     if (count) out.set(m[1], count);
   }
   // C++: int *v = new int[n];
-  for (const m of source.matchAll(new RegExp(`\\b(${IDENT})\\s*=\\s*new\\s+[\\w:<>\\s]+\\[([^\\]]+)\\]`, 'g'))) out.set(m[1], m[2].trim());
+  for (const m of source.matchAll(new RegExp(`${NAME_START}(${IDENT})\\s*=\\s*new\\s+[\\w:<>\\s]+\\[([^\\]]+)\\]`, 'gu'))) out.set(m[1], m[2].trim());
   return out;
 }
 

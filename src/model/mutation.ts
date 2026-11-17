@@ -1,4 +1,5 @@
 import { MESSAGES, type Language } from './messages';
+import { IDENT, NAME_END } from './names';
 import type { ArrayVar, Snapshot } from './snapshot';
 
 /*
@@ -8,7 +9,7 @@ import type { ArrayVar, Snapshot } from './snapshot';
  * igual. A frase aparece no passo em que a linha rodou, com os nomes dela.
  */
 
-const NAME = '[A-Za-z_$][\\w$]*';
+const NAME = IDENT;
 /** Métodos de texto que devolvem um texto novo. */
 const TEXT_NEW =
   'toUpperCase|toLowerCase|trim|strip|replace|replaceAll|concat|substring|repeat|padStart|padEnd|upper|lower|capitalize|title|lstrip|rstrip|ToUpper|ToLower|Trim|Replace|Substring';
@@ -18,23 +19,23 @@ const LIST_NEW = 'concat|slice|map|filter|toSorted|toReversed|toSpliced|copy|clo
 const IN_PLACE = 'sort|reverse|Sort|Reverse';
 
 /** Linha que só chama um método, sem guardar o resultado: "s.trim();". */
-const BARE_CALL = new RegExp(`^(${NAME})\\.(${TEXT_NEW}|${LIST_NEW})\\(.*\\)\\s*;?$`);
-const BARE_SORTED = new RegExp(`^(sorted|reversed)\\(\\s*(${NAME})\\s*\\)$`);
+const BARE_CALL = new RegExp(`^(${NAME})\\.(${TEXT_NEW}|${LIST_NEW})\\(.*\\)\\s*;?$`, 'u');
+const BARE_SORTED = new RegExp(`^(sorted|reversed)\\(\\s*(${NAME})\\s*\\)$`, 'u');
 /** x.sort(), Arrays.sort(x), Collections.reverse(x), Array.Sort(x). */
-const SORT_METHOD = new RegExp(`^(${NAME})\\.(${IN_PLACE})\\(.*\\)\\s*;?$`);
-const SORT_STATIC = new RegExp(`^(?:Arrays|Collections|Array)\\.(${IN_PLACE})\\(\\s*(${NAME})\\b.*\\)\\s*;?$`);
+const SORT_METHOD = new RegExp(`^(${NAME})\\.(${IN_PLACE})\\(.*\\)\\s*;?$`, 'u');
+const SORT_STATIC = new RegExp(`^(?:Arrays|Collections|Array)\\.(${IN_PLACE})\\(\\s*(${NAME})${NAME_END}.*\\)\\s*;?$`, 'u');
 /** Atribuição: "y = ...", "int[] y = ...", "const y = ...", "List<Integer> y = ...". */
-const ASSIGN = new RegExp(`^(?:[\\w<>\\[\\],.?\\s]+\\s)?(${NAME})\\s*=(?!=)\\s*(.+?)\\s*;?$`);
+const ASSIGN = new RegExp(`^(?:[\\p{L}\\p{N}_$<>\\[\\],.?\\s]+\\s)?(${NAME})\\s*=(?!=)\\s*(.+?)\\s*;?$`, 'u');
 
 /** Quem a expressão copia: "sorted(x)", "x[:]", "[...x]", "x.slice()", "Arrays.copyOf(x, n)", "new ArrayList<>(x)". */
 function copySource(rhs: string): string | undefined {
   const patterns = [
-    new RegExp(`^(?:sorted|list|reversed)\\(\\s*(${NAME})\\s*\\)$`),
-    new RegExp(`^(${NAME})\\[\\s*:\\s*\\]$`),
-    new RegExp(`^\\[\\s*\\.\\.\\.(${NAME})\\s*\\]$`),
-    new RegExp(`^(${NAME})\\.(?:${LIST_NEW})\\(.*\\)$`),
-    new RegExp(`^Arrays\\.copyOf(?:Range)?\\(\\s*(${NAME})\\b.*\\)$`),
-    new RegExp(`^new\\s+\\w+(?:<.*>)?\\(\\s*(${NAME})\\s*\\)$`),
+    new RegExp(`^(?:sorted|list|reversed)\\(\\s*(${NAME})\\s*\\)$`, 'u'),
+    new RegExp(`^(${NAME})\\[\\s*:\\s*\\]$`, 'u'),
+    new RegExp(`^\\[\\s*\\.\\.\\.(${NAME})\\s*\\]$`, 'u'),
+    new RegExp(`^(${NAME})\\.(?:${LIST_NEW})\\(.*\\)$`, 'u'),
+    new RegExp(`^Arrays\\.copyOf(?:Range)?\\(\\s*(${NAME})${NAME_END}.*\\)$`, 'u'),
+    new RegExp(`^new\\s+\\w+(?:<.*>)?\\(\\s*(${NAME})\\s*\\)$`, 'u'),
   ];
   for (const p of patterns) {
     const m = p.exec(rhs);
@@ -102,7 +103,7 @@ export function mutationNotes(prev: Snapshot | undefined, next: Snapshot, langua
       return [m.newCopy(target, source, rhs.trim())];
     }
     // Texto novo guardado em outra variável: a de origem não mudou.
-    const textCall = new RegExp(`^(${NAME})\\.(?:${TEXT_NEW})\\(.*\\)$`).exec(rhs.trim());
+    const textCall = new RegExp(`^(${NAME})\\.(?:${TEXT_NEW})\\(.*\\)$`, 'u').exec(rhs.trim());
     if (textCall && textCall[1] !== target) {
       const before = textOf(textCall[1], prev);
       if (before !== undefined && before === textOf(textCall[1], next) && textOf(target, next) !== undefined) {
