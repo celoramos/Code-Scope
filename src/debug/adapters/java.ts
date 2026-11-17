@@ -289,7 +289,7 @@ export const javaAdapter: LanguageAdapter = {
   // O java-debug guarda o valor devolvido como "->fatorial()" nas locais de quem chamou, logo depois
   // do retorno. Sem isto, o painel desenhava "->fatorial()" como uma variável do aluno.
   returnValue: (v) => {
-    const m = /^->(\w+)\(\)$/.exec(v.name);
+    const m = /^->([\p{L}\p{N}_$]+)\(\)$/u.exec(v.name);
     return m ? { function: m[1], value: formatElement(v) } : undefined;
   },
 

@@ -192,7 +192,7 @@ export function peekNote(
   changes: Change[],
   language: Language = 'pt',
 ): string | undefined {
-  const m = code && /\b([A-Za-z_$][\w$]*)\s*\.\s*peek\s*\(/.exec(code);
+  const m = code && /(?<![\p{L}\p{N}_$])([\p{L}_$][\p{L}\p{N}_$]*)\s*\.\s*peek\s*\(/u.exec(code);
   if (!m) return undefined;
   const arr = snapshot.arrays.find((a) => a.name === m[1]);
   if (!arr || (arr.kind !== 'stack' && arr.kind !== 'queue')) return undefined;

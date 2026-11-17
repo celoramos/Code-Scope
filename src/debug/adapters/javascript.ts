@@ -88,7 +88,7 @@ export const javascriptAdapter: LanguageAdapter = {
   caughtError(v) {
     if (!v.type || !/Error$/.test(v.type) || v.variablesReference <= 0) return undefined;
     const first = v.value.split('\n')[0];
-    const m = /^(\w+):\s*(.*)$/.exec(first);
+    const m = /^([\p{L}\p{N}_$]+):\s*(.*)$/u.exec(first);
     return { type: m?.[1] ?? v.type, ...(m ? { message: m[2] } : {}) };
   },
 

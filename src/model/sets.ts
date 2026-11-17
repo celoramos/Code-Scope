@@ -2,7 +2,7 @@ import { MESSAGES, type Language } from './messages';
 import type { Snapshot } from './snapshot';
 
 /** "vistos.add(numero);" e "vistos.add(numero)": o conjunto e o que foi adicionado. */
-const ADD_CALL = /^(\w+)\.add\((.+)\);?$/;
+const ADD_CALL = /^([\p{L}\p{N}_$]+)\.add\((.+)\);?$/u;
 
 /**
  * A linha que rodou adicionou ao conjunto um valor que ele já tinha: nada

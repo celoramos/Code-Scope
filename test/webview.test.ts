@@ -342,3 +342,22 @@ describe('programa que termina sem parar', () => {
     assert.match(panel.doc.getElementById('empty-title')?.textContent ?? '', /sem parar.*breakpoint/);
   });
 });
+
+describe('nomes com acento no texto do painel', () => {
+  it('posição aparece como código na explicação, inteira', () => {
+    const panel = openPanel('pt');
+    const step = (value: number, line: number): Snapshot => ({
+      line,
+      file: 'Busca.java',
+      code: 'posição++;',
+      arrays: [{ name: 'números', values: ['5', '1', '4'], length: 3 }],
+      pointers: [{ name: 'posição', value }],
+    });
+    panel.stop(step(0, 5));
+    panel.stop(step(1, 6));
+    const code = texts(panel.doc, '#explanation li code');
+    assert.ok(code.includes('posição'), `${code.join(' | ')} || ${texts(panel.doc, '#explanation li').join(' | ')}`);
+    assert.ok(!code.includes('posi'), code.join(' | '));
+    assert.deepEqual(panel.errors, []);
+  });
+});

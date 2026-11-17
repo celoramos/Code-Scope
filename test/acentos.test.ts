@@ -1,7 +1,12 @@
 import * as assert from 'node:assert/strict';
 import { methodsCalledOn } from '../src/debug/adapters/adapter';
-import { pythonAdapter } from '../src/debug/adapters';
+import { javaAdapter, pythonAdapter } from '../src/debug/adapters';
 import { collectionRole, objectShape } from '../src/debug/adapters/java';
+import { javascriptAdapter } from '../src/debug/adapters/javascript';
+import { substitute } from '../src/model/condition';
+import { peekNote } from '../src/model/frame';
+import { predictionFor } from '../src/model/predict';
+import { setNotes } from '../src/model/sets';
 import { cAdapter } from '../src/debug/adapters/c';
 import { goAdapter, goRole } from '../src/debug/adapters/go';
 import { parseClasses } from '../src/model/classes';
@@ -178,6 +183,50 @@ describe('nomes com acento', () => {
       { array: 'números', expr: 'posição + 1', index: 3 },
     ]);
     assert.equal(evalIndex('números.length - posição', s), 2);
+  });
+
+  it('condição com os valores no lugar: números[j] > números[j + 1] vira 5 > 1', () => {
+    const s: Snapshot = { file: 'A.java', line: 1, arrays: [{ name: 'números', values: ['5', '1', '4'], length: 3 }], pointers: [{ name: 'j', value: 0 }] };
+    assert.equal(substitute('números[j] > números[j + 1]', s), '5 > 1');
+    assert.equal(substitute('j < números.length', s), '0 < 3');
+    assert.equal(substitute('posição < 3', { ...s, pointers: [{ name: 'posição', value: 2 }] }), '2 < 3');
+  });
+
+  it('Java: ->máximo() é o valor devolvido', () => {
+    assert.deepEqual(javaAdapter.returnValue?.({ name: '->máximo()', value: '3', type: 'int', variablesReference: 0 }), { function: 'máximo', value: '3' });
+  });
+
+  it('JavaScript: erro de class ValidaçãoError com a mensagem', () => {
+    assert.deepEqual(javascriptAdapter.caughtError?.({ name: 'e', value: 'ValidaçãoError: idade negativa\n    at main (a.js:3:9)', type: 'ValidaçãoError', variablesReference: 3 }), {
+      type: 'ValidaçãoError',
+      message: 'idade negativa',
+    });
+  });
+
+  it('peek numa fila que começa com acento', () => {
+    const s: Snapshot = { file: 'A.java', line: 1, arrays: [{ name: 'ônibus', kind: 'queue', values: ['1', '2'], length: 2 }], pointers: [] };
+    assert.ok(peekNote('int primeiro = ônibus.peek();', s, [], 'pt'));
+  });
+
+  it('modo de adivinhar: posição++, int média = ... e números[i] = 0', () => {
+    const s = (code: string): Snapshot => ({
+      file: 'A.java',
+      line: 1,
+      code,
+      arrays: [{ name: 'números', values: ['5', '1', '4'], length: 3 }],
+      pointers: [{ name: 'i', value: 1 }],
+    });
+    assert.deepEqual(predictionFor(s('posição++;')), { target: 'posição' });
+    assert.deepEqual(predictionFor(s('int média = soma / n;')), { target: 'média' });
+    assert.deepEqual(predictionFor(s('List<Ação> ações = new ArrayList<>();')), { target: 'ações' });
+    assert.deepEqual(predictionFor(s('números[i] = 0;')), { target: 'números[1]' });
+  });
+
+  it('conjunto: cães.add(rex) de um valor que já estava', () => {
+    const cães = { name: 'cães', kind: 'set' as const, values: ['"rex"'], length: 1 };
+    const prev: Snapshot = { file: 'A.java', line: 1, code: 'cães.add(rex);', arrays: [cães], pointers: [], scalars: [{ name: 'rex', value: '"rex"' }] };
+    const next: Snapshot = { file: 'A.java', line: 2, arrays: [cães], pointers: [], scalars: [{ name: 'rex', value: '"rex"' }] };
+    assert.equal(setNotes(prev, next, 'pt').length, 1);
   });
 
   it('divisão de inteiros com nomes com acento', () => {

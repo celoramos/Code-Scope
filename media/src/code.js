@@ -108,7 +108,8 @@ export function highlightCode(text) {
   const out = [];
   let last = 0;
   // "turma[1].nota" e "inicio.proximo" viram um trecho de código só.
-  for (const m of text.matchAll(/[A-Za-z_$][\w$]*((?:\[\d+\])+)?((?:\.[A-Za-z_$][\w$]*)+)?/g)) {
+  // Com acento: "posição" é um nome só, não "posi" e "ção".
+  for (const m of text.matchAll(/[\p{L}_$][\p{L}\p{N}_$]*((?:\[\d+\])+)?((?:\.[\p{L}_$][\p{L}\p{N}_$]*)+)?/gu)) {
     const root = m[0].split(/[.[]/)[0];
     if (!m[1] && !known.has(root)) continue;
     if (m.index > last) out.push(text.slice(last, m.index));
