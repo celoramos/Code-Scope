@@ -40,6 +40,8 @@ const MAP = /^(?:const )?std::(?:__\w+::)?(?:unordered_)?map</;
 const STRUCT_VALUE = /^(?:const\s+|volatile\s+)*(?:struct\s+|class\s+|union\s+)?([\p{L}_][\p{L}\p{N}_]*)(?:\s*<.*>)?\s*&?$/u;
 /** Quantos itens o valor diz ter: "of length 3", "with 2 elements", "{ size=3 }". */
 const COUNT = /(?:of length |with |size=)(\d+)/;
+/** char nome[20]: num campo de struct, é um texto. */
+const CHAR_ARRAY = /^(?:const\s+)?(?:unsigned\s+|signed\s+)?char\s*\[\d+\]$/;
 
 /** "97 'a'" vira "'a'"; ponteiro de char ('0x4050a0 "texto"') vira o texto. */
 export function formatValue(v: DapVariable): string {
@@ -165,9 +167,21 @@ export const cAdapter: LanguageAdapter = {
   },
   // char nome[20] num campo: o gdb manda '"ana", '\000' <repeats 16 times>'; vale o texto até o primeiro \0.
   fieldText(v) {
-    if (!/^(?:const\s+)?(?:unsigned\s+|signed\s+)?char\s*\[\d+\]$/.test((v.type ?? '').trim())) return undefined;
+    if (!CHAR_ARRAY.test((v.type ?? '').trim())) return undefined;
     const m = /^"((?:[^"\\]|\\.)*)"/.exec(v.value);
     return m ? `"${m[1].split('\\000')[0]}"` : undefined;
+  },
+  // O gdb real (CI, Windows e Linux) manda o campo só pelo tamanho ("[10]"): o texto sai dos itens, "97 'a'".
+  fieldTextFromItems(v, items) {
+    if (!CHAR_ARRAY.test((v.type ?? '').trim())) return undefined;
+    let text = '';
+    for (const item of items) {
+      const m = /^-?\d+ '(.*)'$/.exec(item.value);
+      if (!m) return undefined;
+      if (m[1] === '\\000') break;
+      text += m[1];
+    }
+    return `"${text}"`;
   },
   // std::string sem pretty-printers: "{...}" no valor, e o texto no ponteiro _M_p ('0x5ffb10 "abc"').
   indirectText(v) {

@@ -191,6 +191,10 @@ class HeapContext {
         return this.adapter.isNull?.(c) ? { name: c.name, value: c.value, ref: null } : { name: c.name, value: s.value };
       case 'sequence': {
         if (s.length === 0) return { name: c.name, value: '[]' };
+        if (this.adapter.fieldTextFromItems && c.variablesReference > 0) {
+          const chars = this.adapter.fieldTextFromItems(c, await variables(this.session, c.variablesReference));
+          if (chars !== undefined) return { name: c.name, value: chars };
+        }
         const text = this.sequenceFields++ < MAX_SEQUENCE_FIELDS ? await this.opts.sequenceText?.(c, s).catch(() => undefined) : undefined;
         // Sem os itens, "[…]": o tamanho entre colchetes ("[3]") seria lido como um array com o 3 dentro.
         return { name: c.name, value: text ?? '[…]' };

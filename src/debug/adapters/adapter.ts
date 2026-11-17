@@ -115,6 +115,11 @@ export interface LanguageAdapter {
    */
   fieldText?(v: DapVariable): string | undefined;
   /**
+   * O mesmo texto, montado pelos itens, quando o debugger mostra o campo só pelo tamanho ("[10]",
+   * como o gdb real): cada item é uma letra ("97 'a'"), até a primeira '\000'.
+   */
+  fieldTextFromItems?(v: DapVariable, items: DapVariable[]): string | undefined;
+  /**
    * Objeto de uma classe de biblioteca (não do aluno) com texto legível: o Optional do Java pelo
    * toString, o Decimal do Python pelo repr. Sem isto, a variável ficava de fora.
    */

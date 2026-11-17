@@ -108,4 +108,29 @@ describe('C e C++: struct e objeto guardados direto na variável', () => {
       ['nome="ana"', 'nota=9'],
     );
   });
+
+  it('char nome[10] que o gdb mostra só pelo tamanho: o texto sai dos itens, até o primeiro \\000', async () => {
+    // Formato do gdb real no CI (Windows e Linux): o campo vem como array, e cada item como "97 'a'".
+    const source = 'typedef struct { char nome[10]; int nota; } Aluno;\nint main(void) {\n  Aluno a = {"ana", 9};\n  return 0;\n}\n';
+    const letras = ['97', "'a'", '110', "'n'", '97', "'a'"];
+    const chars = [0, 1, 2].map((i) => ({ name: `[${i}]`, value: `${letras[2 * i]} ${letras[2 * i + 1]}`, type: 'char', variablesReference: 0 }));
+    const zeros = [3, 4, 5, 6, 7, 8, 9].map((i) => ({ name: `[${i}]`, value: String.raw`0 '\000'`, type: 'char', variablesReference: 0 }));
+    const s = session(
+      4,
+      {
+        1: [{ name: 'a', value: '{...}', type: 'Aluno', variablesReference: 2, evaluateName: 'a' }],
+        2: [
+          { name: 'nome', value: '[10]', type: 'char [10]', variablesReference: 5 },
+          { name: 'nota', value: '9', type: 'int', variablesReference: 0 },
+        ],
+        5: [...chars, ...zeros],
+      },
+      {},
+    );
+    const snap = await step(s, source);
+    assert.deepEqual(
+      snap.heap?.[0].fields.map((f) => `${f.name}=${f.value}`),
+      ['nome="ana"', 'nota=9'],
+    );
+  });
 });
