@@ -98,6 +98,10 @@ jobs:
           echo "::notice title=Integração (${{ matrix.name }})::${total}. ${per}"
           grep -E 'testes pulados' itest.log | sort -u | sed 's/^/::warning::/' || true
           grep -E -A1 '^ +[0-9]+\) ' itest.log | grep -vE '^--$' | paste -d ' ' - - | head -10 | sed 's/^ */::error::/' || true
+          # O motivo de cada falha (a mensagem e o diff do assert), sem a pilha, numa anotação só:
+          # sem isto, só o nome do teste aparece na página do run.
+          msg=$(awk '/^ +[0-9]+ failing/ {on=1; next} on && !/^ +at / && NF {gsub(/\r/, ""); gsub(/%/, "%25"); printf "%s%%0A", substr($0, 1, 300); if (++k == 40) exit}' itest.log)
+          [ -z "$msg" ] || echo "::error title=Falhas (${{ matrix.name }})::${msg}"
 
   vscodium:
     name: Integração no VSCodium (Open VSX)
