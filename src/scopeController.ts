@@ -25,6 +25,8 @@ export class ScopeController implements vscode.Disposable {
    * Os testes de integração esperam por ele para dar o próximo F10.
    */
   stopsRead = 0;
+  /** O último erro ao montar um passo, com a pilha, para os testes de integração mostrarem. */
+  lastError: string | undefined;
   private state: SessionState = 'idle';
   /** Cada parada ganha um número; uma coleta só publica se ainda for a mais recente. */
   private readonly stops = new StopSequence();
@@ -122,6 +124,7 @@ export class ScopeController implements vscode.Disposable {
       this.showCurrent();
       await this.revealOnFirstStop();
     } catch (err) {
+      this.lastError = err instanceof Error ? (err.stack ?? err.message) : String(err);
       if (!this.stops.isCurrent(gen)) return;
       this.log.error('falha ao ler variáveis', err instanceof Error ? err : String(err));
       this.view.post({ type: 'error', text: readError(uiLanguage(), err) });

@@ -22,6 +22,8 @@ export let lastRaws: { index: number; raw: unknown }[] = [];
 export const invisibleDetails = new Map<string, string>();
 
 type RawVar = { name: string; value: string; type?: string; variablesReference: number; indexedVariables?: number };
+/** Pedido, resposta ou evento do Debug Adapter Protocol, só com os campos que o diagnóstico usa. */
+type DapMessage = { type?: string; seq?: number; command?: string; arguments?: unknown; request_seq?: number; success?: boolean; message?: string; event?: string; body?: { output?: string } };
 
 async function probeInvisible(raw: unknown, snap: Snapshot): Promise<void> {
   const session = vscode.debug.activeDebugSession;
@@ -95,18 +97,35 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
   // Guarda o que o debugger escreveu no Debug Console e avisa se a sessão acabou antes de parar,
   // para a falha dizer o motivo em vez de esperar o tempo todo.
   const output: string[] = [];
+  // As últimas mensagens trocadas com o adaptador: mostram se um pedido ficou sem resposta.
+  const traffic: string[] = [];
+  const started = Date.now();
+  const note = (line: string) => {
+    traffic.push(`${((Date.now() - started) / 1000).toFixed(1)}s ${line}`);
+    if (traffic.length > 40) traffic.shift();
+  };
   let ended = false;
   const listeners = [
     vscode.debug.registerDebugAdapterTrackerFactory('*', {
       createDebugAdapterTracker: () => ({
-        onDidSendMessage: (m: { type?: string; event?: string; body?: { output?: string } }) => {
+        onWillReceiveMessage: (m: DapMessage) => {
+          if (m.type === 'request') note(`-> ${m.seq} ${m.command} ${JSON.stringify(m.arguments ?? {}).slice(0, 100)}`);
+        },
+        onDidSendMessage: (m: DapMessage) => {
           if (m.type === 'event' && m.event === 'output' && m.body?.output) output.push(m.body.output);
+          else if (m.type === 'response') note(`<- ${m.request_seq} ${m.command} ${m.success ? 'ok' : `erro: ${m.message}`}`);
+          else if (m.type === 'event') note(`evento ${m.event}`);
         },
         onError: (e: Error) => output.push(`erro do adaptador: ${e.message}\n`),
       }),
     }),
     vscode.debug.onDidTerminateDebugSession(() => (ended = true)),
   ];
+  // Se a leitura da parada terminou sem passo, foi erro; se não terminou, um pedido ficou sem resposta.
+  const readBefore = cs.stopsRead();
+  const diagnosis = () =>
+    `\nParadas lidas: ${cs.stopsRead() - readBefore}. Último erro ao montar o passo: ${cs.lastError() ?? 'nenhum'}` +
+    `\nÚltimas mensagens com o adaptador:\n${traffic.join('\n')}`;
 
   try {
     const folder = vscode.workspace.workspaceFolders?.[0];
@@ -122,8 +141,9 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
       `o debug de ${run.dump} terminou sem parar no breakpoint. Saída do debugger:\n${output.join('')}`,
     );
   } catch (err) {
-    if (err instanceof Error && !err.message.includes('Saída do debugger')) {
-      err.message += `\nSaída do debugger:\n${output.join('')}`;
+    if (err instanceof Error) {
+      if (!err.message.includes('Saída do debugger')) err.message += `\nSaída do debugger:\n${output.join('')}`;
+      err.message += diagnosis();
     }
     await stopAll();
     throw err;

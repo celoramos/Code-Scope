@@ -11,6 +11,8 @@ export interface CodeScopeApi {
   panelVisible(): boolean;
   /** Paradas lidas até agora, com passo publicado ou não. */
   stopsRead(): number;
+  /** O último erro ao montar um passo, com a pilha: o log não aparece no CI. */
+  lastError(): string | undefined;
 }
 
 export function activate(context: vscode.ExtensionContext): CodeScopeApi {
@@ -30,6 +32,7 @@ export function activate(context: vscode.ExtensionContext): CodeScopeApi {
     lastRaw: () => controller.lastRaw,
     panelVisible: () => provider.visible,
     stopsRead: () => controller.stopsRead,
+    lastError: () => controller.lastError,
   };
 }
 
