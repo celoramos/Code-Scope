@@ -39,13 +39,14 @@ jobs:
             os: ubuntu-latest
           - name: macOS
             os: macos-latest
-          # Temporário, sai antes do merge: separa a imagem do código na falha do vetor.cpp.
-          - name: Linux 24.04, só C++
-            os: ubuntu-24.04
-            grep: 'Novidades C\+\+ real'
-          - name: Linux 26.04, só C++
+          # Temporário, sai antes do merge: sozinho, o C++ passa no 26.04. Estes separam os testes de C
+          # (o F11 do ponteiros.c entra no malloc da glibc) do resto da suíte, que vem antes do vetor.cpp.
+          - name: Linux 26.04, só C
             os: ubuntu-26.04
-            grep: 'Novidades C\+\+ real'
+            grep: 'C \(gdb\) real'
+          - name: Linux 26.04, sem os testes de C
+            os: ubuntu-26.04
+            grep: '^(?!C \(gdb\) real)'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 40
     steps:
