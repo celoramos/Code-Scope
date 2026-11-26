@@ -23,7 +23,7 @@ export const invisibleDetails = new Map<string, string>();
 
 type RawVar = { name: string; value: string; type?: string; variablesReference: number; indexedVariables?: number };
 /** Pedido, resposta ou evento do Debug Adapter Protocol, só com os campos que o diagnóstico usa. */
-type DapMessage = { type?: string; seq?: number; command?: string; arguments?: unknown; request_seq?: number; success?: boolean; message?: string; event?: string; body?: { output?: string } };
+type DapMessage = { type?: string; seq?: number; command?: string; arguments?: unknown; request_seq?: number; success?: boolean; message?: string; event?: string; body?: { output?: string; variables?: unknown[] } };
 
 async function probeInvisible(raw: unknown, snap: Snapshot): Promise<void> {
   const session = vscode.debug.activeDebugSession;
@@ -99,10 +99,17 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
   const output: string[] = [];
   // As últimas mensagens trocadas com o adaptador: mostram se um pedido ficou sem resposta.
   const traffic: string[] = [];
+  // O tráfego todo também vai para out-test/trafego, linha a linha: o arquivo sobrevive a uma queda do
+  // extension host, que leva junto a mensagem do teste, e o CI o guarda como artefato.
+  const trafficFile = path.join(dumpDir, 'trafego', `${run.dump}.log`);
+  fs.mkdirSync(path.dirname(trafficFile), { recursive: true });
+  fs.appendFileSync(trafficFile, `--- ${new Date().toISOString()} ${run.dump}\n`);
   const started = Date.now();
   const note = (line: string) => {
-    traffic.push(`${((Date.now() - started) / 1000).toFixed(1)}s ${line}`);
+    const entry = `${((Date.now() - started) / 1000).toFixed(1)}s ${line}`;
+    traffic.push(entry);
     if (traffic.length > 40) traffic.shift();
+    fs.appendFileSync(trafficFile, `${entry}\n`);
   };
   let ended = false;
   const listeners = [
@@ -113,7 +120,7 @@ export async function debugFile(run: DebugRun): Promise<Snapshot[]> {
         },
         onDidSendMessage: (m: DapMessage) => {
           if (m.type === 'event' && m.event === 'output' && m.body?.output) output.push(m.body.output);
-          else if (m.type === 'response') note(`<- ${m.request_seq} ${m.command} ${m.success ? 'ok' : `erro: ${m.message}`}`);
+          else if (m.type === 'response') note(`<- ${m.request_seq} ${m.command} ${m.success ? 'ok' : `erro: ${m.message}`}${m.body?.variables ? `, ${m.body.variables.length} itens` : ''}`);
           else if (m.type === 'event') note(`evento ${m.event}`);
         },
         onError: (e: Error) => output.push(`erro do adaptador: ${e.message}\n`),
