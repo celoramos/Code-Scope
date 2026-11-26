@@ -111,7 +111,7 @@ O modelo, o histórico e o painel não mudam. A explicação de fluxo (`flow.ts`
 ## Pull requests
 
 - Um assunto por pull request.
-- Descreva o que mudou e como testou. Se mudou algo visual, uma captura do painel ajuda muito.
+- Descreva o que mudou e como testou. Se mudou algo visual, uma captura do painel ajuda muito (o botão "Salvar imagem" do painel faz uma).
 - Testes novos para comportamento novo.
 
 Ao contribuir, você concorda que sua contribuição é licenciada sob a [licença MIT](LICENSE) do projeto, e se compromete a seguir o [código de conduta](CODE_OF_CONDUCT.md).

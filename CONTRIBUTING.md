@@ -98,7 +98,7 @@ With no work at all, the language already uses the generic mode. To give it its 
 4. If the language has its own stacks and queues, implement `collectionRole` by looking at the methods used in the code (`methodsCalledOn` helps).
 5. Cover the adapter in `test/adapters.test.ts` with real debugger values and, if you can, add samples in `samples/` and an integration test.
 
-The model, the history and the panel do not change.
+The model, the history and the panel do not change. The flow explanation (`flow.ts`) understands `if`, `for` and `while` at the start of a line, so it works for most languages.
 
 ## Style
 
