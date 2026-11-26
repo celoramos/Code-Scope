@@ -20,6 +20,7 @@
 - O painel não mostra mais texto interno do debugger: campo que aponta para outro nó, o `repr` padrão do Python dentro de listas e chaves de dicionário, e as linhas de uma lista de listas do Java (`ArrayList@1452 size=3`).
 - Função com a chave `{` sozinha na linha de baixo (o jeito de muito livro de C, e o padrão do C#) é reconhecida, para as regras de pilha, fila e variáveis de fora.
 - IntelliJ: o plugin deixa de usar APIs que a plataforma marcou para remoção (`SimpleListCellRenderer.create`, `ReadAction.compute`), para continuar abrindo nas próximas versões da IDE.
+- C no Linux: o F11 numa linha com `malloc` entra na glibc, e os blocos de memória dela, ligados em círculo por `fd`, `bk`, `fd_nextsize` e `bk_nextsize`, viravam uma árvore com cada caminho possível. O VS Code travava e a extensão caía. Agora, num grafo que não é árvore, cada nó se abre uma vez só.
 
 ## 0.9.2
 
