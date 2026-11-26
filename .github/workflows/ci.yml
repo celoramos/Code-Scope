@@ -39,6 +39,13 @@ jobs:
             os: ubuntu-latest
           - name: macOS
             os: macos-latest
+          # Temporário, sai antes do merge: separa a imagem do código na falha do vetor.cpp.
+          - name: Linux 24.04, só C++
+            os: ubuntu-24.04
+            grep: 'Novidades C\+\+ real'
+          - name: Linux 26.04, só C++
+            os: ubuntu-26.04
+            grep: 'Novidades C\+\+ real'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 40
     steps:
@@ -84,6 +91,7 @@ jobs:
         shell: bash
         env:
           CODE_SCOPE_PYTHON: ${{ steps.python.outputs.python-path }}
+          CODE_SCOPE_GREP: ${{ matrix.grep }}
       # O log do job só abre com login no GitHub; anotações qualquer um vê na página do run.
       # Resumo: quantos testes passaram por linguagem, os pulados e o nome de cada falha.
       - if: always()
