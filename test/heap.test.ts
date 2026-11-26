@@ -1,7 +1,7 @@
 import { History } from '../src/model/history';
 import { makeFrame } from '../src/model/frame';
 import * as assert from 'node:assert/strict';
-import { explainHeap, heapDelta, heapView } from '../src/model/heap';
+import { explainHeap, heapDelta, heapView, type TreeNodeView } from '../src/model/heap';
 import type { HeapObject, Snapshot } from '../src/model/snapshot';
 
 const conta = (id: string, titular: string, saldo: string): HeapObject => ({
@@ -116,5 +116,31 @@ describe('listas ligadas e árvores', () => {
 
   it('variável que aponta para null aparece como tal', () => {
     assert.deepEqual(heapView(snap([], [['raiz', null]])).nulls, ['raiz']);
+  });
+
+  // Os chunks do malloc da glibc se ligam por fd, bk, fd_nextsize e bk_nextsize, em círculo: um grafo,
+  // não uma árvore. O F11 numa linha com malloc entra lá no gdb do Linux, e cada caminho do grafo virava
+  // um galho: o extension host travava e caía com o código 133.
+  const grafo = (n: number) =>
+    snap(
+      Array.from({ length: n }, (_, i) =>
+        no(`@${i}`, String(i), { fd: `@${(i + 1) % n}`, bk: `@${(i + n - 1) % n}`, fd_nextsize: `@${(i + 3) % n}`, bk_nextsize: `@${(i + n - 3) % n}` }),
+      ),
+      [['p', '@0']],
+    );
+  const tamanho = (t: TreeNodeView | null): number => (t ? 1 + t.children.reduce((s, c) => s + tamanho(c), 0) : 0);
+  const abertos = (t: TreeNodeView | null): string[] => (t && t.children.some(Boolean) ? [t.id, ...t.children.flatMap(abertos)] : []);
+
+  it('grafo que não é árvore: cada nó se abre uma vez só', () => {
+    const v = heapView(grafo(8));
+    const ids = v.trees.flatMap((t) => abertos(t.root));
+    assert.equal(new Set(ids).size, ids.length, `nós abertos mais de uma vez: ${ids.join(' ')}`);
+    assert.ok(v.trees.reduce((s, t) => s + tamanho(t.root), 0) <= 8 * 5);
+    assert.equal(v.objects.length, 0);
+  });
+
+  it('grafo grande que não é árvore termina com tamanho proporcional aos nós', () => {
+    const v = heapView(grafo(200));
+    assert.ok(v.trees.reduce((s, t) => s + tamanho(t.root), 0) <= 200 * 5);
   });
 });
