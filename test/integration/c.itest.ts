@@ -25,12 +25,13 @@ function gdbPath(): string | undefined {
   return undefined;
 }
 
-function debugC(name: string, breakpointLine: number, steps: number, step: 'stepOver' | 'stepInto' = 'stepOver'): Promise<Snapshot[]> {
+function debugC(name: string, breakpointLine: number, steps: number, step: 'stepOver' | 'stepInto' = 'stepOver', until?: (s: Snapshot) => boolean): Promise<Snapshot[]> {
   return debugFile({
     file: path.join(dir, `${name}.c`),
     breakpointLine,
     steps,
     step,
+    until,
     config: {
       type: 'cppdbg',
       request: 'launch',
@@ -72,7 +73,9 @@ describe('C (gdb) real', function () {
   });
 
   it('ponteiros.c: array recebido por ponteiro, vetor de malloc, globais na função e struct na variável', async () => {
-    const snaps = await debugC('ponteiros', 30, 120, 'stepInto');
+    // Começa depois do malloc e segue sem parar a partir do printf. Quando a glibc tem informação de linha
+    // (o Ubuntu do CI desde a imagem 20261111), o F11 entra nas duas e gasta os passos lá dentro, sem chegar ao ordena.
+    const snaps = await debugC('ponteiros', 31, 120, 'stepInto', (s) => s.line >= 38);
     const dentro = snaps.filter((s) => s.line >= 14 && s.line <= 23);
     assert.ok(dentro.length > 0, `não entrou em ordena: ${snaps.map((s) => s.line).join(' ')}`);
     // O int v[] chega como int *: o tamanho vem do n ao lado, nos parâmetros.
