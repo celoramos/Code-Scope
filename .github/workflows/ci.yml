@@ -102,6 +102,13 @@ jobs:
           # sem isto, só o nome do teste aparece na página do run.
           msg=$(awk '/^ +[0-9]+ failing/ {on=1; next} on && !/^ +at / && NF {gsub(/\r/, ""); gsub(/%/, "%25"); printf "%s%%0A", substr($0, 1, 300); if (++k == 40) exit}' itest.log)
           [ -z "$msg" ] || echo "::error title=Falhas (${{ matrix.name }})::${msg}"
+      # O tráfego com cada adaptador, gravado durante o teste: sobra mesmo quando o VS Code cai no meio.
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: trafego-${{ strategy.job-index }}
+          path: out-test/trafego/
+          if-no-files-found: ignore
 
   vscodium:
     name: Integração no VSCodium (Open VSX)

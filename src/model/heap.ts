@@ -149,6 +149,9 @@ export function heapView(s: Snapshot): HeapView {
       const build = (id: string | null | undefined, path: Set<string>): TreeNodeView | null => {
         const o = id ? byId.get(id) : undefined;
         if (!o || path.has(o.id)) return null;
+        // Já aberto em outro galho: num grafo que não é árvore (os chunks do malloc, por exemplo), abrir de
+        // novo percorreria cada caminho possível. Aparece como folha; numa árvore, isso nunca acontece.
+        if (used.has(o.id)) return { ...nodeOf(o), children: ordered.map(() => null) };
         used.add(o.id);
         const inner = new Set(path).add(o.id);
         return { ...nodeOf(o), children: ordered.map((f) => build(o.fields.find((x) => x.name === f)?.ref, inner)) };
